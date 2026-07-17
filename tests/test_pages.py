@@ -207,20 +207,24 @@ def test_supporting_pages_and_sendable_documents_state_claim_boundaries() -> Non
     assert "text table" in accessibility_markdown.casefold()
 
 
-def test_pages_workflow_is_narrow_and_uses_exact_demo_branch() -> None:
+def test_pages_workflow_validates_prs_and_deploys_only_main() -> None:
     workflow = ROOT / ".github" / "workflows" / "pages.yml"
     assert workflow.exists()
     text_value = workflow.read_text(encoding="utf-8")
 
-    assert "codex/monday-ons-okf-demonstrator" in text_value
+    assert "      - main" in text_value
+    assert "codex/monday-ons-okf-demonstrator" not in text_value
     assert "workflow_dispatch:" in text_value
-    assert "pull_request:" not in text_value
+    assert "pull_request:" in text_value
+    assert text_value.count("if: github.ref == 'refs/heads/main'") == 3
     assert "contents: read" in text_value
     assert "pages: write" in text_value
     assert "id-token: write" in text_value
-    assert "actions/configure-pages@" in text_value
-    assert "actions/upload-pages-artifact@" in text_value
-    assert "actions/deploy-pages@" in text_value
+    assert "actions/checkout@v7" in text_value
+    assert "actions/setup-python@v6" in text_value
+    assert "actions/configure-pages@v6" in text_value
+    assert "actions/upload-pages-artifact@v5" in text_value
+    assert "actions/deploy-pages@v5" in text_value
     assert "source/demo-snapshot" in text_value
     assert "python scripts/build_bundle.py" in text_value
     assert "secrets." not in text_value
