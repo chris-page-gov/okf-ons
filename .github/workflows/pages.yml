@@ -1,0 +1,91 @@
+name: Publish OKF ONS demonstrator
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install validation tools
+        run: python -m pip install --disable-pip-version-check -e ".[test]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Run static checks
+        run: python -m ruff check .
+
+      - name: Build bundle from the frozen source snapshot
+        run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
+
+      - name: Verify deterministic bundle rebuild
+        run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle --check
+
+      - name: Add project-relative Pages assets to the public bundle
+        run: |
+          cp -R pages/. bundle/
+          cp docs/demo-guide.md bundle/demo-guide.md
+          cp accessibility.md bundle/accessibility.md
+          touch bundle/.nojekyll
+
+      - name: Verify public entrypoints
+        run: |
+          test -f bundle/index.html
+          test -f bundle/okf-explorer.json
+          test -f bundle/data/demo/contrast-records.json
+          test -f bundle/data/coverage/ledger.json
+          test -f bundle/data/standards/evaluation.json
+          test -f bundle/data/evaluation/report.json
+          test -f bundle/data/ons/mcp-bindings.json
+          test -f bundle/data/ons/spatial-index.json
+
+      - name: Configure GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: bundle
+          retention-days: 7
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

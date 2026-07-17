@@ -1,0 +1,290 @@
+{
+  "schemaVersion": "okf-ons.source-register.v1",
+  "scope": {
+    "definition": "Public ONS data-asset metadata discoverable through the registered official source lanes at a stated snapshot date.",
+    "globalExclusions": [
+      "Observation values and statistical data cells",
+      "Secure or controlled microdata",
+      "Binary dataset downloads and full geometries",
+      "Credentials, cookies and request-specific personal information"
+    ]
+  },
+  "snapshotPolicy": {
+    "rawPages": "Operational cache only; never published in an OKF bundle.",
+    "frozenBuild": "Publication consumes content-hashed cached pages without network access.",
+    "publicProvenance": [
+      "source id and official endpoint",
+      "retrieval timestamp",
+      "request URL without credentials",
+      "response ETag or Last-Modified when supplied",
+      "page and record counts",
+      "normalisation drop and unrepresented-record counts",
+      "content and record-set SHA-256 digests",
+      "completeness and stopping reason"
+    ]
+  },
+  "reconciliationSourceLedger": {
+    "schemaVersion": "okf-ons.reconciliation-source-ledger.v1",
+    "purpose": "Planned official metadata lanes used to reconcile identities, releases, quality evidence, time-series codes and catalogue representations across ONS surfaces.",
+    "coverageRule": "A planned lane does not contribute to a coverage or completeness claim until its acquisition method, denominator, stopping rule, frozen snapshot and unrepresented-record count are implemented and evaluated.",
+    "conflictRule": "Preserve every material source value and its provenance as conflicted evidence; never silently overwrite one official surface with another.",
+    "lanes": [
+      {
+        "id": "ons-website-dataset-pages",
+        "title": "ONS website dataset search and dataset pages",
+        "status": "planned",
+        "implementationStatus": "planned-no-adapter",
+        "authority": {
+          "name": "Office for National Statistics",
+          "role": "authoritative producer website",
+          "url": "https://www.ons.gov.uk/"
+        },
+        "entrypoint": "https://www.ons.gov.uk/search?filter=datasets",
+        "reconciliationRole": [
+          "Discover public dataset and download pages not represented by the ONS Data API",
+          "Cross-reference website slugs, canonical URLs, titles, editions and download identities",
+          "Preserve methodology, quality, related-data and publication links"
+        ],
+        "expectedCrossReferences": [
+          "canonical page URL",
+          "dataset family and edition path segments",
+          "release and download links",
+          "methodology and QMI links",
+          "related datasets and time-series codes"
+        ],
+        "denominatorPlan": "Measure all unique in-scope dataset results at the frozen snapshot and classify every result as represented, alias, redirect, duplicate representation, tombstone or explained exclusion.",
+        "stoppingRulePlan": "Follow the official search pagination to its reported end, then reconcile canonical dataset links and record the final page and record counts.",
+        "publicationBoundary": "Metadata and links only; no spreadsheet, CSV or observation payloads."
+      },
+      {
+        "id": "ons-release-calendar-and-releases",
+        "title": "ONS release calendar and statistical release pages",
+        "status": "planned",
+        "implementationStatus": "planned-no-adapter",
+        "authority": {
+          "name": "Office for National Statistics",
+          "role": "authoritative release surface",
+          "url": "https://www.ons.gov.uk/"
+        },
+        "entrypoint": "https://www.ons.gov.uk/releasecalendar",
+        "reconciliationRole": [
+          "Attach announced, published, revised, cancelled and provisional release context",
+          "Distinguish dataset versions from release pages and publication editions",
+          "Preserve correction notices, revision explanations and back-series links"
+        ],
+        "expectedCrossReferences": [
+          "release page canonical URL",
+          "publication and dataset links",
+          "release date and next-release date",
+          "revision and correction notices",
+          "contact and methodology links"
+        ],
+        "denominatorPlan": "For a declared calendar interval, count every release-calendar result and reconcile it to a release record, redirect, duplicate representation or explained exclusion.",
+        "stoppingRulePlan": "Use an explicit start and end date, exhaust every result page, and record the interval and upstream result count.",
+        "publicationBoundary": "Release metadata and explanatory links only; no statistical values copied from release text."
+      },
+      {
+        "id": "ons-quality-methodology-information",
+        "title": "ONS Quality and Methodology Information",
+        "status": "planned",
+        "implementationStatus": "planned-no-adapter",
+        "authority": {
+          "name": "Office for National Statistics",
+          "role": "authoritative producer quality and methodology surface",
+          "url": "https://www.ons.gov.uk/"
+        },
+        "entrypoint": "https://www.ons.gov.uk/methodology/methodologytopicsandstatisticalconcepts/qualityinofficialstatistics/qualityandmethodologyinformation",
+        "reconciliationRole": [
+          "Attach strengths, limitations, methods and quality-dimension evidence",
+          "Cross-reference statistical products, dataset series and release pages",
+          "Preserve source wording for relevance, accuracy, timeliness, accessibility, coherence and comparability"
+        ],
+        "expectedCrossReferences": [
+          "QMI canonical URL",
+          "related dataset, release and bulletin links",
+          "methodology and source-data references",
+          "quality-dimension headings",
+          "page issue and modification dates"
+        ],
+        "denominatorPlan": "Enumerate unique QMI records reachable from the official QMI collection and in-scope product pages, then reconcile every record or explain its exclusion.",
+        "stoppingRulePlan": "Exhaust collection pagination or index groups and close the denominator only after canonical URL de-duplication.",
+        "publicationBoundary": "Source-attributed metadata summaries and evidence links; no claim that QMI presence proves statistical accuracy."
+      },
+      {
+        "id": "ons-time-series-identifiers",
+        "title": "ONS time-series pages and identifiers",
+        "status": "planned",
+        "implementationStatus": "planned-no-adapter",
+        "authority": {
+          "name": "Office for National Statistics",
+          "role": "authoritative producer time-series surface",
+          "url": "https://www.ons.gov.uk/"
+        },
+        "entrypoint": "https://www.ons.gov.uk/timeseriestool",
+        "reconciliationRole": [
+          "Cross-reference time-series codes to dataset families, editions and releases",
+          "Preserve measure, unit, seasonal-adjustment, frequency and version context",
+          "Distinguish similarly named series before an MCP selection is generated"
+        ],
+        "expectedCrossReferences": [
+          "time-series code",
+          "dataset and edition path",
+          "release and next-release links",
+          "frequency, unit and adjustment labels",
+          "source and methodology links"
+        ],
+        "denominatorPlan": "Derive the discoverable series-code universe from an official machine-readable index or bounded website enumeration before making a coverage claim.",
+        "stoppingRulePlan": "Not yet defined; this lane remains planned until an official bounded enumeration and replayable stopping rule are documented.",
+        "publicationBoundary": "Series metadata only; time-series observation values are prohibited."
+      },
+      {
+        "id": "data-gov-uk-ons-records",
+        "title": "data.gov.uk records attributed to the Office for National Statistics",
+        "status": "planned",
+        "implementationStatus": "planned-no-adapter",
+        "authority": {
+          "name": "data.gov.uk",
+          "role": "official government discovery registry, not the producer source of truth",
+          "url": "https://www.data.gov.uk/"
+        },
+        "entrypoint": "https://www.data.gov.uk/search?q=Office+for+National+Statistics",
+        "reconciliationRole": [
+          "Find legacy, federated or alternative catalogue identifiers and landing pages",
+          "Cross-reference publisher, licence, dates, distributions and ONS canonical URLs",
+          "Detect stale, redirected or conflicting catalogue representations"
+        ],
+        "expectedCrossReferences": [
+          "data.gov.uk record identifier and URL",
+          "publisher or organisation identity",
+          "ONS landing-page and distribution URLs",
+          "licence, issue and modification dates",
+          "catalogue status and redirect target"
+        ],
+        "denominatorPlan": "Use an official bounded data.gov.uk query constrained to ONS publisher or organisation identity and classify every returned record.",
+        "stoppingRulePlan": "Exhaust the official query pagination and record the query, total, page counts, de-duplication and publisher-identity rules.",
+        "publicationBoundary": "Registry metadata only; producer evidence takes precedence and conflicts remain visible."
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "ons-data-api",
+      "title": "ONS Data API dataset catalogue",
+      "adapter": "ons-data-api",
+      "publisher": {
+        "name": "Office for National Statistics",
+        "url": "https://www.ons.gov.uk/"
+      },
+      "endpoint": "https://api.beta.ons.gov.uk/v1/datasets",
+      "responseFormat": "ONS Data API JSON",
+      "standards": [
+        "ONS dataset-edition-version-dimension-option identity model",
+        "HTTPS JSON API"
+      ],
+      "scope": {
+        "includes": [
+          "Dataset identities, titles, descriptions, keywords and lifecycle state",
+          "Official links to editions, latest versions, taxonomy and dataset records"
+        ],
+        "excludes": [
+          "Observations",
+          "Dimension option values in the catalogue pass",
+          "CSV and other dataset payloads"
+        ]
+      },
+      "identityFields": [
+        "id"
+      ],
+      "pagination": {
+        "strategy": "offset-limit",
+        "defaultPageSize": 100,
+        "maximumPageSize": 1000
+      },
+      "crossReferences": [
+        "links.editions",
+        "links.latest_version",
+        "links.self",
+        "links.taxonomy"
+      ]
+    },
+    {
+      "id": "nomis-dataset-definitions",
+      "title": "Nomis dataset definitions",
+      "adapter": "nomis-sdmx",
+      "publisher": {
+        "name": "Office for National Statistics",
+        "url": "https://www.nomisweb.co.uk/"
+      },
+      "endpoint": "https://www.nomisweb.co.uk/api/v01/dataset/def.sdmx.json",
+      "responseFormat": "Nomis SDMX JSON",
+      "standards": [
+        "SDMX information model",
+        "Nomis RESTful API"
+      ],
+      "scope": {
+        "includes": [
+          "Dataset key-family identities, names and catalogue annotations",
+          "Dimension, attribute, measure and code-list references"
+        ],
+        "excludes": [
+          "Observation values",
+          "JSON-stat data responses",
+          "Per-geography statistical cells"
+        ]
+      },
+      "identityFields": [
+        "structure.keyfamilies.keyfamily.id"
+      ],
+      "pagination": {
+        "strategy": "single-definition-document",
+        "defaultPageSize": 2000,
+        "maximumPageSize": 5000
+      },
+      "crossReferences": [
+        "components.dimension.conceptref",
+        "components.dimension.codelist",
+        "annotations.annotation"
+      ]
+    },
+    {
+      "id": "ons-open-geography",
+      "title": "ONS Open Geography Portal dataset search",
+      "adapter": "open-geography-search",
+      "publisher": {
+        "name": "Office for National Statistics",
+        "url": "https://geoportal.statistics.gov.uk/"
+      },
+      "endpoint": "https://geoportal.statistics.gov.uk/api/search/v1/collections/dataset/items",
+      "responseFormat": "GeoJSON feature collection containing catalogue search records",
+      "standards": [
+        "GeoJSON FeatureCollection",
+        "ONS GSS geography codes and product vintages where supplied"
+      ],
+      "scope": {
+        "includes": [
+          "Dataset catalogue identities, titles, descriptions, ownership and timestamps",
+          "Keywords, licence statements, item links and catalogue bounding boxes"
+        ],
+        "excludes": [
+          "Feature geometry",
+          "Boundary and lookup downloads",
+          "Postcode, UPRN and statistical observation rows"
+        ]
+      },
+      "identityFields": [
+        "features.id"
+      ],
+      "pagination": {
+        "strategy": "next-link-with-start-index-fallback",
+        "defaultPageSize": 100,
+        "maximumPageSize": 100
+      },
+      "crossReferences": [
+        "features.links",
+        "features.properties.url",
+        "features.properties.typeKeywords",
+        "features.properties.modified"
+      ]
+    }
+  ]
+}

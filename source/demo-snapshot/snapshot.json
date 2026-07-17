@@ -1,0 +1,46 @@
+{
+  "claimBoundary": "Completeness here covers only the implemented registered adapters. The bundle coverage ledger separately records planned and reconciliation lanes.",
+  "completeForRegisteredAdapters": true,
+  "metadataOnly": true,
+  "observationsIncluded": false,
+  "schema": "okf-ons.frozen-snapshot.v1",
+  "snapshotId": "monday-2026-07-17",
+  "sources": [
+    {
+      "coverageComplete": true,
+      "file": "nomis-dataset-definitions.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 1617,
+      "recordSetSha256": "90923b56f25118e4430b1107be07c73d1fe1d9df63965723fba92410c90db4c0",
+      "reportedTotal": 1617,
+      "sha256": "857ab320b4cad94c3a05ef09d15f0886b42015949fa386e4bc7f367d94022627",
+      "snapshotSetSha256": "dc2fc1443620581223acc61936b63084f5c9e6164e000b27d47827e51ccf01fb",
+      "sourceId": "nomis-dataset-definitions",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "file": "ons-data-api.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 337,
+      "recordSetSha256": "77b1a0f6d8444307e4da15ba3d198d51322a6010a63415a20d46d7a093c952b8",
+      "reportedTotal": 337,
+      "sha256": "8cbce2757ae00589d0e0b8799c42b3c0121377bbd8f93512496ba9301575ca87",
+      "snapshotSetSha256": "9214bc2e22102bf21399c124cb75b6ac1aa8d4b9927bb7dee91117803ebaada3",
+      "sourceId": "ons-data-api",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "file": "ons-open-geography.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 3035,
+      "recordSetSha256": "72a580228c7c070202825f13f0075974e5cdddc0f5a9d248fc15cd86dc59e57b",
+      "reportedTotal": 3035,
+      "sha256": "044185ce47e676c5a54ab6e8807606d0f22204d888c5ab5d2bea5e7beb561b1d",
+      "snapshotSetSha256": "2d0479f764de73e490b2df230332d61c7f8808fd0f14544d279be69dc0fe8a45",
+      "sourceId": "ons-open-geography",
+      "unrepresentedCount": 0
+    }
+  ]
+}

@@ -1,0 +1,1787 @@
+{
+  "schemaVersion": "okf-ons.standards-register.v1",
+  "title": "Standards and assurance register for the OKF ONS metadata bundle",
+  "asOf": "2026-07-17",
+  "assuranceBoundary": {
+    "metadataOnly": true,
+    "certifiesStatisticalAccuracy": false,
+    "certifiesStandardsCompliance": false,
+    "statement": "The register records source evidence and tests the bundle's metadata mappings. It does not certify an ONS statistical product, observation, methodology or producer.",
+    "absenceRule": "Missing source evidence is recorded as not-evidenced, never as non-compliance.",
+    "separationRule": "Bundle profile alignment and source-product evidence are separate claims with separate status vocabularies."
+  },
+  "claimModel": {
+    "evidenceStatuses": [
+      "observed",
+      "inferred",
+      "not-evidenced",
+      "not-applicable",
+      "conflicted",
+      "stale"
+    ],
+    "profileStatuses": [
+      "aligned",
+      "partial",
+      "not-evaluated",
+      "not-applicable"
+    ],
+    "requiredClaimFields": [
+      "standardUri",
+      "requirementId",
+      "status",
+      "evidenceUrl",
+      "evidenceType",
+      "retrievedAt",
+      "sourceModifiedAt",
+      "contentDigest",
+      "notes"
+    ],
+    "rules": [
+      "Observed claims require a retrievable source evidence URL and retrieval metadata.",
+      "Inferred claims must state the deterministic inference and may not be presented as producer assertion.",
+      "Conflicted claims preserve every material source and identify the conflict.",
+      "Stale claims preserve the earlier evidence and the freshness rule that failed.",
+      "Not-evidenced is not a finding of non-compliance or inaccuracy.",
+      "Profile status describes the OKF mapping only and never confers accreditation or certification."
+    ]
+  },
+  "categories": {
+    "binding-legislation": "Legislation whose applicability is determined by law and context.",
+    "statutory-code": "The Code of Practice for Statistics made under statutory authority.",
+    "official-standard": "A current government functional, data or analytical standard.",
+    "official-guidance": "Official producer, regulator or government guidance and policy.",
+    "international-standard": "A formally maintained international statistical or ISO standard.",
+    "technical-recommendation": "A maintained web, semantic or catalogue specification, with its normative status recorded."
+  },
+  "standards": [
+    {
+      "id": "uk-srsa-2007",
+      "title": "Statistics and Registration Service Act 2007",
+      "category": "binding-legislation",
+      "authority": "UK Parliament",
+      "canonicalUri": "https://www.legislation.gov.uk/ukpga/2007/18/contents",
+      "currentVersion": "2007 c.18, as amended",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK primary legislation",
+      "applicability": {
+        "scope": "UK Statistics Authority and official-statistics functions governed by the Act",
+        "conditions": "Apply the relevant provisions according to the producer and information involved.",
+        "exclusions": "The bundle does not interpret legal compliance."
+      },
+      "requirements": [
+        {
+          "id": "srsa-standards-and-code",
+          "theme": "Statistical standards and Code",
+          "requirementLevel": "mandatory",
+          "statement": "Preserve evidence of applicable definitions, methodologies, classifications, standards and Code status.",
+          "applicability": "Official-statistics metadata where the source publishes this evidence.",
+          "evidenceFields": [
+            "statisticalStatus",
+            "methodology",
+            "classifications",
+            "standardsEvidence"
+          ],
+          "evaluation": "Check that every claim retains its official source and that unsupported legal conclusions are absent."
+        },
+        {
+          "id": "srsa-confidentiality",
+          "theme": "Statistical confidentiality",
+          "requirementLevel": "mandatory",
+          "statement": "Do not disclose protected personal information through the metadata bundle.",
+          "applicability": "All acquisition, normalisation and publication stages.",
+          "evidenceFields": [
+            "accessRights",
+            "securityClassification",
+            "contactPoint"
+          ],
+          "evaluation": "Secret and personal-data lint; confirm the bundle contains metadata only."
+        }
+      ],
+      "recordEvidenceFields": [
+        "statisticalStatus",
+        "methodology",
+        "classifications",
+        "accessRights"
+      ],
+      "uiTreatments": [
+        "Display the sourced statistical status without implying legal endorsement.",
+        "Keep confidentiality and access constraints next to access links."
+      ],
+      "automatedChecks": [
+        "Reject observations, credentials and request-specific personal information.",
+        "Require source URLs for legal or Code claims."
+      ]
+    },
+    {
+      "id": "uk-accessibility-regulations-2018",
+      "title": "Public Sector Bodies (Websites and Mobile Applications) Accessibility Regulations 2018",
+      "category": "binding-legislation",
+      "authority": "UK Parliament",
+      "canonicalUri": "https://www.legislation.gov.uk/uksi/2018/952/contents",
+      "currentVersion": "SI 2018/952, as amended",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK statutory instrument",
+      "applicability": {
+        "scope": "Public-sector web and mobile services within the Regulations",
+        "conditions": "Service owner must determine legal applicability and exemptions.",
+        "exclusions": "The register is not an accessibility audit certificate."
+      },
+      "requirements": [
+        {
+          "id": "accessibility-wcag-22-aa",
+          "theme": "Accessible public interface",
+          "requirementLevel": "mandatory",
+          "statement": "The demonstrator should meet WCAG 2.2 level AA and publish an accurate accessibility statement.",
+          "applicability": "OKF Explorer and published supporting pages.",
+          "evidenceFields": [
+            "accessibilityStatement",
+            "accessibilityTestDate",
+            "knownAccessibilityIssues"
+          ],
+          "evaluation": "Automated WCAG checks plus keyboard, zoom, focus, contrast and screen-reader journeys."
+        }
+      ],
+      "recordEvidenceFields": [
+        "accessibilityStatement",
+        "accessibilityTestDate"
+      ],
+      "uiTreatments": [
+        "Provide a keyboard-accessible table alternative for every map.",
+        "Expose an accessibility statement from every published page."
+      ],
+      "automatedChecks": [
+        "Run axe against representative routes.",
+        "Test keyboard-only use and 200 percent and 400 percent zoom."
+      ]
+    },
+    {
+      "id": "uk-data-protection-act-2018",
+      "title": "Data Protection Act 2018",
+      "category": "binding-legislation",
+      "authority": "UK Parliament",
+      "canonicalUri": "https://www.legislation.gov.uk/ukpga/2018/12/contents",
+      "currentVersion": "2018 c.12, as amended",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK primary legislation",
+      "applicability": {
+        "scope": "Processing of personal data during acquisition and publication",
+        "conditions": "Apply where a metadata field contains personal data.",
+        "exclusions": "Public organisational contact points are preferred over personal contacts."
+      },
+      "requirements": [
+        {
+          "id": "dpa-data-minimisation",
+          "theme": "Data minimisation",
+          "requirementLevel": "mandatory",
+          "statement": "Collect and publish only personal information necessary for the metadata purpose.",
+          "applicability": "Contacts, provenance and acquisition logs.",
+          "evidenceFields": [
+            "contactPoint",
+            "publisher"
+          ],
+          "evaluation": "Scan public output for secrets, cookies, request identifiers and unnecessary personal contacts."
+        }
+      ],
+      "recordEvidenceFields": [
+        "contactPoint",
+        "publisher"
+      ],
+      "uiTreatments": [
+        "Prefer organisational contact labels and addresses."
+      ],
+      "automatedChecks": [
+        "Run secret and personal-data heuristics over generated output."
+      ]
+    },
+    {
+      "id": "uk-inspire-regulations-2009",
+      "title": "INSPIRE Regulations 2009",
+      "category": "binding-legislation",
+      "authority": "UK Parliament",
+      "canonicalUri": "https://www.legislation.gov.uk/uksi/2009/3157/contents",
+      "currentVersion": "SI 2009/3157, as amended",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK statutory instrument",
+      "applicability": {
+        "scope": "Spatial datasets and services within the Regulations",
+        "conditions": "Apply only after an explicit in-scope determination.",
+        "exclusions": "Do not mark every dataset with a geographic dimension as INSPIRE."
+      },
+      "requirements": [
+        {
+          "id": "inspire-discovery-metadata",
+          "theme": "Spatial discovery metadata",
+          "requirementLevel": "conditional",
+          "statement": "Preserve the published GEMINI or INSPIRE discovery record and validation evidence for an in-scope spatial asset.",
+          "applicability": "Records explicitly identified as INSPIRE or assessed as in scope.",
+          "evidenceFields": [
+            "spatialExtent",
+            "coordinateReferenceSystem",
+            "lineage",
+            "responsibleOrganisation",
+            "conformanceEvidence"
+          ],
+          "evaluation": "Validate supplied GEMINI or ISO 19139 metadata without inferring legal scope."
+        }
+      ],
+      "recordEvidenceFields": [
+        "spatialExtent",
+        "coordinateReferenceSystem",
+        "lineage",
+        "conformanceEvidence"
+      ],
+      "uiTreatments": [
+        "Show INSPIRE status only when source evidence exists."
+      ],
+      "automatedChecks": [
+        "Run the applicable GEMINI validation on supplied metadata.",
+        "Require an explicit applicability decision before reporting alignment."
+      ]
+    },
+    {
+      "id": "uksa-code-3",
+      "title": "Code of Practice for Statistics 3.0: Standards for Official Statistics",
+      "category": "statutory-code",
+      "authority": "UK Statistics Authority",
+      "canonicalUri": "https://code.statisticsauthority.gov.uk/standards-of-the-code-of-practice/standards-for-official-statistics-with-required-practices/",
+      "currentVersion": "3.0",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Current statutory Code, released October 2025",
+      "applicability": {
+        "scope": "Official statistics and producers subject to the Code",
+        "conditions": "Map source evidence to the ten current Standards for Official Statistics.",
+        "exclusions": "Do not use superseded Code 2.1 Q1, Q2 and Q3 labels as current requirements."
+      },
+      "requirements": [
+        {
+          "id": "code3-release-status-and-revisions",
+          "theme": "Release, status, revisions and corrections",
+          "requirementLevel": "mandatory",
+          "statement": "Preserve release timing, official-statistics status, revisions and corrections with their nature, scale and explanation.",
+          "applicability": "All statistical releases and dataset versions for which evidence is available.",
+          "evidenceFields": [
+            "statisticalStatus",
+            "releaseDate",
+            "releaseCalendar",
+            "revisionType",
+            "revisionReason",
+            "versionNotes"
+          ],
+          "evaluation": "Check release dates and version-chain integrity; distinguish revisions from corrections."
+        },
+        {
+          "id": "code3-sources-methods-and-validation",
+          "theme": "Suitable sources, methods and validation",
+          "requirementLevel": "mandatory",
+          "statement": "Preserve source changes and biases, reuse and linkage, recognised classifications, validation against relevant sources, and evidence about error or uncertainty.",
+          "applicability": "Statistical products where the producer publishes source, method or validation evidence.",
+          "evidenceFields": [
+            "sourceInputs",
+            "methodology",
+            "classifications",
+            "validationEvidence",
+            "uncertainty",
+            "bias"
+          ],
+          "evaluation": "Cross-reference catalogue, release, QMI and methodology evidence; retain conflicts instead of overwriting them."
+        },
+        {
+          "id": "code3-coherence-comparability",
+          "theme": "Coherence and comparability",
+          "requirementLevel": "mandatory",
+          "statement": "Explain consistency over time and comparability across and within geographies, including deviations from recognised definitions or classifications.",
+          "applicability": "Series, editions, geographies and related statistical products.",
+          "evidenceFields": [
+            "comparability",
+            "coherence",
+            "geography",
+            "classificationVersion",
+            "deviations"
+          ],
+          "evaluation": "Check that a confusable or related record exposes at least one material discriminator."
+        },
+        {
+          "id": "code3-quality-and-limitations",
+          "theme": "Quality, uncertainty and limitations",
+          "requirementLevel": "mandatory",
+          "statement": "Make quality, uncertainty, sources, methods, representativeness, comparability, limitations and planned changes prominent.",
+          "applicability": "Every discovery record, with not-evidenced used where the source is silent.",
+          "evidenceFields": [
+            "qualityDimensions",
+            "uncertainty",
+            "limitations",
+            "representativeness",
+            "plannedChanges",
+            "backSeries"
+          ],
+          "evaluation": "Measure evidence coverage by field and requirement; do not infer statistical accuracy."
+        },
+        {
+          "id": "code3-access-related-and-persistent",
+          "theme": "Accessible, related, reusable and persistent statistics",
+          "requirementLevel": "mandatory",
+          "statement": "Provide accessible outputs, comparisons and related statistics, reusable metadata and persistent archived access.",
+          "applicability": "Public bundle records and Explorer routes.",
+          "evidenceFields": [
+            "relatedStatistics",
+            "persistentIdentifier",
+            "distribution",
+            "archiveLocation",
+            "accessibility"
+          ],
+          "evaluation": "Check links, persistence, accessible presentation and related-product relationships."
+        }
+      ],
+      "recordEvidenceFields": [
+        "statisticalStatus",
+        "releaseDate",
+        "revisionType",
+        "sourceInputs",
+        "methodology",
+        "classifications",
+        "qualityDimensions",
+        "uncertainty",
+        "limitations",
+        "relatedStatistics",
+        "persistentIdentifier"
+      ],
+      "uiTreatments": [
+        "Show official, accredited and development status prominently and exactly as sourced.",
+        "Place limitations, uncertainty and revision notices before execution.",
+        "Provide Compare alternatives and Related statistics views."
+      ],
+      "automatedChecks": [
+        "Reject legacy Q1, Q2 and Q3 labels as the current Code structure.",
+        "Evaluate source-backed requirement coverage without emitting a compliance verdict.",
+        "Validate revision chains and related-record links."
+      ]
+    },
+    {
+      "id": "uksa-code-3-public-use",
+      "title": "Code of Practice for Statistics 3.0: Standards for Public Use",
+      "category": "statutory-code",
+      "authority": "UK Statistics Authority",
+      "canonicalUri": "https://code.statisticsauthority.gov.uk/standards-of-the-code-of-practice/standards-for-the-public-use-of-statistics-data-and-wider-analysis-with-required-practices/",
+      "currentVersion": "3.0",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Current Code standards replacing the 2022 intelligent-transparency guidance in May 2026",
+      "applicability": {
+        "scope": "Public use of statistics, data and wider analysis",
+        "conditions": "Apply to explanatory content and generated citations in the demonstrator.",
+        "exclusions": "Do not present the replaced 2022 regulatory guidance as current."
+      },
+      "requirements": [
+        {
+          "id": "public-use-equality-of-access",
+          "theme": "Equality of access",
+          "requirementLevel": "mandatory",
+          "statement": "Statistics or data used publicly should be publicly available in a timely way and use the latest reliable source.",
+          "applicability": "Public explanations, comparisons and demonstrations.",
+          "evidenceFields": [
+            "sourceUrl",
+            "accessDate",
+            "currentVersion",
+            "releaseDate"
+          ],
+          "evaluation": "Check that citations resolve and warn when a selected version is superseded."
+        },
+        {
+          "id": "public-use-supporting-understanding",
+          "theme": "Supporting understanding",
+          "requirementLevel": "mandatory",
+          "statement": "Present statistics with integrity, clarity, context, limitations and source citations, without cherry-picking or undue certainty.",
+          "applicability": "Human- and agent-facing summaries.",
+          "evidenceFields": [
+            "citation",
+            "context",
+            "limitations",
+            "uncertainty"
+          ],
+          "evaluation": "Require citations for generated factual claims and prohibit unsupported certainty."
+        },
+        {
+          "id": "public-use-decision-making",
+          "theme": "Decision making and leadership",
+          "requirementLevel": "mandatory",
+          "statement": "Support impartial expert interpretation and responsible leadership in public use.",
+          "applicability": "Interpretive and decision-support features.",
+          "evidenceFields": [
+            "expertCommentary",
+            "responsibleOwner"
+          ],
+          "evaluation": "Keep generated interpretation distinct from producer evidence."
+        }
+      ],
+      "recordEvidenceFields": [
+        "sourceUrl",
+        "citation",
+        "context",
+        "limitations",
+        "uncertainty"
+      ],
+      "uiTreatments": [
+        "Offer a copyable citation with source, version and access date.",
+        "Warn clearly about superseded or development data."
+      ],
+      "automatedChecks": [
+        "Check source-link health and current-version relationships.",
+        "Label generated summaries separately from quoted producer evidence."
+      ]
+    },
+    {
+      "id": "ons-qmi",
+      "title": "ONS Quality and Methodology Information",
+      "category": "official-guidance",
+      "authority": "Office for National Statistics",
+      "canonicalUri": "https://www.ons.gov.uk/methodology/methodologytopicsandstatisticalconcepts/qualityinofficialstatistics/qualityandmethodologyinformation",
+      "currentVersion": "Current ONS QMI collection",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Official ONS quality and methodology guidance",
+      "applicability": {
+        "scope": "ONS statistical products with a QMI or equivalent quality report",
+        "conditions": "Populate only from a linked producer source.",
+        "exclusions": "A missing QMI link is not proof that no quality work exists."
+      },
+      "requirements": [
+        {
+          "id": "qmi-five-dimensions",
+          "theme": "Quality dimensions and methods",
+          "requirementLevel": "advisory",
+          "statement": "Preserve strengths, limitations, methods and evidence for relevance, accuracy, timeliness and punctuality, accessibility and clarity, and coherence and comparability.",
+          "applicability": "Products with QMI or equivalent evidence.",
+          "evidenceFields": [
+            "qmiUrl",
+            "relevance",
+            "accuracyEvidence",
+            "timeliness",
+            "accessibilityClarity",
+            "coherenceComparability",
+            "strengths",
+            "limitations"
+          ],
+          "evaluation": "Report coverage by dimension; never convert metadata presence into an accuracy score."
+        }
+      ],
+      "recordEvidenceFields": [
+        "qmiUrl",
+        "relevance",
+        "accuracyEvidence",
+        "timeliness",
+        "accessibilityClarity",
+        "coherenceComparability",
+        "strengths",
+        "limitations"
+      ],
+      "uiTreatments": [
+        "Provide a Quality and methodology view with source-attributed dimension summaries."
+      ],
+      "automatedChecks": [
+        "Check QMI link health and source digest.",
+        "Use not-evidenced for absent dimensions."
+      ]
+    },
+    {
+      "id": "ons-revisions-policy",
+      "title": "ONS Guide to Statistical Revisions",
+      "category": "official-guidance",
+      "authority": "Office for National Statistics",
+      "canonicalUri": "https://www.ons.gov.uk/methodology/methodologytopicsandstatisticalconcepts/revisions/guidetostatisticalrevisions",
+      "currentVersion": "Central policy updated August 2024",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Official ONS revisions and corrections policy",
+      "applicability": {
+        "scope": "ONS dataset editions, versions, releases, revisions and corrections",
+        "conditions": "Use the producer's classification where supplied.",
+        "exclusions": "Do not infer correction from any changed metadata value."
+      },
+      "requirements": [
+        {
+          "id": "ons-revision-correction-distinction",
+          "theme": "Revision versus correction",
+          "requirementLevel": "advisory",
+          "statement": "Distinguish a quality-improving revision from a correction of a mistake and preserve nature, reason and timing.",
+          "applicability": "Version and release records with change evidence.",
+          "evidenceFields": [
+            "revisionType",
+            "revisionReason",
+            "announcedAt",
+            "effectiveAt",
+            "previousVersion",
+            "currentVersion",
+            "correctionNotice"
+          ],
+          "evaluation": "Validate a single current version, acyclic succession and an explanation for classified changes."
+        }
+      ],
+      "recordEvidenceFields": [
+        "revisionType",
+        "revisionReason",
+        "announcedAt",
+        "effectiveAt",
+        "previousVersion",
+        "currentVersion"
+      ],
+      "uiTreatments": [
+        "Show a revision timeline and correction notices adjacent to the selected version."
+      ],
+      "automatedChecks": [
+        "Validate version-chain direction and dates.",
+        "Flag an unexplained changed version as not-evidenced rather than a correction."
+      ]
+    },
+    {
+      "id": "osr-qaad",
+      "title": "Administrative Data Quality Assurance Toolkit",
+      "category": "official-guidance",
+      "authority": "Office for Statistics Regulation",
+      "canonicalUri": "https://osr.statisticsauthority.gov.uk/publication/administrative-data-quality-assurance-toolkit/pages/3/",
+      "currentVersion": "Toolkit updated 21 May 2026",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Current OSR regulatory guidance",
+      "applicability": {
+        "scope": "Official statistics produced from administrative data",
+        "conditions": "Assurance is proportionate to data-quality risk and public interest.",
+        "exclusions": "Do not infer an A0 to A3 assurance level from catalogue metadata."
+      },
+      "requirements": [
+        {
+          "id": "qaad-four-practice-areas",
+          "theme": "Administrative-data assurance evidence",
+          "requirementLevel": "conditional",
+          "statement": "Preserve evidence for operational context and collection, supplier communication, supplier quality checks, and the producer's investigations and documentation.",
+          "applicability": "Products whose published methodology identifies administrative sources.",
+          "evidenceFields": [
+            "operationalContext",
+            "supplierCommunication",
+            "supplierQualityAssurance",
+            "producerQualityAssurance",
+            "assuranceLevel",
+            "assuranceRationale"
+          ],
+          "evaluation": "Show four-area coverage and source any assurance level and rationale directly."
+        }
+      ],
+      "recordEvidenceFields": [
+        "operationalContext",
+        "supplierCommunication",
+        "supplierQualityAssurance",
+        "producerQualityAssurance",
+        "assuranceLevel",
+        "assuranceRationale"
+      ],
+      "uiTreatments": [
+        "Present a four-area evidence matrix for administrative-data products."
+      ],
+      "automatedChecks": [
+        "Require direct source evidence before displaying an assurance level."
+      ]
+    },
+    {
+      "id": "govs-010-analysis",
+      "title": "Government Functional Standard GovS 010: Analysis",
+      "category": "official-standard",
+      "authority": "UK Government Analysis Function",
+      "canonicalUri": "https://www.gov.uk/government/publications/government-analysis-functional-standard--2/government-functional-standard-govs-010-analysis",
+      "currentVersion": "2.2",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Current government functional standard, updated August 2025",
+      "applicability": {
+        "scope": "Government analysis and analytical products",
+        "conditions": "The source text distinguishes mandatory shall from advisory should.",
+        "exclusions": "Do not upgrade advisory practices to mandatory requirements."
+      },
+      "requirements": [
+        {
+          "id": "govs010-repeatable-assured-analysis",
+          "theme": "Repeatable and assured analysis",
+          "requirementLevel": "mandatory",
+          "statement": "Analysis should use fit-for-purpose inputs and methods, be repeatable and documented, and retain proportionate assurance, assumptions, uncertainty, limitations and references.",
+          "applicability": "Bundle construction and source-published analytical evidence.",
+          "evidenceFields": [
+            "assuranceStatement",
+            "assumptions",
+            "uncertainty",
+            "limitations",
+            "verification",
+            "validation",
+            "peerReview",
+            "auditTrail"
+          ],
+          "evaluation": "Require build provenance and report source-published assurance without treating it as bundle certification."
+        }
+      ],
+      "recordEvidenceFields": [
+        "assuranceStatement",
+        "assumptions",
+        "uncertainty",
+        "limitations",
+        "verification",
+        "validation",
+        "peerReview"
+      ],
+      "uiTreatments": [
+        "Keep source assurance statements, assumptions and limitations together."
+      ],
+      "automatedChecks": [
+        "Check deterministic build provenance and evidence URLs.",
+        "Keep mandatory and advisory requirement levels machine-readable."
+      ]
+    },
+    {
+      "id": "aqua-book-2025",
+      "title": "The Aqua Book: guidance on producing quality analysis for government",
+      "category": "official-guidance",
+      "authority": "UK Government Analysis Function",
+      "canonicalUri": "https://www.gov.uk/guidance/the-aqua-book",
+      "currentVersion": "July 2025",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Current cross-government analytical quality guidance",
+      "applicability": {
+        "scope": "Government analysis and analytical models",
+        "conditions": "Assurance should be independent and proportionate to risk and complexity.",
+        "exclusions": "The bundle cannot validate an upstream statistical calculation without observations and method execution."
+      },
+      "requirements": [
+        {
+          "id": "aqua-verification-validation",
+          "theme": "Verification, validation and audit trail",
+          "requirementLevel": "mandatory",
+          "statement": "Analysis shall be assured through lifecycle QA, verification that it was built correctly, validation that it addresses the right purpose, and documented decisions and uncertainty.",
+          "applicability": "OKF build and any source-published analytical assurance.",
+          "evidenceFields": [
+            "specification",
+            "assumptions",
+            "decisionLog",
+            "verification",
+            "validation",
+            "independentReview",
+            "versionControl"
+          ],
+          "evaluation": "Report verification and validation separately and reconcile generated metadata to frozen source evidence."
+        }
+      ],
+      "recordEvidenceFields": [
+        "verification",
+        "validation",
+        "independentReview",
+        "decisionLog"
+      ],
+      "uiTreatments": [
+        "Separate verification evidence from validation evidence."
+      ],
+      "automatedChecks": [
+        "Run independent source-to-bundle reconciliation.",
+        "Do not produce a single opaque quality score."
+      ]
+    },
+    {
+      "id": "rap-strategy",
+      "title": "Reproducible Analytical Pipelines Strategy",
+      "category": "official-guidance",
+      "authority": "UK Government Analysis Function",
+      "canonicalUri": "https://analysisfunction.civilservice.gov.uk/policy-store/reproducible-analytical-pipelines-strategy/",
+      "currentVersion": "Current strategy",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Cross-government analytical policy",
+      "applicability": {
+        "scope": "The metadata acquisition, reconciliation, build and evaluation pipeline",
+        "conditions": "Apply proportionately to a metadata-only demonstrator and subsequent publication pipeline.",
+        "exclusions": "Live acquisition is separate from deterministic frozen publication."
+      },
+      "requirements": [
+        {
+          "id": "rap-minimum",
+          "theme": "Reproducible pipeline minimum",
+          "requirementLevel": "advisory",
+          "statement": "Minimise and document manual steps; use open-source tools, peer review, version control, QA and version-controlled documentation.",
+          "applicability": "All checked-in build and evaluation workflows.",
+          "evidenceFields": [
+            "sourceSnapshot",
+            "buildManifest",
+            "dependencies",
+            "versionControl",
+            "peerReview",
+            "qualityChecks"
+          ],
+          "evaluation": "Rebuild twice from a frozen snapshot and compare canonical output digests."
+        },
+        {
+          "id": "rap-mature",
+          "theme": "Mature reproducibility",
+          "requirementLevel": "advisory",
+          "statement": "Use modular code, tests, error handling, logging, continuous integration, dependency management and input validation.",
+          "applicability": "Production-ready harvesting and publication.",
+          "evidenceFields": [
+            "tests",
+            "continuousIntegration",
+            "logs",
+            "dependencyLock",
+            "inputValidation"
+          ],
+          "evaluation": "Check tests, CI, pinned dependencies and safe logs."
+        }
+      ],
+      "recordEvidenceFields": [
+        "sourceSnapshot",
+        "buildManifest",
+        "dependencies",
+        "qualityChecks"
+      ],
+      "uiTreatments": [
+        "Link the published bundle to its source snapshot and evaluation report."
+      ],
+      "automatedChecks": [
+        "Require byte-identical frozen rebuilds.",
+        "Scan build output and logs for secrets and local paths."
+      ]
+    },
+    {
+      "id": "government-data-quality-framework",
+      "title": "Government Data Quality Framework",
+      "category": "official-guidance",
+      "authority": "Central Digital and Data Office",
+      "canonicalUri": "https://www.gov.uk/government/publications/the-government-data-quality-framework/the-government-data-quality-framework",
+      "currentVersion": "Current framework",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Cross-government data quality framework",
+      "applicability": {
+        "scope": "Source metadata and generated bundle data",
+        "conditions": "Assess fitness for purpose and retain metric definitions and denominators.",
+        "exclusions": "Metadata cannot establish observation accuracy."
+      },
+      "requirements": [
+        {
+          "id": "gdqf-six-dimensions",
+          "theme": "Data quality dimensions",
+          "requirementLevel": "advisory",
+          "statement": "Assess completeness, uniqueness, consistency, timeliness, validity and accuracy in relation to purpose.",
+          "applicability": "Source lanes, reconciliation records and generated metadata.",
+          "evidenceFields": [
+            "completeness",
+            "uniqueness",
+            "consistency",
+            "timeliness",
+            "validity",
+            "accuracyEvidence"
+          ],
+          "evaluation": "Automate bounded metadata tests for the first five; leave accuracy not-evidenced without independent or producer evidence."
+        }
+      ],
+      "recordEvidenceFields": [
+        "completeness",
+        "uniqueness",
+        "consistency",
+        "timeliness",
+        "validity",
+        "accuracyEvidence"
+      ],
+      "uiTreatments": [
+        "Show metric, denominator, method, date and evidence source for each quality result."
+      ],
+      "automatedChecks": [
+        "Never infer observation accuracy from metadata completeness."
+      ]
+    },
+    {
+      "id": "ons-classifications",
+      "title": "ONS Classifications and Standards",
+      "category": "official-guidance",
+      "authority": "Office for National Statistics",
+      "canonicalUri": "https://www.ons.gov.uk/methodology/classificationsandstandards",
+      "currentVersion": "Current ONS collection",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Official classifications and standards collection",
+      "applicability": {
+        "scope": "Records using an ONS, GSS, national or international classification",
+        "conditions": "Preserve the named edition and source code.",
+        "exclusions": "A text label is not sufficient evidence of classification identity."
+      },
+      "requirements": [
+        {
+          "id": "classification-version-and-deviation",
+          "theme": "Classification identity",
+          "requirementLevel": "conditional",
+          "statement": "Preserve classification URI, name, version, definitions, codes and any documented deviation.",
+          "applicability": "Records with classified dimensions, populations, activities, occupations, industries or geographies.",
+          "evidenceFields": [
+            "classificationUri",
+            "classificationName",
+            "classificationVersion",
+            "classificationCode",
+            "classificationDeviation"
+          ],
+          "evaluation": "Validate codes against the declared edition when an authoritative code list is available."
+        }
+      ],
+      "recordEvidenceFields": [
+        "classificationUri",
+        "classificationName",
+        "classificationVersion",
+        "classificationCode"
+      ],
+      "uiTreatments": [
+        "Display classification name and edition; explain documented deviations."
+      ],
+      "automatedChecks": [
+        "Reject an unversioned code match as proof of cross-edition equivalence."
+      ]
+    },
+    {
+      "id": "gss-harmonised-standards",
+      "title": "GSS Harmonised Standards and Guidance",
+      "category": "official-guidance",
+      "authority": "Government Statistical Service",
+      "canonicalUri": "https://analysisfunction.civilservice.gov.uk/government-statistical-service-and-statistician-group/user-facing-pages/gss-harmonisation/harmonised-standards-and-guidance/",
+      "currentVersion": "Current collection",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Official GSS harmonisation standards and guidance",
+      "applicability": {
+        "scope": "Concepts, definitions, questions and outputs covered by a harmonised standard",
+        "conditions": "Use only an evidenced mapping to a named standard and version.",
+        "exclusions": "Do not infer harmonisation from similar wording."
+      },
+      "requirements": [
+        {
+          "id": "harmonisation-evidence",
+          "theme": "Comparable concepts and definitions",
+          "requirementLevel": "conditional",
+          "statement": "Preserve the harmonised concept or definition, version, implementation evidence, deviations and implications for comparison.",
+          "applicability": "Statistical concepts with a source-published harmonisation statement.",
+          "evidenceFields": [
+            "harmonisedStandard",
+            "harmonisedVersion",
+            "implementationEvidence",
+            "deviation",
+            "comparabilityImplication"
+          ],
+          "evaluation": "Require evidence before reporting harmonised alignment."
+        }
+      ],
+      "recordEvidenceFields": [
+        "harmonisedStandard",
+        "harmonisedVersion",
+        "implementationEvidence",
+        "deviation"
+      ],
+      "uiTreatments": [
+        "Show harmonisation evidence and deviations in comparisons."
+      ],
+      "automatedChecks": [
+        "Do not equate similar labels without an evidenced mapping."
+      ]
+    },
+    {
+      "id": "uk-dcat-3-profile",
+      "title": "Using metadata to describe data assets in a data catalogue",
+      "category": "official-standard",
+      "authority": "UK Government Data Standards Authority",
+      "canonicalUri": "https://www.gov.uk/government/publications/recommended-open-standards-for-government/using-metadata-to-describe-data-assets-in-a-data-catalogue",
+      "currentVersion": "DCAT 3 recommendation",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Recommended open standard for UK government",
+      "applicability": {
+        "scope": "Public metadata for datasets, data services, distributions and catalogues",
+        "conditions": "Use with the current UK metadata exchange model and DQV where quality measurements exist.",
+        "exclusions": "Use GEMINI or INSPIRE metadata as well for applicable geospatial assets."
+      },
+      "requirements": [
+        {
+          "id": "uk-dcat-core-assets",
+          "theme": "Catalogue asset metadata",
+          "requirementLevel": "advisory",
+          "statement": "Represent dataset, dataset series, distribution, data service and catalogue-record identity and relationships using DCAT 3.",
+          "applicability": "All public bundle records as appropriate to record type.",
+          "evidenceFields": [
+            "identifier",
+            "title",
+            "description",
+            "publisher",
+            "datasetSeries",
+            "distribution",
+            "dataService",
+            "catalogueRecord"
+          ],
+          "evaluation": "Validate JSON-LD expansion and profile cardinalities without claiming source-product compliance."
+        }
+      ],
+      "recordEvidenceFields": [
+        "identifier",
+        "title",
+        "description",
+        "publisher",
+        "datasetSeries",
+        "distribution",
+        "dataService"
+      ],
+      "uiTreatments": [
+        "Expose stable identifiers, publisher, versions, distributions and services."
+      ],
+      "automatedChecks": [
+        "Run JSON Schema and SHACL profile checks against generated records."
+      ]
+    },
+    {
+      "id": "uk-cross-government-metadata-exchange-model",
+      "title": "UK Cross-Government Metadata Exchange Model",
+      "category": "official-standard",
+      "authority": "UK Government",
+      "canonicalUri": "https://co-cddo.github.io/ukgov-metadata-exchange-model/",
+      "currentVersion": "Current published model",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK application model for cross-government metadata exchange",
+      "applicability": {
+        "scope": "Dataset, data service and distribution exchange metadata",
+        "conditions": "Follow published class and property cardinalities for the selected profile.",
+        "exclusions": "Source absence is recorded rather than filled with guessed values."
+      },
+      "requirements": [
+        {
+          "id": "uk-metadata-exchange-cardinality",
+          "theme": "Cross-government exchange fields",
+          "requirementLevel": "advisory",
+          "statement": "Preserve identifiers, descriptive metadata, responsibility, dates, access, licence, provenance and dataset-service-distribution relationships.",
+          "applicability": "All mapped bundle assets.",
+          "evidenceFields": [
+            "identifier",
+            "title",
+            "description",
+            "creator",
+            "publisher",
+            "contactPoint",
+            "version",
+            "issued",
+            "modified",
+            "licence",
+            "accessRights",
+            "provenance",
+            "endpointUrl"
+          ],
+          "evaluation": "Validate required and recommended cardinalities and report missing evidence separately."
+        }
+      ],
+      "recordEvidenceFields": [
+        "identifier",
+        "title",
+        "description",
+        "publisher",
+        "contactPoint",
+        "version",
+        "issued",
+        "modified",
+        "licence",
+        "accessRights",
+        "provenance",
+        "endpointUrl"
+      ],
+      "uiTreatments": [
+        "Keep access rights and licence adjacent to download and service links."
+      ],
+      "automatedChecks": [
+        "Validate profile cardinality, URI and ISO 8601 date forms."
+      ]
+    },
+    {
+      "id": "w3c-dcat-3",
+      "title": "Data Catalog Vocabulary DCAT Version 3",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/vocab-dcat-3/",
+      "currentVersion": "W3C Recommendation 22 August 2024",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Recommendation",
+      "applicability": {
+        "scope": "Semantic catalogue representation and export",
+        "conditions": "Distinguish datasets, distributions, services, series and catalogue records.",
+        "exclusions": "A distribution is not a duplicate dataset."
+      },
+      "requirements": [
+        {
+          "id": "dcat3-version-series-service",
+          "theme": "Series, versions, services and qualified relations",
+          "requirementLevel": "advisory",
+          "statement": "Use DCAT 3 version, series, checksum, distribution, service and qualified-relation terms according to their defined semantics.",
+          "applicability": "Mapped bundle assets and JSON-LD export.",
+          "evidenceFields": [
+            "datasetSeries",
+            "version",
+            "previousVersion",
+            "currentVersion",
+            "versionNotes",
+            "checksum",
+            "qualifiedRelation",
+            "dataService"
+          ],
+          "evaluation": "Validate graph type and version-chain constraints."
+        }
+      ],
+      "recordEvidenceFields": [
+        "datasetSeries",
+        "version",
+        "previousVersion",
+        "currentVersion",
+        "versionNotes",
+        "checksum",
+        "qualifiedRelation",
+        "dataService"
+      ],
+      "uiTreatments": [
+        "Render series and version history separately from download formats."
+      ],
+      "automatedChecks": [
+        "Validate single-current acyclic version chains and resource types."
+      ]
+    },
+    {
+      "id": "w3c-skos",
+      "title": "SKOS Simple Knowledge Organization System Reference",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/skos-reference/",
+      "currentVersion": "W3C Recommendation 18 August 2009",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Recommendation",
+      "applicability": {
+        "scope": "Concepts, aliases, hierarchies and cross-scheme mappings",
+        "conditions": "Mapping strength must be evidence-backed.",
+        "exclusions": "Title similarity alone never establishes semantic identity."
+      },
+      "requirements": [
+        {
+          "id": "skos-labels-and-mappings",
+          "theme": "Labels, hierarchy and semantic mapping",
+          "requirementLevel": "advisory",
+          "statement": "Use preferred, alternative and hidden labels, hierarchy and exact, close, broad, narrow or related mappings with their distinct meanings.",
+          "applicability": "Topics, classifications, dimensions, options and cross-source concept links.",
+          "evidenceFields": [
+            "preferredLabel",
+            "alternativeLabel",
+            "hiddenLabel",
+            "broader",
+            "narrower",
+            "related",
+            "mappingRelation",
+            "mappingEvidence"
+          ],
+          "evaluation": "Require explicit evidence for exactMatch and preserve close but non-equivalent alternatives."
+        }
+      ],
+      "recordEvidenceFields": [
+        "preferredLabel",
+        "alternativeLabel",
+        "broader",
+        "narrower",
+        "related",
+        "mappingRelation"
+      ],
+      "uiTreatments": [
+        "Keep close but non-equivalent datasets visible in Compare alternatives."
+      ],
+      "automatedChecks": [
+        "Run SKOS label and mapping integrity checks.",
+        "Reject title-only exactMatch assertions."
+      ]
+    },
+    {
+      "id": "w3c-prov-o",
+      "title": "PROV-O: The PROV Ontology",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/prov-o/",
+      "currentVersion": "W3C Recommendation 30 April 2013",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Recommendation",
+      "applicability": {
+        "scope": "Acquisition, normalisation, derivation and producer-process provenance",
+        "conditions": "Retain source and generated activity identities separately.",
+        "exclusions": "The bundle build activity is not the upstream statistical production activity."
+      },
+      "requirements": [
+        {
+          "id": "prov-entity-activity-agent",
+          "theme": "Traceable provenance",
+          "requirementLevel": "advisory",
+          "statement": "Represent entities, activities and agents, including use, generation, derivation, primary sources, association and time.",
+          "applicability": "Every harvested record and cross-source reconciliation claim.",
+          "evidenceFields": [
+            "entity",
+            "activity",
+            "agent",
+            "used",
+            "generatedAtTime",
+            "derivedFrom",
+            "primarySource",
+            "associatedWith"
+          ],
+          "evaluation": "Require source URL, retrieval time, content digest and transformation identity."
+        }
+      ],
+      "recordEvidenceFields": [
+        "entity",
+        "activity",
+        "agent",
+        "used",
+        "generatedAtTime",
+        "derivedFrom",
+        "primarySource"
+      ],
+      "uiTreatments": [
+        "Provide a How produced view that distinguishes source and bundle transformations."
+      ],
+      "automatedChecks": [
+        "Validate provenance graph references and content digests."
+      ]
+    },
+    {
+      "id": "w3c-dqv",
+      "title": "Data on the Web Best Practices: Data Quality Vocabulary",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/vocab-dqv/",
+      "currentVersion": "W3C Working Group Note 15 December 2016",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Working Group Note, not a W3C Recommendation",
+      "applicability": {
+        "scope": "Machine-readable quality dimensions, metrics, measurements, annotations and policies",
+        "conditions": "Each measurement must retain method, denominator and evidence.",
+        "exclusions": "DQV use does not establish data quality or standards compliance."
+      },
+      "requirements": [
+        {
+          "id": "dqv-evidence-backed-measurement",
+          "theme": "Quality measurement",
+          "requirementLevel": "advisory",
+          "statement": "Represent quality dimensions, metrics, measurements, annotations and policies with explicit evidence.",
+          "applicability": "Bundle evaluation and source-published quality measurements.",
+          "evidenceFields": [
+            "qualityDimension",
+            "qualityMetric",
+            "qualityMeasurement",
+            "qualityAnnotation",
+            "qualityPolicy",
+            "measurementEvidence"
+          ],
+          "evaluation": "Require metric definition, denominator, method, date and evidence source."
+        }
+      ],
+      "recordEvidenceFields": [
+        "qualityDimension",
+        "qualityMetric",
+        "qualityMeasurement",
+        "qualityAnnotation",
+        "qualityPolicy"
+      ],
+      "uiTreatments": [
+        "Label measurements as bundle evaluation or producer evidence."
+      ],
+      "automatedChecks": [
+        "Reject an unqualified score without metric and evidence metadata."
+      ]
+    },
+    {
+      "id": "w3c-rdf-data-cube",
+      "title": "RDF Data Cube Vocabulary",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/vocab-data-cube/",
+      "currentVersion": "W3C Recommendation 16 January 2014",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Recommendation",
+      "applicability": {
+        "scope": "Statistical structure metadata",
+        "conditions": "Use for dataset structure, dimensions, measures, attributes, code lists and slices.",
+        "exclusions": "Observation values are prohibited from the public metadata bundle."
+      },
+      "requirements": [
+        {
+          "id": "qb-structural-metadata-only",
+          "theme": "Statistical cube structure",
+          "requirementLevel": "advisory",
+          "statement": "Preserve data-structure definitions, dimensions, measures, attributes and code-list references without materialising observations.",
+          "applicability": "ONS Data API and Nomis structures where evidence exists.",
+          "evidenceFields": [
+            "dataStructureDefinition",
+            "dimensions",
+            "measures",
+            "attributes",
+            "codeLists",
+            "slices"
+          ],
+          "evaluation": "Validate structural references and reject observation values."
+        }
+      ],
+      "recordEvidenceFields": [
+        "dataStructureDefinition",
+        "dimensions",
+        "measures",
+        "attributes",
+        "codeLists"
+      ],
+      "uiTreatments": [
+        "Use structure metadata to configure a query, not to display statistical cells."
+      ],
+      "automatedChecks": [
+        "Reject qb:Observation and equivalent observation payloads from published output."
+      ]
+    },
+    {
+      "id": "sdmx-3-1",
+      "title": "Statistical Data and Metadata eXchange 3.1",
+      "category": "international-standard",
+      "authority": "SDMX Sponsors",
+      "canonicalUri": "https://sdmx.org/standards-2/",
+      "currentVersion": "3.1, released May 2025",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "International statistical standard; SDMX is published as ISO 17369",
+      "applicability": {
+        "scope": "SDMX dataflows, structures, concepts, code lists, constraints and services",
+        "conditions": "Preserve native identities and actual content constraints.",
+        "exclusions": "Do not invent valid dimension combinations when constraints are unavailable."
+      },
+      "requirements": [
+        {
+          "id": "sdmx-structure-and-constraints",
+          "theme": "Executable statistical selection metadata",
+          "requirementLevel": "conditional",
+          "statement": "Preserve dataflow, DSD, concept scheme, code list, content constraint, metadata structure and service identities.",
+          "applicability": "Nomis and other source surfaces that publish SDMX structures.",
+          "evidenceFields": [
+            "dataflow",
+            "dataStructureDefinition",
+            "conceptScheme",
+            "codeLists",
+            "contentConstraints",
+            "metadataStructure",
+            "serviceEndpoint"
+          ],
+          "evaluation": "Validate dimensions and options for the exact version and block known-impossible combinations."
+        }
+      ],
+      "recordEvidenceFields": [
+        "dataflow",
+        "dataStructureDefinition",
+        "conceptScheme",
+        "codeLists",
+        "contentConstraints",
+        "serviceEndpoint"
+      ],
+      "uiTreatments": [
+        "Generate MCP selection controls from the exact version's dimensions and constraints."
+      ],
+      "automatedChecks": [
+        "Round-trip a selection plan without fetching observations.",
+        "Reject unknown dimensions, options and ambiguous geographies."
+      ]
+    },
+    {
+      "id": "unece-gsbpm-5-2",
+      "title": "Generic Statistical Business Process Model 5.2",
+      "category": "international-standard",
+      "authority": "United Nations Economic Commission for Europe",
+      "canonicalUri": "https://unece.org/statistics/gsbpm-v5.2",
+      "currentVersion": "5.2, endorsed June 2025",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "International statistical process model",
+      "applicability": {
+        "scope": "Source-published statistical production process evidence",
+        "conditions": "Map only activities that the source documents.",
+        "exclusions": "Do not infer full process coverage from a methodology title."
+      },
+      "requirements": [
+        {
+          "id": "gsbpm-process-evidence",
+          "theme": "Statistical production process",
+          "requirementLevel": "advisory",
+          "statement": "Classify documented production activities using the current GSBPM process model.",
+          "applicability": "Methodology, process and quality evidence.",
+          "evidenceFields": [
+            "processPhase",
+            "subProcess",
+            "processEvidence",
+            "processAgent"
+          ],
+          "evaluation": "Report evidenced process coverage without filling undocumented phases."
+        }
+      ],
+      "recordEvidenceFields": [
+        "processPhase",
+        "subProcess",
+        "processEvidence"
+      ],
+      "uiTreatments": [
+        "Use a How produced process view with missing phases explicitly not-evidenced."
+      ],
+      "automatedChecks": [
+        "Validate mapped process identifiers against GSBPM 5.2."
+      ]
+    },
+    {
+      "id": "unece-gsim-2",
+      "title": "Generic Statistical Information Model 2.0",
+      "category": "international-standard",
+      "authority": "United Nations Economic Commission for Europe",
+      "canonicalUri": "https://unece.org/statistics/modernstats/gsim",
+      "currentVersion": "2.0",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "International statistical information model",
+      "applicability": {
+        "scope": "Statistical information objects and their relationships",
+        "conditions": "Use as a semantic crosswalk, preserving native source terms.",
+        "exclusions": "A GSIM mapping does not replace the source identifier."
+      },
+      "requirements": [
+        {
+          "id": "gsim-information-objects",
+          "theme": "Statistical information semantics",
+          "requirementLevel": "advisory",
+          "statement": "Relate concepts, variables, populations, structures, products and processes using GSIM information classes.",
+          "applicability": "Canonical OKF ontology mappings.",
+          "evidenceFields": [
+            "concept",
+            "representedVariable",
+            "population",
+            "valueDomain",
+            "informationStructure",
+            "statisticalProduct"
+          ],
+          "evaluation": "Check mapping consistency while retaining source-native terminology."
+        }
+      ],
+      "recordEvidenceFields": [
+        "concept",
+        "representedVariable",
+        "population",
+        "valueDomain",
+        "statisticalProduct"
+      ],
+      "uiTreatments": [
+        "Use concept, population and represented-variable differences in comparisons."
+      ],
+      "automatedChecks": [
+        "Validate canonical field-to-information-object mappings."
+      ]
+    },
+    {
+      "id": "ddi-common-core-1",
+      "title": "DDI Common Core 1",
+      "category": "international-standard",
+      "authority": "DDI Alliance",
+      "canonicalUri": "https://ddialliance.org/ddi-common-core",
+      "currentVersion": "1, 2025",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "DDI specification; DDI suite recognised as ISO/PAS 25955:2026",
+      "applicability": {
+        "scope": "Cross-domain statistical and research metadata concepts",
+        "conditions": "Populate only source-evidenced entities and relationships.",
+        "exclusions": "Do not require fields that the source does not expose."
+      },
+      "requirements": [
+        {
+          "id": "ddi-core-concepts",
+          "theme": "Population, concept and variable metadata",
+          "requirementLevel": "advisory",
+          "statement": "Preserve universe or population, concept, represented variable, value domain, instrument, collection, processing and quality statements when available.",
+          "applicability": "Survey, census and administrative statistical products.",
+          "evidenceFields": [
+            "universe",
+            "concept",
+            "representedVariable",
+            "valueDomain",
+            "instrument",
+            "collection",
+            "processing",
+            "qualityStatement"
+          ],
+          "evaluation": "Check field provenance and use not-evidenced rather than synthesising missing methodological metadata."
+        }
+      ],
+      "recordEvidenceFields": [
+        "universe",
+        "concept",
+        "representedVariable",
+        "valueDomain",
+        "instrument",
+        "collection",
+        "processing"
+      ],
+      "uiTreatments": [
+        "Prioritise universe, concept and value-domain differences in dataset comparison."
+      ],
+      "automatedChecks": [
+        "Require field-level provenance for DDI mappings."
+      ]
+    },
+    {
+      "id": "un-fundamental-principles-official-statistics",
+      "title": "Fundamental Principles of Official Statistics",
+      "category": "international-standard",
+      "authority": "United Nations",
+      "canonicalUri": "https://unece.org/statistics/FPOS",
+      "currentVersion": "Ten Fundamental Principles",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UN-endorsed principles for official statistics",
+      "applicability": {
+        "scope": "High-level alignment of official-statistics evidence and presentation",
+        "conditions": "Use for traceable reporting alignment, not producer certification.",
+        "exclusions": "The bundle cannot determine professional independence or legal compliance."
+      },
+      "requirements": [
+        {
+          "id": "fpos-transparency-and-comparability",
+          "theme": "Impartiality, transparency, confidentiality and international comparability",
+          "requirementLevel": "informative",
+          "statement": "Preserve evidence relevant to impartial and equal access, source and method transparency, confidentiality, prevention of misuse and use of international standards.",
+          "applicability": "Bundle-wide standards reporting.",
+          "evidenceFields": [
+            "equalAccess",
+            "methodology",
+            "sourceInputs",
+            "confidentiality",
+            "misuseGuidance",
+            "internationalStandards"
+          ],
+          "evaluation": "Map available evidence to principles without a pass or fail verdict."
+        }
+      ],
+      "recordEvidenceFields": [
+        "equalAccess",
+        "methodology",
+        "sourceInputs",
+        "confidentiality",
+        "internationalStandards"
+      ],
+      "uiTreatments": [
+        "Link principle alignment to the exact evidence used."
+      ],
+      "automatedChecks": [
+        "Prohibit certification language in principle coverage reports."
+      ]
+    },
+    {
+      "id": "un-nqaf-2019",
+      "title": "United Nations National Quality Assurance Frameworks Manual for Official Statistics",
+      "category": "international-standard",
+      "authority": "United Nations Statistics Division",
+      "canonicalUri": "https://unstats.un.org/unsd/methodology/dataquality/un-nqaf-manual/",
+      "currentVersion": "2019 manual",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UN Statistical Commission-adopted quality assurance framework",
+      "applicability": {
+        "scope": "Holistic evaluation taxonomy and self-assessment reporting",
+        "conditions": "Use as a crosswalk for bundle evidence and source-specific QA.",
+        "exclusions": "Do not claim that the bundle has assessed or certified the ONS institution."
+      },
+      "requirements": [
+        {
+          "id": "un-nqaf-evidence-crosswalk",
+          "theme": "Holistic statistical quality assurance",
+          "requirementLevel": "informative",
+          "statement": "Cross-reference institutional, process and output quality evidence, including source-specific assurance.",
+          "applicability": "Evaluation reporting and future maturity assessment.",
+          "evidenceFields": [
+            "institutionalEvidence",
+            "processEvidence",
+            "outputEvidence",
+            "sourceSpecificQualityAssurance"
+          ],
+          "evaluation": "Report evidence coverage and applicability, not an institutional score."
+        }
+      ],
+      "recordEvidenceFields": [
+        "processEvidence",
+        "outputEvidence",
+        "sourceSpecificQualityAssurance"
+      ],
+      "uiTreatments": [
+        "Keep UN NQAF as an evaluation crosswalk rather than a badge."
+      ],
+      "automatedChecks": [
+        "Reject institutional certification claims."
+      ]
+    },
+    {
+      "id": "uk-gemini-2-3",
+      "title": "UK GEMINI 2.3 geospatial metadata profile",
+      "category": "official-standard",
+      "authority": "UK Geospatial Commission",
+      "canonicalUri": "https://www.gov.uk/government/publications/making-your-geospatial-data-easy-to-find-metadata-best-practice-guide-for-data-publishers/making-your-data-easy-to-find-metadata-best-practice-guide-for-data-publishers",
+      "currentVersion": "2.3",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "UK geospatial discovery metadata profile of ISO 19115",
+      "applicability": {
+        "scope": "Geospatial datasets and services with GEMINI or equivalent ISO metadata",
+        "conditions": "Preserve the profile version and source validation result.",
+        "exclusions": "A geographic statistical dimension alone does not imply GEMINI conformance."
+      },
+      "requirements": [
+        {
+          "id": "gemini-discovery-and-lineage",
+          "theme": "Geospatial discovery, lineage and quality",
+          "requirementLevel": "conditional",
+          "statement": "Preserve title, abstract, persistent identifier, resource locator, responsible organisation, lineage, constraints, dates, extent, quality, conformity, maintenance, series parent and CRS.",
+          "applicability": "Open Geography and other spatial assets with official geospatial metadata.",
+          "evidenceFields": [
+            "identifier",
+            "title",
+            "description",
+            "resourceLocator",
+            "responsibleOrganisation",
+            "lineage",
+            "accessConstraints",
+            "useConstraints",
+            "temporalExtent",
+            "spatialExtent",
+            "coordinateReferenceSystem",
+            "quality",
+            "conformance",
+            "seriesParent"
+          ],
+          "evaluation": "Validate supplied GEMINI 2.3 or ISO 19139 metadata and preserve the validation evidence."
+        }
+      ],
+      "recordEvidenceFields": [
+        "spatialExtent",
+        "coordinateReferenceSystem",
+        "lineage",
+        "quality",
+        "conformance",
+        "seriesParent"
+      ],
+      "uiTreatments": [
+        "Show geography level, GSS code family, reference vintage, CRS and boundary variant next to the map."
+      ],
+      "automatedChecks": [
+        "Validate bounding-box order and range.",
+        "Require geography code family and vintage where supplied.",
+        "Keep geometry payloads outside the metadata bundle."
+      ]
+    },
+    {
+      "id": "iso-19115-1",
+      "title": "ISO 19115-1 Geographic information — Metadata — Part 1: Fundamentals",
+      "category": "international-standard",
+      "authority": "International Organization for Standardization",
+      "canonicalUri": "https://www.iso.org/standard/53798.html",
+      "currentVersion": "ISO 19115-1:2014 with applicable amendments",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "International Standard",
+      "applicability": {
+        "scope": "Geographic information and services metadata",
+        "conditions": "Use through an applicable implementation profile such as GEMINI where possible.",
+        "exclusions": "The bundle does not reproduce the copyrighted standard text."
+      },
+      "requirements": [
+        {
+          "id": "iso19115-metadata-fundamentals",
+          "theme": "Geographic resource metadata",
+          "requirementLevel": "conditional",
+          "statement": "Map identification, extent, lineage, constraints, quality, reference system, distribution and responsibility metadata where supplied.",
+          "applicability": "Geospatial dataset and service records.",
+          "evidenceFields": [
+            "spatialExtent",
+            "lineage",
+            "constraints",
+            "quality",
+            "coordinateReferenceSystem",
+            "distribution",
+            "responsibleOrganisation"
+          ],
+          "evaluation": "Validate the selected public profile rather than claiming direct ISO certification."
+        }
+      ],
+      "recordEvidenceFields": [
+        "spatialExtent",
+        "lineage",
+        "constraints",
+        "quality",
+        "coordinateReferenceSystem",
+        "distribution"
+      ],
+      "uiTreatments": [
+        "Provide a non-map textual presentation of spatial metadata."
+      ],
+      "automatedChecks": [
+        "Validate mapped profile fields and source provenance."
+      ]
+    },
+    {
+      "id": "iso-19157-1-2023",
+      "title": "ISO 19157-1:2023 Geographic information — Data quality — Part 1: General requirements",
+      "category": "international-standard",
+      "authority": "International Organization for Standardization",
+      "canonicalUri": "https://www.iso.org/standard/78900.html",
+      "currentVersion": "ISO 19157-1:2023",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "International Standard",
+      "applicability": {
+        "scope": "Geographic data quality descriptions, measures, evaluation and reporting",
+        "conditions": "Use only source-published or independently measured quality evidence.",
+        "exclusions": "A valid bounding box is not evidence of positional accuracy."
+      },
+      "requirements": [
+        {
+          "id": "iso19157-quality-evidence",
+          "theme": "Geographic data quality",
+          "requirementLevel": "conditional",
+          "statement": "Preserve quality component, measure, evaluation method, scope, result and report.",
+          "applicability": "Geospatial records with geographic quality evidence.",
+          "evidenceFields": [
+            "qualityComponent",
+            "qualityMeasure",
+            "evaluationMethod",
+            "evaluationScope",
+            "qualityResult",
+            "qualityReport"
+          ],
+          "evaluation": "Require evidence and method for each geographic quality measurement."
+        }
+      ],
+      "recordEvidenceFields": [
+        "qualityComponent",
+        "qualityMeasure",
+        "evaluationMethod",
+        "evaluationScope",
+        "qualityResult"
+      ],
+      "uiTreatments": [
+        "Keep spatial quality evidence separate from general metadata validity."
+      ],
+      "automatedChecks": [
+        "Do not infer positional or thematic accuracy from metadata presence."
+      ]
+    },
+    {
+      "id": "w3c-csvw",
+      "title": "Metadata Vocabulary for Tabular Data",
+      "category": "technical-recommendation",
+      "authority": "World Wide Web Consortium",
+      "canonicalUri": "https://www.w3.org/TR/tabular-metadata/",
+      "currentVersion": "W3C Recommendation 17 December 2015",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "W3C Recommendation and UK-recommended tabular metadata standard",
+      "applicability": {
+        "scope": "Actual tabular distributions",
+        "conditions": "Map only columns, datatypes, keys and constraints exposed by the source.",
+        "exclusions": "Do not download or publish the statistical rows."
+      },
+      "requirements": [
+        {
+          "id": "csvw-tabular-schema",
+          "theme": "Tabular distribution metadata",
+          "requirementLevel": "conditional",
+          "statement": "Describe table URL, dialect, columns, datatypes, titles, descriptions, keys and constraints where available.",
+          "applicability": "CSV and other tabular distributions.",
+          "evidenceFields": [
+            "tableUrl",
+            "dialect",
+            "columns",
+            "datatypes",
+            "primaryKey",
+            "foreignKeys"
+          ],
+          "evaluation": "Validate metadata structure without fetching or embedding data rows."
+        }
+      ],
+      "recordEvidenceFields": [
+        "tableUrl",
+        "dialect",
+        "columns",
+        "datatypes",
+        "primaryKey",
+        "foreignKeys"
+      ],
+      "uiTreatments": [
+        "Expose a schema preview without observation rows."
+      ],
+      "automatedChecks": [
+        "Reject row data from the public bundle."
+      ]
+    },
+    {
+      "id": "gds-api-standards",
+      "title": "GDS API technical and data standards",
+      "category": "official-guidance",
+      "authority": "Government Digital Service",
+      "canonicalUri": "https://www.gov.uk/guidance/gds-api-technical-and-data-standards",
+      "currentVersion": "Current guidance",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "Official UK government API guidance",
+      "applicability": {
+        "scope": "Data services and API distributions",
+        "conditions": "Link source-published endpoint descriptions and OpenAPI documents.",
+        "exclusions": "Do not invent an endpoint contract that the provider does not publish."
+      },
+      "requirements": [
+        {
+          "id": "gds-api-description",
+          "theme": "Discoverable API contract",
+          "requirementLevel": "conditional",
+          "statement": "Preserve service endpoint, documentation, versioning, authentication class and machine-readable API description where published.",
+          "applicability": "ONS and Nomis API data services.",
+          "evidenceFields": [
+            "endpointUrl",
+            "endpointDescription",
+            "apiDocumentation",
+            "apiVersion",
+            "authenticationClass"
+          ],
+          "evaluation": "Validate credential-free public metadata URLs and link health."
+        }
+      ],
+      "recordEvidenceFields": [
+        "endpointUrl",
+        "endpointDescription",
+        "apiDocumentation",
+        "apiVersion",
+        "authenticationClass"
+      ],
+      "uiTreatments": [
+        "Show authentication requirements before generating an MCP plan."
+      ],
+      "automatedChecks": [
+        "Reject credentials and secret query parameters.",
+        "Do not imply a generated MCP plan is an upstream API contract."
+      ]
+    },
+    {
+      "id": "dcat-ap-3-0-1",
+      "title": "DCAT Application Profile for data portals in Europe 3.0.1",
+      "category": "technical-recommendation",
+      "authority": "European Commission SEMIC",
+      "canonicalUri": "https://semiceu.github.io/DCAT-AP/releases/3.0.1/",
+      "currentVersion": "3.0.1",
+      "currentAsOf": "2026-07-17",
+      "normativeStatus": "European application profile",
+      "applicability": {
+        "scope": "Optional European catalogue federation or export",
+        "conditions": "Validate the export against the declared DCAT-AP release.",
+        "exclusions": "DCAT-AP is not the primary UK authority for the canonical bundle model."
+      },
+      "requirements": [
+        {
+          "id": "dcat-ap-export-profile",
+          "theme": "Optional federated catalogue export",
+          "requirementLevel": "conditional",
+          "statement": "Apply DCAT-AP class, property, cardinality and controlled-vocabulary constraints when producing a declared DCAT-AP export.",
+          "applicability": "Only a generated DCAT-AP export.",
+          "evidenceFields": [
+            "profileIdentifier",
+            "profileVersion",
+            "validationReport"
+          ],
+          "evaluation": "Run the release-specific SHACL validation and label the result as export-profile validation."
+        }
+      ],
+      "recordEvidenceFields": [
+        "profileIdentifier",
+        "profileVersion",
+        "validationReport"
+      ],
+      "uiTreatments": [
+        "Label DCAT-AP as an optional export profile."
+      ],
+      "automatedChecks": [
+        "Do not use DCAT-AP alignment as a statistical-quality claim."
+      ]
+    }
+  ]
+}
