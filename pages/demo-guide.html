@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A short demonstration route for the ONS Open Knowledge Format data-discovery prototype.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+  <title>Demo guide · ONS Open Knowledge Format</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to the demo guide</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="ONS Open Knowledge Format home">
+        <span class="brand-mark" aria-hidden="true">OKF</span>
+        <span>
+          <strong>ONS data discovery</strong>
+          <small>Open Knowledge Format demonstrator</small>
+        </span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="./">Discovery demo</a>
+        <a href="accessibility.html">Accessibility</a>
+        <a href="https://github.com/chris-page-gov/okf-ons" rel="noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="secondary-page">
+    <article class="shell prose">
+      <p class="eyebrow">Monday hackathon · seven-minute route</p>
+      <h1>Show discovery becoming a safe MCP selection</h1>
+      <p class="hero-copy">
+        The central story is not “we copied ONS data”. It is that source-backed
+        metadata can help a person or an agent choose the exact statistical
+        product, understand plausible alternatives and configure a valid live
+        request without storing observations.
+      </p>
+
+      <div class="notice">
+        <h2>One-sentence framing</h2>
+        <p>
+          “OKF makes ONS data findable and distinguishable; MCP retrieves it
+          only after the dataset-specific choices are explicit.”
+        </p>
+      </div>
+
+      <h2>Demonstration route</h2>
+      <ol>
+        <li>
+          <strong>Start with the coverage strip.</strong>
+          Explain that “all” is a measured claim: expected, represented,
+          excluded and unexplained records are reported per official source.
+        </li>
+        <li>
+          <strong>Search for a real statistical intent.</strong>
+          Try <em>consumer prices inflation</em>, <em>population estimates</em>
+          or <em>unemployment claimant count</em>. Use one facet to form a
+          reduced candidate set.
+        </li>
+        <li>
+          <strong>Open the first plausible record.</strong>
+          Read its decision signature: population, measure, unit, geography,
+          reference period, frequency and version.
+        </li>
+        <li>
+          <strong>Choose Compare.</strong>
+          Show that a similar title is kept visible and that material
+          differences are source-backed. No equivalence is inferred from title
+          similarity.
+        </li>
+        <li>
+          <strong>Open Quality &amp; methodology and Standards.</strong>
+          Highlight QMI, methodology, provenance and evidence status. Point out
+          the visible warning that metadata coverage is not certification of
+          statistical accuracy.
+        </li>
+        <li>
+          <strong>Open Dimensions, then Access via MCP.</strong>
+          Missing dimensions remain explicit. The browser emits a read-only
+          plan but never calls ONS and never asks for an API key.
+        </li>
+        <li>
+          <strong>Finish with Open in OKF Explorer.</strong>
+          The descriptor proves the demonstrator is an interoperable bundle,
+          not a one-off page.
+        </li>
+      </ol>
+
+      <h2>Useful links</h2>
+      <ul>
+        <li><a href="./">Human discovery and comparison UI</a></li>
+        <li><a href="okf-explorer.json">OKF Explorer descriptor</a></li>
+        <li><a href="data/demo/contrast-records.json">Bounded contrast records</a></li>
+        <li><a href="data/coverage/ledger.json">Coverage ledger</a></li>
+        <li><a href="data/standards/evaluation.json">Standards evaluation</a></li>
+        <li><a href="data/evaluation/report.json">Discovery evaluation report</a></li>
+        <li><a href="data/ons/mcp-bindings.json">Read-only MCP bindings</a></li>
+      </ul>
+
+      <h2>Claims to make carefully</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Safe claim</th>
+            <th>Claim to avoid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>The frozen build is metadata-only and reproducible.</td>
+            <td>The bundle proves every statistic is accurate.</td>
+          </tr>
+          <tr>
+            <td>The UI exposes evidence-backed alternatives.</td>
+            <td>Similar titles are the same dataset.</td>
+          </tr>
+          <tr>
+            <td>Standards alignment is reported with evidence.</td>
+            <td>Every source record is certified compliant.</td>
+          </tr>
+          <tr>
+            <td>A zero-omission ledger supports the stated source scope.</td>
+            <td>The bundle covers “all ONS” without a measured denominator.</td>
+          </tr>
+          <tr>
+            <td>MCP performs live retrieval after validation.</td>
+            <td>GitHub Pages executes authenticated API calls.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>If the network is awkward</h2>
+      <p>
+        The interface and every record used in the demonstration are static.
+        Open an already loaded tab, use the direct JSON links above, or open the
+        descriptor in OKF Explorer. A live ONS request is the final hand-off,
+        not a dependency of the discovery demonstration.
+      </p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="shell footer-grid">
+      <div>
+        <strong>ONS Open Knowledge Format demonstrator</strong>
+        <p>An independent metadata discovery demonstrator; not an official ONS service.</p>
+      </div>
+      <div>
+        <a href="./">Discovery demo</a>
+        <a href="accessibility.html">Accessibility</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

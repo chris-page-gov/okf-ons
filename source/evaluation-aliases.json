@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "okf-ons.evaluation-aliases.v1",
+  "snapshotId": "monday-2026-07-17",
+  "policy": {
+    "meaning": "Aliases reconcile a curated evaluation concept to one source-qualified record in the frozen snapshot.",
+    "minimumEvidence": "The source title and metadata must match the intended statistical product; a merely similar title is not enough.",
+    "unresolvedTreatment": "Unresolved aliases remain evaluation gaps. They must not be silently mapped to a neighbouring product.",
+    "statisticalEquivalenceAsserted": false
+  },
+  "aliases": {
+    "annual-survey-hours-earnings": "nomis:dataset:NM_99_1",
+    "census-2021-population": "ons-data-api:dataset:TS001",
+    "census-occupancy-rating-bedrooms": "ons-data-api:dataset:TS052",
+    "census-overcrowding-rooms": "ons-data-api:dataset:TS053",
+    "claimant-count": "nomis:dataset:NM_11_1",
+    "consumer-prices-cpih": "ons-data-api:dataset:cpih01",
+    "deaths-occurrences-weekly": "ons-data-api:dataset:weekly-deaths-local-authority",
+    "deaths-registered-weekly-england-wales": "ons-data-api:dataset:weekly-deaths-age-sex",
+    "economic-inactivity-rate": "nomis:dataset:NM_181_1",
+    "gdp-monthly-estimate": "ons-data-api:dataset:gdp-to-four-decimal-places",
+    "household-size-census": "ons-data-api:dataset:TS017",
+    "life-expectancy-at-birth": "ons-data-api:dataset:life-expectancy-by-local-authority",
+    "population-estimates-la": "nomis:dataset:NM_2002_1",
+    "population-estimates-uk": "ons-data-api:dataset:mid-year-pop-est",
+    "population-projections-la": "nomis:dataset:NM_2006_1",
+    "private-rental-prices-index": "ons-data-api:dataset:index-private-housing-rental-prices",
+    "regional-gdp": "ons-data-api:dataset:regional-gdp-by-quarter",
+    "unemployment-rate-lfs": "nomis:dataset:NM_17_5"
+  },
+  "qualifications": {
+    "deaths-occurrences-weekly": "The mapped product contains registrations and occurrences; the exact time basis remains a required comparison field.",
+    "economic-inactivity-rate": "The mapped regional APS product is grouped by inactivity reasons; it is an alternative rather than a generic headline-rate series.",
+    "unemployment-rate-lfs": "Nomis APS percentages contain the internationally defined measure; dataset-specific dimensions must still be inspected."
+  },
+  "unresolved": [
+    {
+      "alias": "avoidable-mortality",
+      "reason": "No source record in the implemented catalogue lanes establishes the selected-cause avoidable-mortality product.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "consumer-prices-cpi",
+      "reason": "The implemented ONS Data API catalogue exposes CPIH but not a source record that safely represents the requested CPI product.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "crime-severity-and-harm",
+      "reason": "No matching source record is represented in the implemented lanes.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "crime-survey-england-wales",
+      "reason": "No matching source record is represented in the implemented lanes.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "gdp-per-head",
+      "reason": "No source record safely identifies the intended resident-population denominator series.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "gdp-quarterly-national-accounts",
+      "reason": "Regional quarterly GDP is present, but it is not the Quarterly National Accounts product.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "house-price-to-earnings-ratio",
+      "reason": "House-price metadata is present, but no record establishes the workplace-earnings affordability ratio.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "healthy-life-expectancy",
+      "reason": "Life-expectancy metadata is present, but no source record establishes the additional health-state component.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "international-passenger-survey-migration",
+      "reason": "Census migration tables are not evidence for the historical IPS time series.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "long-term-international-migration",
+      "reason": "Census migration tables are present, but not the current administrative-data LTIM estimates.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "monthly-mortality-analysis",
+      "reason": "No matching monthly analytical release record is represented.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "output-per-hour-worked",
+      "reason": "No source record establishes the requested labour-productivity measure.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "output-per-worker",
+      "reason": "No source record establishes the requested labour-productivity denominator.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "police-recorded-crime",
+      "reason": "No matching source record is represented in the implemented lanes.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    },
+    {
+      "alias": "regular-pay-growth",
+      "reason": "ASHE records are present, but the monthly Average Weekly Earnings regular-pay series is not.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "retail-prices-index",
+      "reason": "No source record in the implemented lanes safely represents RPI.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "total-pay-growth",
+      "reason": "No source record in the implemented lanes safely represents monthly AWE total pay.",
+      "neededSourceLane": "ons-timeseries-and-downloads"
+    },
+    {
+      "alias": "uk-house-price-index",
+      "reason": "Local house-price products are present, but no source record safely identifies UK HPI.",
+      "neededSourceLane": "ons-website-datasets-and-releases"
+    }
+  ]
+}

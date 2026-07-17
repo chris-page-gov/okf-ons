@@ -1,0 +1,702 @@
+{
+  "schema": "okf-ons-evaluation-suite.v1",
+  "suite_id": "okf-ons-confusable-dataset-selection",
+  "title": "ONS confusable dataset discovery gold queries",
+  "description": "A first-release deterministic suite for ranking the intended ONS dataset, exposing plausible alternatives, and presenting enough metadata evidence to compare them safely.",
+  "version": "1.0.0",
+  "defaults": {
+    "cutoffs": [
+      1,
+      3,
+      5,
+      10
+    ]
+  },
+  "statistical_accuracy_policy": {
+    "evaluated": false,
+    "statement": "This suite evaluates metadata retrieval, contrast, and evidence availability. It does not validate observations, estimates, methods, calculations, or statistical interpretations."
+  },
+  "curation": {
+    "basis": [
+      "MCP Geo ONS dataset-selection research",
+      "OKF Explorer deterministic static-search evaluation pattern"
+    ],
+    "record_id_note": "Record IDs are curated canonical aliases and must be reconciled to the frozen OKF-ONS bundle IDs before a release gate is enabled."
+  },
+  "queries": [
+    {
+      "id": "ONS-Q001",
+      "query": "UK inflation including owner occupiers' housing costs, monthly",
+      "intent": "Find the CPIH dataset for the broadest official consumer inflation measure including owner occupiers' housing costs.",
+      "stratum": "measure-definition",
+      "why_confusing": "CPI, CPIH and RPI are all familiar inflation series but differ in population coverage, housing-cost treatment and status.",
+      "target_record_id": "consumer-prices-cpih",
+      "relevance": {
+        "consumer-prices-cpih": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "consumer-prices-cpi",
+          "must_expose_by": 3,
+          "reason": "CPI is a legitimate comparator but excludes owner occupiers' housing costs.",
+          "contrast_fields": [
+            "measure_concept",
+            "housing_cost_treatment",
+            "population_scope"
+          ]
+        },
+        {
+          "record_id": "retail-prices-index",
+          "must_expose_by": 5,
+          "reason": "RPI is widely searched for but has a different construction and official-use status.",
+          "contrast_fields": [
+            "measure_concept",
+            "method",
+            "official_status"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q002",
+      "query": "Did the UK economy grow in the latest month?",
+      "intent": "Find the monthly GDP estimate rather than quarterly national accounts or regional GDP.",
+      "stratum": "time-granularity",
+      "why_confusing": "Several GDP products share the same concept but answer questions at different frequencies, maturity and geographic levels.",
+      "target_record_id": "gdp-monthly-estimate",
+      "relevance": {
+        "gdp-monthly-estimate": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "gdp-quarterly-national-accounts",
+          "must_expose_by": 3,
+          "reason": "Quarterly national accounts are a more mature estimate but do not answer a latest-month question.",
+          "contrast_fields": [
+            "frequency",
+            "estimate_maturity",
+            "revision_basis"
+          ]
+        },
+        {
+          "record_id": "regional-gdp",
+          "must_expose_by": 5,
+          "reason": "Regional GDP answers a geography-specific question and is published on a different timetable.",
+          "contrast_fields": [
+            "geography",
+            "frequency",
+            "time_lag"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q003",
+      "query": "Latest population estimate for my local authority by age and sex",
+      "intent": "Find local-authority mid-year population estimates with age and sex dimensions.",
+      "stratum": "estimate-projection-census",
+      "why_confusing": "Population estimates, projections and Census counts have overlapping labels but different reference dates and purposes.",
+      "target_record_id": "population-estimates-la",
+      "relevance": {
+        "population-estimates-la": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "population-projections-la",
+          "must_expose_by": 3,
+          "reason": "Subnational projections describe possible future populations, not the latest estimate.",
+          "contrast_fields": [
+            "estimate_or_projection",
+            "reference_period",
+            "method"
+          ]
+        },
+        {
+          "record_id": "census-2021-population",
+          "must_expose_by": 5,
+          "reason": "The Census is a detailed benchmark for 2021, not the latest annual estimate.",
+          "contrast_fields": [
+            "reference_period",
+            "frequency",
+            "population_basis"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q004",
+      "query": "UK unemployment rate from the Labour Force Survey",
+      "intent": "Find the LFS unemployment rate using the internationally comparable unemployment definition.",
+      "stratum": "labour-market-definition",
+      "why_confusing": "The claimant count, unemployment rate and economic inactivity rate are related but have different populations and denominators.",
+      "target_record_id": "unemployment-rate-lfs",
+      "relevance": {
+        "unemployment-rate-lfs": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "claimant-count",
+          "must_expose_by": 3,
+          "reason": "The claimant count is administrative benefit data and is not equivalent to LFS unemployment.",
+          "contrast_fields": [
+            "population_scope",
+            "data_source",
+            "denominator"
+          ]
+        },
+        {
+          "record_id": "economic-inactivity-rate",
+          "must_expose_by": 5,
+          "reason": "Economic inactivity describes people outside the labour force rather than unemployed people seeking work.",
+          "contrast_fields": [
+            "measure_concept",
+            "population_scope",
+            "denominator"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q005",
+      "query": "Monthly underlying employee pay growth excluding bonuses",
+      "intent": "Find regular pay growth from the Average Weekly Earnings family.",
+      "stratum": "earnings-definition",
+      "why_confusing": "Regular pay, total pay, real pay and annual earnings surveys differ by bonus treatment, inflation adjustment, frequency and population.",
+      "target_record_id": "regular-pay-growth",
+      "relevance": {
+        "regular-pay-growth": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "total-pay-growth",
+          "must_expose_by": 3,
+          "reason": "Total pay includes bonuses and therefore does not match the requested measure.",
+          "contrast_fields": [
+            "bonus_treatment",
+            "measure_concept",
+            "frequency"
+          ]
+        },
+        {
+          "record_id": "annual-survey-hours-earnings",
+          "must_expose_by": 5,
+          "reason": "ASHE provides detailed annual earnings estimates for employee jobs, not the monthly growth series.",
+          "contrast_fields": [
+            "population_scope",
+            "frequency",
+            "measure_concept"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q006",
+      "query": "How affordable are homes compared with workplace earnings in each local authority?",
+      "intent": "Find the local house-price-to-workplace-earnings ratio dataset.",
+      "stratum": "derived-ratio",
+      "why_confusing": "House prices, rents and affordability ratios concern the same domain but use different numerators, denominators and geographies.",
+      "target_record_id": "house-price-to-earnings-ratio",
+      "relevance": {
+        "house-price-to-earnings-ratio": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "uk-house-price-index",
+          "must_expose_by": 3,
+          "reason": "The house price index measures price change and does not include an earnings denominator.",
+          "contrast_fields": [
+            "measure_concept",
+            "denominator",
+            "geography"
+          ]
+        },
+        {
+          "record_id": "private-rental-prices-index",
+          "must_expose_by": 5,
+          "reason": "Private rental prices describe rents rather than purchase affordability.",
+          "contrast_fields": [
+            "housing_tenure",
+            "measure_concept",
+            "frequency"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q007",
+      "query": "How many adults experienced crime, including offences not reported to police?",
+      "intent": "Find Crime Survey for England and Wales prevalence estimates.",
+      "stratum": "survey-administrative",
+      "why_confusing": "Crime Survey estimates and police-recorded crime measure different populations and are affected by different reporting and recording processes.",
+      "target_record_id": "crime-survey-england-wales",
+      "relevance": {
+        "crime-survey-england-wales": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "police-recorded-crime",
+          "must_expose_by": 3,
+          "reason": "Police-recorded crime excludes incidents not reported to or recorded by police.",
+          "contrast_fields": [
+            "data_source",
+            "coverage",
+            "comparability_warning"
+          ]
+        },
+        {
+          "record_id": "crime-severity-and-harm",
+          "must_expose_by": 5,
+          "reason": "Severity or harm measures weight recorded offences and do not estimate victim prevalence.",
+          "contrast_fields": [
+            "measure_concept",
+            "data_source",
+            "unit"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q008",
+      "query": "Latest long-term international net migration estimate for the UK",
+      "intent": "Find the current long-term international migration estimates rather than population-change or historical survey products.",
+      "stratum": "migration-method",
+      "why_confusing": "Migration estimates appear in several datasets whose source methods, time windows and revision states changed materially.",
+      "target_record_id": "long-term-international-migration",
+      "relevance": {
+        "long-term-international-migration": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "population-estimates-uk",
+          "must_expose_by": 3,
+          "reason": "Population estimates incorporate migration but do not directly provide the requested flow measure.",
+          "contrast_fields": [
+            "stock_or_flow",
+            "measure_concept",
+            "method"
+          ]
+        },
+        {
+          "record_id": "international-passenger-survey-migration",
+          "must_expose_by": 5,
+          "reason": "Historical IPS-based estimates are not automatically comparable with the current administrative-data method.",
+          "contrast_fields": [
+            "method",
+            "time_coverage",
+            "comparability_warning"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q009",
+      "query": "Life expectancy at birth by local authority and deprivation",
+      "intent": "Find period life expectancy at birth with local geography and deprivation breakdowns.",
+      "stratum": "health-outcome-definition",
+      "why_confusing": "Life expectancy, healthy life expectancy and avoidable mortality are related health outcomes but have different concepts and units.",
+      "target_record_id": "life-expectancy-at-birth",
+      "relevance": {
+        "life-expectancy-at-birth": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "healthy-life-expectancy",
+          "must_expose_by": 3,
+          "reason": "Healthy life expectancy adds a health-state component and is not equivalent to total life expectancy.",
+          "contrast_fields": [
+            "measure_concept",
+            "health_state",
+            "unit"
+          ]
+        },
+        {
+          "record_id": "avoidable-mortality",
+          "must_expose_by": 5,
+          "reason": "Avoidable mortality is a mortality rate based on selected causes, not expected years of life.",
+          "contrast_fields": [
+            "measure_concept",
+            "unit",
+            "population_scope"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q010",
+      "query": "UK labour productivity measured as output per hour worked",
+      "intent": "Find output per hour worked rather than output per worker or GDP per head.",
+      "stratum": "productivity-denominator",
+      "why_confusing": "Productivity series share an output numerator while using materially different labour or population denominators.",
+      "target_record_id": "output-per-hour-worked",
+      "relevance": {
+        "output-per-hour-worked": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "output-per-worker",
+          "must_expose_by": 3,
+          "reason": "Output per worker does not account for changes in hours worked.",
+          "contrast_fields": [
+            "denominator",
+            "measure_concept",
+            "interpretation"
+          ]
+        },
+        {
+          "record_id": "gdp-per-head",
+          "must_expose_by": 5,
+          "reason": "GDP per head uses the resident population and is not a labour productivity measure.",
+          "contrast_fields": [
+            "denominator",
+            "population_scope",
+            "measure_concept"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q011",
+      "query": "Weekly deaths registered in England and Wales by registration date",
+      "intent": "Find the weekly provisional deaths registrations dataset.",
+      "stratum": "event-time-basis",
+      "why_confusing": "Deaths may be counted by date of registration or occurrence and appear in weekly and monthly products with different revision patterns.",
+      "target_record_id": "deaths-registered-weekly-england-wales",
+      "relevance": {
+        "deaths-registered-weekly-england-wales": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "deaths-occurrences-weekly",
+          "must_expose_by": 3,
+          "reason": "Occurrence-date counts answer a different time-basis question and are revised as registrations arrive.",
+          "contrast_fields": [
+            "event_time_basis",
+            "revision_basis",
+            "time_lag"
+          ]
+        },
+        {
+          "record_id": "monthly-mortality-analysis",
+          "must_expose_by": 5,
+          "reason": "Monthly mortality analysis has different frequency and analytical adjustments.",
+          "contrast_fields": [
+            "frequency",
+            "measure_concept",
+            "adjustment"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    },
+    {
+      "id": "ONS-Q012",
+      "query": "Census 2021 overcrowding using occupancy rating by rooms",
+      "intent": "Find the Census occupancy-rating-by-rooms dataset rather than bedroom occupancy or household-size tables.",
+      "stratum": "census-variable",
+      "why_confusing": "Census housing tables have near-identical titles but use different occupancy definitions and denominators.",
+      "target_record_id": "census-overcrowding-rooms",
+      "relevance": {
+        "census-overcrowding-rooms": 3
+      },
+      "alternatives": [
+        {
+          "record_id": "census-occupancy-rating-bedrooms",
+          "must_expose_by": 3,
+          "reason": "Bedroom occupancy uses a different space standard from occupancy by rooms.",
+          "contrast_fields": [
+            "occupancy_definition",
+            "denominator",
+            "dimensions"
+          ]
+        },
+        {
+          "record_id": "household-size-census",
+          "must_expose_by": 5,
+          "reason": "Household size counts residents and does not itself classify overcrowding.",
+          "contrast_fields": [
+            "measure_concept",
+            "denominator",
+            "dimensions"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "title",
+        "identity.dataset_id",
+        "identity.edition",
+        "identity.version",
+        "provenance.source_url",
+        "publication.release_date",
+        "publication.revision_status",
+        "statistical.measure",
+        "statistical.unit",
+        "statistical.population",
+        "statistical.geography",
+        "statistical.time_coverage",
+        "statistical.frequency",
+        "statistical.dimensions",
+        "statistical.quality_notes"
+      ],
+      "required_standards": [
+        "DCAT-AP",
+        "SDMX",
+        "GSS geography codes",
+        "ISO 8601",
+        "PROV-O"
+      ]
+    }
+  ]
+}

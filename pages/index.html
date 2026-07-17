@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence-led discovery and comparison of Office for National Statistics metadata, published as an Open Knowledge Format bundle.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>ONS data discovery · Open Knowledge Format</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to dataset discovery</a>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./" aria-label="ONS Open Knowledge Format home">
+        <span class="brand-mark" aria-hidden="true">OKF</span>
+        <span>
+          <strong>ONS data discovery</strong>
+          <small>Open Knowledge Format demonstrator</small>
+        </span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#discover">Discover</a>
+        <a href="#agent-entrypoints">Agent files</a>
+        <a href="demo-guide.html">Demo guide</a>
+        <a href="accessibility.html">Accessibility</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <p class="eyebrow">Metadata-only · evidence-led · read-only</p>
+          <h1>Find the exact dataset.<br>See what you might confuse it with.</h1>
+          <p class="hero-copy">
+            Search across ONS Data API, Nomis and Open Geography metadata.
+            Reduce the candidate set, compare material differences, inspect
+            quality evidence, then create a validated plan for MCP.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#discover">Start discovering</a>
+            <a
+              class="button button-secondary"
+              id="explorer-link"
+              href="https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json"
+              rel="noreferrer"
+            >Open in OKF Explorer</a>
+          </div>
+        </div>
+        <aside class="assurance-card" aria-labelledby="assurance-heading">
+          <h2 id="assurance-heading">What this demo guarantees</h2>
+          <ul class="check-list">
+            <li>No observation values are stored.</li>
+            <li>No API key is requested or retained.</li>
+            <li>Similar datasets remain visible before selection.</li>
+            <li>Standards claims show evidence and never imply certification.</li>
+          </ul>
+          <p class="assurance-note">
+            Live data retrieval happens only after a trusted MCP server validates
+            the chosen dataset, version and dimensions.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="evidence-strip" aria-labelledby="snapshot-heading">
+      <div class="shell">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Frozen publication snapshot</p>
+            <h2 id="snapshot-heading">Coverage is measured, not assumed</h2>
+          </div>
+          <p id="snapshot-status" class="status-pill" role="status">Loading bundle evidence…</p>
+        </div>
+        <dl class="summary-grid" id="summary-grid">
+          <div>
+            <dt>Discovery records</dt>
+            <dd id="summary-records">—</dd>
+            <span>in this demo projection</span>
+          </div>
+          <div>
+            <dt>Official source lanes</dt>
+            <dd id="summary-sources">—</dd>
+            <span>catalogues reconciled separately</span>
+          </div>
+          <div>
+            <dt>Records with alternatives</dt>
+            <dd id="summary-alternatives">—</dd>
+            <span>comparison available</span>
+          </div>
+          <div>
+            <dt>Unexplained omissions</dt>
+            <dd id="summary-omissions">—</dd>
+            <span>must be zero before claiming “all”</span>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="discovery shell" id="discover" aria-labelledby="discover-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Browse → reduce → compare → configure</p>
+          <h2 id="discover-heading">What statistic are you trying to find?</h2>
+        </div>
+        <a href="#method" class="text-link">How ranking works</a>
+      </div>
+
+      <form id="search-form" role="search">
+        <label for="search-input">Search titles, subjects, descriptions and native identifiers</label>
+        <div class="search-row">
+          <input
+            id="search-input"
+            name="q"
+            type="search"
+            autocomplete="off"
+            placeholder="For example: population estimates by local authority"
+          >
+          <button class="button button-primary" type="submit">Find datasets</button>
+        </div>
+      </form>
+
+      <div class="example-queries" aria-label="Example searches">
+        <span>Try:</span>
+        <button type="button" data-query="consumer prices inflation">consumer prices inflation</button>
+        <button type="button" data-query="population estimates local authority">population estimates</button>
+        <button type="button" data-query="unemployment claimant count">unemployment</button>
+        <button type="button" data-query="local authority boundaries">local authority boundaries</button>
+      </div>
+      <p class="projection-note">
+        This page loads a bounded, comparison-rich projection for a fast live demo.
+        The linked OKF Explorer index searches all 4,989 frozen records.
+      </p>
+
+      <details class="filters" id="filter-panel">
+        <summary>Refine the reduced set</summary>
+        <div class="filter-grid">
+          <label for="source-filter">
+            Source
+            <select id="source-filter">
+              <option value="">All sources</option>
+            </select>
+          </label>
+          <label for="type-filter">
+            Record type
+            <select id="type-filter">
+              <option value="">All record types</option>
+            </select>
+          </label>
+          <label for="topic-filter">
+            Subject
+            <select id="topic-filter">
+              <option value="">All subjects</option>
+            </select>
+          </label>
+          <label for="frequency-filter">
+            Frequency
+            <select id="frequency-filter">
+              <option value="">All frequencies</option>
+            </select>
+          </label>
+          <label for="evidence-filter">
+            Quality evidence
+            <select id="evidence-filter">
+              <option value="">Any evidence level</option>
+              <option value="high">High metadata evidence</option>
+              <option value="medium">Medium metadata evidence</option>
+              <option value="low">Low metadata evidence</option>
+            </select>
+          </label>
+          <label for="sort-select">
+            Sort
+            <select id="sort-select">
+              <option value="relevance">Best match</option>
+              <option value="evidence">Metadata evidence</option>
+              <option value="updated">Most recently updated</option>
+              <option value="title">Title A–Z</option>
+            </select>
+          </label>
+        </div>
+        <button class="text-button" id="clear-filters" type="button">Clear all filters</button>
+      </details>
+
+      <div id="load-error" class="notice notice-error" hidden>
+        <h3>The generated demo records could not be loaded</h3>
+        <p>
+          The explanatory pages still work. You can inspect the
+          <a href="data/demo/contrast-records.json">bounded demo JSON</a> or
+          <a href="okf-explorer.json">the OKF descriptor</a> directly.
+        </p>
+      </div>
+
+      <noscript>
+        <div class="notice">
+          <h3>JavaScript is off</h3>
+          <p>
+            Search and comparison need JavaScript, but every machine-readable
+            artefact remains available. Open the
+            <a href="data/demo/contrast-records.json">demo records</a>,
+            <a href="data/coverage/ledger.json">coverage ledger</a>, or
+            <a href="okf-explorer.json">OKF descriptor</a>.
+          </p>
+        </div>
+      </noscript>
+
+      <p id="results-status" class="results-status" aria-live="polite">
+        Loading discovery records…
+      </p>
+
+      <div class="workspace" id="workspace" hidden>
+        <section aria-labelledby="results-heading">
+          <div class="subheading">
+            <h3 id="results-heading">Reduced candidate set</h3>
+            <button class="text-button" id="reset-search" type="button">Reset search</button>
+          </div>
+          <div id="results-list" class="results-list"></div>
+        </section>
+
+        <section class="detail-shell" aria-labelledby="selected-title">
+          <div class="selected-header">
+            <div>
+              <p class="eyebrow" id="selected-source">Select a result</p>
+              <h3 id="selected-title" aria-live="polite">Dataset evidence appears here</h3>
+            </div>
+            <a class="button button-secondary button-small" id="source-link" href="#" hidden>
+              Official source
+            </a>
+          </div>
+          <p id="selected-context" class="selected-context">
+            The comparison view keeps close alternatives visible before you commit.
+          </p>
+
+          <div class="tabs" role="tablist" aria-label="Dataset evidence views">
+            <button id="tab-overview" type="button" role="tab" aria-selected="true" aria-controls="detail-panel" data-tab="overview">Overview</button>
+            <button id="tab-compare" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="compare">Compare</button>
+            <button id="tab-quality" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="quality">Quality &amp; methodology</button>
+            <button id="tab-production" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="production">How produced</button>
+            <button id="tab-versions" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="versions">Versions</button>
+            <button id="tab-dimensions" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="dimensions">Dimensions</button>
+            <button id="tab-geography" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="geography">Geography</button>
+            <button id="tab-mcp" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="mcp">Access via MCP</button>
+            <button id="tab-standards" type="button" role="tab" aria-selected="false" aria-controls="detail-panel" data-tab="standards">Standards</button>
+          </div>
+          <div id="detail-panel" class="detail-panel" role="tabpanel"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="method" id="method" aria-labelledby="method-heading">
+      <div class="shell method-grid">
+        <div>
+          <p class="eyebrow">Explainable discovery</p>
+          <h2 id="method-heading">The result is a decision, not just a title match</h2>
+        </div>
+        <ol>
+          <li><strong>Reduce:</strong> deterministic text matching and explicit facets create a reviewable candidate set.</li>
+          <li><strong>Differentiate:</strong> population, measure, unit, geography, time, frequency, version and method are compared.</li>
+          <li><strong>Verify:</strong> QMI, methodology, provenance, revisions and standards evidence stay linked to the source.</li>
+          <li><strong>Configure:</strong> required dimensions remain explicit until a read-only MCP plan is valid.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="agent-section shell" id="agent-entrypoints" aria-labelledby="agent-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Inspectable by agents</p>
+          <h2 id="agent-heading">Stable entrypoints, no screen-scraping required</h2>
+        </div>
+      </div>
+      <div class="agent-grid">
+        <a href="okf-explorer.json">
+          <strong>OKF Explorer descriptor</strong>
+          <code>okf-explorer.json</code>
+        </a>
+        <a href="data/demo/contrast-records.json">
+          <strong>Contrast demonstrator</strong>
+          <code>data/demo/contrast-records.json</code>
+        </a>
+        <a href="data/coverage/ledger.json">
+          <strong>Coverage ledger</strong>
+          <code>data/coverage/ledger.json</code>
+        </a>
+        <a href="data/standards/evaluation.json">
+          <strong>Standards evidence</strong>
+          <code>data/standards/evaluation.json</code>
+        </a>
+        <a href="data/evaluation/report.json">
+          <strong>Evaluation report</strong>
+          <code>data/evaluation/report.json</code>
+        </a>
+        <a href="data/ons/mcp-bindings.json">
+          <strong>MCP bindings</strong>
+          <code>data/ons/mcp-bindings.json</code>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-grid">
+      <div>
+        <strong>ONS Open Knowledge Format demonstrator</strong>
+        <p>An independent metadata discovery demonstrator; not an official ONS service.</p>
+      </div>
+      <div>
+        <a href="demo-guide.html">Demo guide</a>
+        <a href="accessibility.html">Accessibility</a>
+        <a href="https://github.com/chris-page-gov/okf-ons" rel="noreferrer">GitHub repository</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

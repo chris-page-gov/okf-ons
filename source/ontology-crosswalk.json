@@ -1,0 +1,804 @@
+{
+  "schemaVersion": "okf-ons.ontology-crosswalk.v1",
+  "title": "Crosswalk from canonical OKF ONS metadata to statistical, catalogue and provenance vocabularies",
+  "asOf": "2026-07-17",
+  "assuranceBoundary": {
+    "sourceNativeIdentityIsCanonical": true,
+    "crosswalkReplacesSourceMeaning": false,
+    "statement": "Mappings support discovery, comparison and exchange. They do not assert that an upstream product conforms to a vocabulary or that two records are statistically equivalent."
+  },
+  "namespaces": {
+    "adms": "http://www.w3.org/ns/adms#",
+    "csvw": "http://www.w3.org/ns/csvw#",
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "dqv": "http://www.w3.org/ns/dqv#",
+    "locn": "http://www.w3.org/ns/locn#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "qb": "http://purl.org/linked-data/cube#",
+    "schema": "https://schema.org/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "mappingKinds": {
+    "direct": "The canonical field and target term have the same intended role at the declared record layer.",
+    "structural": "The target model supplies a corresponding class or relation but may require additional transformation.",
+    "broader": "The target term is less specific than the canonical field.",
+    "conditional": "The mapping is valid only when the record carries the stated evidence or type.",
+    "process": "The mapping describes production or provenance rather than catalogue identity."
+  },
+  "relationshipPolicy": {
+    "rules": [
+      "Never infer equivalence from title or embedding similarity.",
+      "Use skos:exactMatch only with evidence of semantic identity; use skos:closeMatch for close but non-equivalent concepts.",
+      "Use version predicates only within an evidenced version or succession chain.",
+      "Use prov:wasDerivedFrom for derivation and dct:relation for a general relationship when no stronger predicate is evidenced.",
+      "A cross-source representation retains both native identifiers and the reconciliation evidence.",
+      "Every alternative relationship must expose its material differences or carry not_enough_evidence."
+    ],
+    "relationshipTypes": [
+      {
+        "type": "alternative",
+        "preferredTerms": [
+          "dct:relation",
+          "skos:related"
+        ],
+        "minimumEvidence": [
+          "shared subject concept",
+          "at least one material discriminator"
+        ]
+      },
+      {
+        "type": "close-concept",
+        "preferredTerms": [
+          "skos:closeMatch"
+        ],
+        "minimumEvidence": [
+          "concept mapping evidence",
+          "explicit non-equivalence reason"
+        ]
+      },
+      {
+        "type": "exact-concept",
+        "preferredTerms": [
+          "skos:exactMatch"
+        ],
+        "minimumEvidence": [
+          "authoritative mapping or reviewed semantic-identity evidence"
+        ]
+      },
+      {
+        "type": "previous-version",
+        "preferredTerms": [
+          "dcat:previousVersion"
+        ],
+        "minimumEvidence": [
+          "source version identifiers",
+          "directed succession evidence"
+        ]
+      },
+      {
+        "type": "successor",
+        "preferredTerms": [
+          "dct:replaces",
+          "dcat:hasCurrentVersion"
+        ],
+        "minimumEvidence": [
+          "source-published succession or current-version relationship"
+        ]
+      },
+      {
+        "type": "derived-from",
+        "preferredTerms": [
+          "prov:wasDerivedFrom"
+        ],
+        "minimumEvidence": [
+          "source or transformation provenance"
+        ]
+      },
+      {
+        "type": "cross-source-representation",
+        "preferredTerms": [
+          "prov:specializationOf",
+          "dct:relation"
+        ],
+        "minimumEvidence": [
+          "both native identifiers",
+          "field-level reconciliation evidence"
+        ]
+      }
+    ]
+  },
+  "canonicalFields": [
+    {
+      "field": "recordType",
+      "purpose": "Distinguish datasets, series, versions, distributions, data services, catalogue records, concepts and evidence records.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dcat:Dataset | dcat:DatasetSeries | dcat:Distribution | dcat:DataService | dcat:CatalogRecord",
+          "mappingKind": "conditional",
+          "notes": "Select exactly the class supported by the record layer."
+        },
+        {
+          "standardId": "w3c-rdf-data-cube",
+          "term": "qb:DataSet",
+          "mappingKind": "conditional",
+          "notes": "Use only for a statistical dataset structure, never for a catalogue record or distribution."
+        },
+        {
+          "standardId": "w3c-csvw",
+          "term": "csvw:TableGroup | csvw:Table",
+          "mappingKind": "conditional",
+          "notes": "Use only for an actual tabular distribution."
+        }
+      ]
+    },
+    {
+      "field": "identifier",
+      "purpose": "Stable source-qualified native identity.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uk-dcat-3-profile",
+          "term": "dct:identifier",
+          "mappingKind": "direct",
+          "notes": "The source-native identifier remains separately available."
+        },
+        {
+          "standardId": "uk-gemini-2-3",
+          "term": "metadata file identifier and resource identifier",
+          "mappingKind": "conditional",
+          "notes": "Preserve both identifiers when the GEMINI record supplies them."
+        },
+        {
+          "standardId": "ons-classifications",
+          "term": "skos:notation",
+          "mappingKind": "conditional",
+          "notes": "Use notation for a code within an explicitly identified classification scheme."
+        }
+      ]
+    },
+    {
+      "field": "title",
+      "purpose": "Preferred human-readable title without replacing native identity.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "uk-dcat-3-profile",
+          "term": "dct:title",
+          "mappingKind": "direct",
+          "notes": "Retain language metadata when supplied."
+        },
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:prefLabel",
+          "mappingKind": "conditional",
+          "notes": "Use for a concept or code-list item, not automatically for a dataset."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:name",
+          "mappingKind": "broader",
+          "notes": "Useful in schema.org dataset JSON-LD export."
+        }
+      ]
+    },
+    {
+      "field": "alternativeTitles",
+      "purpose": "Source-published aliases, abbreviations and previous titles.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "uk-dcat-3-profile",
+          "term": "dct:alternative",
+          "mappingKind": "direct",
+          "notes": "Preserve alias type and source."
+        },
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:altLabel | skos:hiddenLabel",
+          "mappingKind": "conditional",
+          "notes": "Hidden labels support search but should not be shown as preferred names."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:alternateName",
+          "mappingKind": "broader",
+          "notes": "Use for public structured-data export."
+        }
+      ]
+    },
+    {
+      "field": "description",
+      "purpose": "Source-attributed description of the statistical product.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "uk-dcat-3-profile",
+          "term": "dct:description",
+          "mappingKind": "direct",
+          "notes": "Do not replace source description with generated interpretation."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:description",
+          "mappingKind": "direct",
+          "notes": "Generated summaries must remain separately labelled."
+        }
+      ]
+    },
+    {
+      "field": "statisticalStatus",
+      "purpose": "Official-statistics status such as accredited, official or official statistics in development.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uksa-code-3",
+          "term": "Code 3.0 statistical-status practice",
+          "mappingKind": "direct",
+          "notes": "Use the exact current source label and its evidence URL."
+        },
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:Concept",
+          "mappingKind": "structural",
+          "notes": "Status values can be maintained as a controlled concept scheme."
+        }
+      ]
+    },
+    {
+      "field": "datasetSeries",
+      "purpose": "Group releases or versions that belong to one statistical series.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dcat:DatasetSeries | dcat:inSeries",
+          "mappingKind": "direct",
+          "notes": "Do not infer series membership from title similarity."
+        },
+        {
+          "standardId": "ddi-common-core-1",
+          "term": "DDI Series",
+          "mappingKind": "structural",
+          "notes": "Map only an evidenced longitudinal or product-series relation."
+        }
+      ]
+    },
+    {
+      "field": "version",
+      "purpose": "Exact edition and version identity, succession and notes.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dcat:version | dcat:previousVersion | dcat:hasCurrentVersion | dcat:versionNotes",
+          "mappingKind": "direct",
+          "notes": "Preserve native edition and version components as well as display form."
+        },
+        {
+          "standardId": "ons-revisions-policy",
+          "term": "revision or correction history",
+          "mappingKind": "conditional",
+          "notes": "A changed version is not automatically a correction."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "adms:versionNotes",
+          "mappingKind": "conditional",
+          "notes": "Use when the profile representation calls for ADMS version notes."
+        }
+      ]
+    },
+    {
+      "field": "publisher",
+      "purpose": "Organisation responsible for making the asset available.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:publisher",
+          "mappingKind": "direct",
+          "notes": "Distinguish publisher from creator, owner and statistical producer."
+        },
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:Agent",
+          "mappingKind": "structural",
+          "notes": "Use explicit associations to distinguish organisational roles."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:publisher",
+          "mappingKind": "direct",
+          "notes": "Use in schema.org export."
+        }
+      ]
+    },
+    {
+      "field": "temporalCoverage",
+      "purpose": "Reference period and coverage, distinct from release, issue and modification dates.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:temporal",
+          "mappingKind": "direct",
+          "notes": "Encode bounded dates and intervals using ISO 8601 forms."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:temporalCoverage",
+          "mappingKind": "direct",
+          "notes": "Keep publication dates in separate fields."
+        }
+      ]
+    },
+    {
+      "field": "frequency",
+      "purpose": "Expected publication or observation frequency.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:accrualPeriodicity",
+          "mappingKind": "direct",
+          "notes": "Use an identified controlled value where available."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX frequency concept",
+          "mappingKind": "conditional",
+          "notes": "Preserve the source code and code-list identity."
+        }
+      ]
+    },
+    {
+      "field": "population",
+      "purpose": "Statistical universe or population represented by the product.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "ddi-common-core-1",
+          "term": "DDI Universe",
+          "mappingKind": "direct",
+          "notes": "Preserve inclusion, exclusion and reference-time evidence."
+        },
+        {
+          "standardId": "unece-gsim-2",
+          "term": "GSIM Population",
+          "mappingKind": "direct",
+          "notes": "Use as an information-model mapping, not a replacement identifier."
+        }
+      ]
+    },
+    {
+      "field": "concept",
+      "purpose": "Statistical subject or characteristic being measured.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:Concept",
+          "mappingKind": "direct",
+          "notes": "Preserve concept-scheme membership and mapping strength."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX Concept and ConceptScheme",
+          "mappingKind": "direct",
+          "notes": "Retain agency, identifier and version."
+        },
+        {
+          "standardId": "unece-gsim-2",
+          "term": "GSIM Concept",
+          "mappingKind": "direct",
+          "notes": "May participate in a represented-variable mapping."
+        }
+      ]
+    },
+    {
+      "field": "measure",
+      "purpose": "Measured quantity, indicator or statistic.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "w3c-rdf-data-cube",
+          "term": "qb:MeasureProperty",
+          "mappingKind": "direct",
+          "notes": "Keep measure identity distinct from unit."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX measure concept",
+          "mappingKind": "conditional",
+          "notes": "Preserve source DSD role and concept identity."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:variableMeasured",
+          "mappingKind": "broader",
+          "notes": "Useful for public dataset structured data."
+        }
+      ]
+    },
+    {
+      "field": "unit",
+      "purpose": "Unit, scale, denominator or basis needed to interpret the measure.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "w3c-rdf-data-cube",
+          "term": "qb:AttributeProperty",
+          "mappingKind": "conditional",
+          "notes": "Map a unit attribute when the source structure identifies it."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX unit and unit-multiplier concepts",
+          "mappingKind": "conditional",
+          "notes": "Keep both the source code and readable label."
+        }
+      ]
+    },
+    {
+      "field": "dimensions",
+      "purpose": "Selection dimensions belonging to an exact dataset version.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "w3c-rdf-data-cube",
+          "term": "qb:DimensionProperty",
+          "mappingKind": "direct",
+          "notes": "Associate dimensions with the exact data-structure definition."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX Dimension and DataStructureDefinition",
+          "mappingKind": "direct",
+          "notes": "Dimension order and role are significant where the source specifies them."
+        },
+        {
+          "standardId": "ddi-common-core-1",
+          "term": "DDI RepresentedVariable",
+          "mappingKind": "structural",
+          "notes": "Use when concept and value domain evidence is available."
+        }
+      ]
+    },
+    {
+      "field": "codeLists",
+      "purpose": "Allowed option vocabularies with codes, labels, hierarchy and version.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-rdf-data-cube",
+          "term": "qb:codeList",
+          "mappingKind": "direct",
+          "notes": "Reference the code list rather than duplicating it per observation."
+        },
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:ConceptScheme | skos:Concept | skos:notation",
+          "mappingKind": "direct",
+          "notes": "Preserve hierarchy and source-native notation."
+        },
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX Codelist and Code",
+          "mappingKind": "direct",
+          "notes": "Retain agency, identifier and version."
+        }
+      ]
+    },
+    {
+      "field": "selectionConstraints",
+      "purpose": "Valid and invalid combinations for a dataset-version selection plan.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "sdmx-3-1",
+          "term": "SDMX ContentConstraint",
+          "mappingKind": "direct",
+          "notes": "Use source constraints to prune impossible combinations."
+        },
+        {
+          "standardId": "w3c-csvw",
+          "term": "csvw:required | csvw:datatype | csvw:foreignKeys",
+          "mappingKind": "conditional",
+          "notes": "Use only for constraints actually expressed by a tabular distribution."
+        }
+      ]
+    },
+    {
+      "field": "geography",
+      "purpose": "Geography level, code family, reference vintage, CRS, extent and boundary variant.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uk-gemini-2-3",
+          "term": "geographic bounding box, reference system and spatial-resolution metadata",
+          "mappingKind": "conditional",
+          "notes": "Preserve profile version and validation evidence."
+        },
+        {
+          "standardId": "iso-19115-1",
+          "term": "ISO 19115 extent and reference-system metadata",
+          "mappingKind": "structural",
+          "notes": "Map through a public implementation profile."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:spatial | locn:Geometry | schema:spatialCoverage",
+          "mappingKind": "conditional",
+          "notes": "Use a bounded extent or named geography; full geometry remains external."
+        }
+      ]
+    },
+    {
+      "field": "methodology",
+      "purpose": "Producer-published methods, collection, sampling, processing and adjustment evidence.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uksa-code-3",
+          "term": "Code 3.0 methods and quality evidence",
+          "mappingKind": "direct",
+          "notes": "Keep limitations and planned changes with the method."
+        },
+        {
+          "standardId": "ddi-common-core-1",
+          "term": "DDI Instrument | Collection | Processing",
+          "mappingKind": "structural",
+          "notes": "Map only what the source publishes."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:measurementTechnique",
+          "mappingKind": "broader",
+          "notes": "Useful for a concise public structured-data summary."
+        }
+      ]
+    },
+    {
+      "field": "qualityEvidence",
+      "purpose": "Source-published and independently measured quality evidence with method and provenance.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-dqv",
+          "term": "dqv:hasQualityMeasurement | dqv:hasQualityAnnotation | dqv:hasQualityPolicy",
+          "mappingKind": "direct",
+          "notes": "Identify whether the evidence is producer-supplied or bundle-evaluated."
+        },
+        {
+          "standardId": "ons-qmi",
+          "term": "ONS QMI quality dimensions",
+          "mappingKind": "direct",
+          "notes": "Preserve source wording and URL."
+        },
+        {
+          "standardId": "iso-19157-1-2023",
+          "term": "ISO 19157 quality element, measure, evaluation and result",
+          "mappingKind": "conditional",
+          "notes": "Use only for geographic-quality evidence."
+        }
+      ]
+    },
+    {
+      "field": "uncertaintyAndLimitations",
+      "purpose": "Uncertainty, error, bias, confidence, representativeness and known limitations.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "uksa-code-3",
+          "term": "Code 3.0 quality explanation practices",
+          "mappingKind": "direct",
+          "notes": "Prominence is part of the user-facing contract."
+        },
+        {
+          "standardId": "ons-qmi",
+          "term": "QMI strengths and limitations",
+          "mappingKind": "direct",
+          "notes": "Keep evidence attributed to the product and version."
+        },
+        {
+          "standardId": "w3c-dqv",
+          "term": "dqv:QualityAnnotation",
+          "mappingKind": "conditional",
+          "notes": "Use a typed annotation with evidence provenance."
+        }
+      ]
+    },
+    {
+      "field": "revision",
+      "purpose": "Revision or correction type, reason, timing and affected versions.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "ons-revisions-policy",
+          "term": "ONS revision and correction classification",
+          "mappingKind": "direct",
+          "notes": "Use the producer's explicit classification."
+        },
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dcat:previousVersion | dcat:versionNotes",
+          "mappingKind": "structural",
+          "notes": "Version relations do not by themselves distinguish revision from correction."
+        },
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:wasRevisionOf",
+          "mappingKind": "conditional",
+          "notes": "Use only where a revision relation is evidenced."
+        }
+      ]
+    },
+    {
+      "field": "classificationAndHarmonisation",
+      "purpose": "Recognised classifications, definitions, harmonised standards and deviations.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "ons-classifications",
+          "term": "ONS classification scheme, version and code",
+          "mappingKind": "direct",
+          "notes": "Preserve the scheme edition."
+        },
+        {
+          "standardId": "gss-harmonised-standards",
+          "term": "GSS harmonised standard and implementation evidence",
+          "mappingKind": "conditional",
+          "notes": "Similar wording is not enough to claim harmonisation."
+        },
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:ConceptScheme | skos:inScheme | skos:notation",
+          "mappingKind": "structural",
+          "notes": "Use mappings with an explicit strength and evidence."
+        }
+      ]
+    },
+    {
+      "field": "productionProcess",
+      "purpose": "Evidence about how the statistical product is specified, acquired, processed, analysed and disseminated.",
+      "decisionSignature": true,
+      "mappings": [
+        {
+          "standardId": "unece-gsbpm-5-2",
+          "term": "GSBPM phase and sub-process",
+          "mappingKind": "process",
+          "notes": "Undocumented phases remain not-evidenced."
+        },
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:Activity | prov:used | prov:wasAssociatedWith",
+          "mappingKind": "process",
+          "notes": "Distinguish statistical production from bundle transformation."
+        },
+        {
+          "standardId": "osr-qaad",
+          "term": "QAAD four practice areas",
+          "mappingKind": "conditional",
+          "notes": "Apply to products using administrative data."
+        }
+      ]
+    },
+    {
+      "field": "provenance",
+      "purpose": "Source URL, native identifier, retrieval, content digest and transformation lineage.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:Entity | prov:Activity | prov:Agent | prov:wasDerivedFrom | prov:hadPrimarySource | prov:generatedAtTime",
+          "mappingKind": "direct",
+          "notes": "Never publish a local cache path."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:provenance",
+          "mappingKind": "broader",
+          "notes": "Use for a human-readable provenance statement."
+        }
+      ]
+    },
+    {
+      "field": "relationships",
+      "purpose": "Typed alternatives, succession, derivation, different-grain and cross-source representations.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-skos",
+          "term": "skos:related | skos:closeMatch | skos:exactMatch | skos:broadMatch | skos:narrowMatch",
+          "mappingKind": "conditional",
+          "notes": "Use for semantic concept relationships with explicit strength."
+        },
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dct:relation | dcat:qualifiedRelation",
+          "mappingKind": "structural",
+          "notes": "Use a qualified relation when role or evidence needs representation."
+        },
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:wasDerivedFrom | prov:specializationOf",
+          "mappingKind": "conditional",
+          "notes": "Use for provenance and representation relations, not topical similarity."
+        }
+      ]
+    },
+    {
+      "field": "distributionAndService",
+      "purpose": "Downloads, APIs and services through which the data may be accessed.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-dcat-3",
+          "term": "dcat:Distribution | dcat:DataService | dcat:accessService | dcat:endpointURL | dcat:endpointDescription",
+          "mappingKind": "direct",
+          "notes": "Keep the service distinct from the dataset and distribution."
+        },
+        {
+          "standardId": "gds-api-standards",
+          "term": "source-published API and OpenAPI description",
+          "mappingKind": "conditional",
+          "notes": "Do not synthesize an unsupported upstream API contract."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "schema:distribution",
+          "mappingKind": "broader",
+          "notes": "Use for public structured-data discovery."
+        }
+      ]
+    },
+    {
+      "field": "licenceAndAccess",
+      "purpose": "Licence, rights, security classification, authentication and access restrictions.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:license | dct:accessRights",
+          "mappingKind": "direct",
+          "notes": "Use persistent licence identifiers where supplied."
+        },
+        {
+          "standardId": "uk-gemini-2-3",
+          "term": "use limitation, use constraints and access constraints",
+          "mappingKind": "conditional",
+          "notes": "Keep distinct constraints distinct."
+        }
+      ]
+    },
+    {
+      "field": "standardsEvidence",
+      "purpose": "Requirement-level source evidence and separate bundle-profile validation.",
+      "decisionSignature": false,
+      "mappings": [
+        {
+          "standardId": "w3c-dqv",
+          "term": "dqv:QualityAnnotation | dqv:QualityMeasurement",
+          "mappingKind": "conditional",
+          "notes": "A standards-evidence claim is not a quality certification."
+        },
+        {
+          "standardId": "uk-cross-government-metadata-exchange-model",
+          "term": "dct:conformsTo",
+          "mappingKind": "conditional",
+          "notes": "Use only for the bundle profile or an explicit source-published conformance assertion."
+        },
+        {
+          "standardId": "w3c-prov-o",
+          "term": "prov:hadPrimarySource | prov:wasDerivedFrom",
+          "mappingKind": "direct",
+          "notes": "Retain the evidence source and evaluation activity."
+        }
+      ]
+    }
+  ]
+}
