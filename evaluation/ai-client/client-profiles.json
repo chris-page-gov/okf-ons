@@ -1,0 +1,273 @@
+{
+  "schema": "okf-ons.ai-client-profiles.v1",
+  "observed_on": "2026-07-18",
+  "warning": "Availability is a run-time property. Installed or previously ready does not mean authenticated and ready for a future run.",
+  "profiles": [
+    {
+      "id": "codex-cli",
+      "product": "OpenAI Codex CLI",
+      "surface": "command-line",
+      "observed_version": "0.144.1",
+      "automation": "unattended",
+      "initial_smoke_suite": true,
+      "readiness": "previously-ready-fresh-probe-required",
+      "capture": ["jsonl", "structured-answer", "mcp-trace", "usage-when-reported"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": false,
+        "javascript": false,
+        "local_scratch": true,
+        "native_http_fetch": null,
+        "structured_output": true
+      },
+      "notes": "Run with an isolated configuration and workspace. Do not mutate or trust the user's global MCP registration."
+    },
+    {
+      "id": "claude-code",
+      "product": "Anthropic Claude Code",
+      "surface": "command-line",
+      "observed_version": "2.1.204",
+      "automation": "unattended",
+      "initial_smoke_suite": true,
+      "readiness": "previously-ready-fresh-probe-required",
+      "capture": ["stream-json", "structured-answer", "mcp-trace", "provider-usage"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": false,
+        "javascript": false,
+        "local_scratch": true,
+        "native_http_fetch": null,
+        "structured_output": true
+      },
+      "notes": "Use a temporary strict MCP configuration, no session persistence and the existing user login. A model alias must be resolved and recorded per run."
+    },
+    {
+      "id": "gemini-cli",
+      "product": "Google Gemini CLI",
+      "surface": "command-line",
+      "observed_version": "0.38.2",
+      "automation": "unattended",
+      "initial_smoke_suite": true,
+      "readiness": "previously-ready-fresh-probe-required",
+      "capture": ["stream-json", "structured-answer", "mcp-trace", "provider-usage"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": false,
+        "javascript": false,
+        "local_scratch": true,
+        "native_http_fetch": null,
+        "structured_output": true
+      },
+      "notes": "Use a stable isolated project workspace and project-scoped MCP policy. Previous runs showed workspace and settings-path sensitivity."
+    },
+    {
+      "id": "vscode-agent",
+      "product": "Visual Studio Code Agent / Copilot Chat",
+      "surface": "desktop-ide",
+      "observed_version": "1.129.1",
+      "automation": "experimental-unattended",
+      "initial_smoke_suite": true,
+      "readiness": "fresh-memory-and-cleanup-probe-required",
+      "capture": ["structured-answer", "mcp-trace", "ui-events", "visible-transcript"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": true,
+        "native_http_fetch": null,
+        "structured_output": true
+      },
+      "notes": "Use an isolated window and workspace. The current launcher cannot reliably pin the model, so the resolved model may remain unknown."
+    },
+    {
+      "id": "claude-cowork",
+      "product": "Anthropic Cowork",
+      "surface": "desktop-research-preview",
+      "observed_version": null,
+      "automation": "manual-import",
+      "initial_smoke_suite": true,
+      "readiness": "historical-evidence-only",
+      "capture": ["contemporaneous-log", "visible-transcript-when-exported", "tool-log-when-exported"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": "extension-dependent",
+        "javascript": null,
+        "local_scratch": true,
+        "native_http_fetch": true,
+        "structured_output": false
+      },
+      "notes": "The preserved Fable 5 trace observed approximately 92 to 95 KB fetch truncation, automatic spooling, no shell HTTP and a disconnected browser extension. It is not a controlled run."
+    },
+    {
+      "id": "claude-desktop",
+      "product": "Anthropic Claude Desktop",
+      "surface": "desktop",
+      "observed_version": "1.19367.0",
+      "automation": "manual-import",
+      "initial_smoke_suite": true,
+      "readiness": "client-ready-server-not-ready",
+      "capture": ["structured-answer", "mcp-trace", "visible-transcript"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": "extension-dependent",
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": true
+      },
+      "notes": "A July trace reached MCP initialization, but the existing MCP-Geo Docker wrapper was unavailable. Use a lightweight metadata-only broker for this evaluation."
+    },
+    {
+      "id": "codex-desktop",
+      "product": "OpenAI Codex Desktop",
+      "surface": "desktop",
+      "observed_version": "26.715.21425",
+      "automation": "manual-import",
+      "initial_smoke_suite": true,
+      "readiness": "manual-path-available",
+      "capture": ["structured-answer", "mcp-trace", "visible-transcript"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": true,
+        "javascript": true,
+        "local_scratch": true,
+        "native_http_fetch": true,
+        "structured_output": true
+      },
+      "notes": "No unattended OKF runner is yet evidenced. Treat this as a distinct host surface from Codex CLI."
+    },
+    {
+      "id": "chatgpt-classic",
+      "product": "OpenAI ChatGPT Classic",
+      "surface": "desktop",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": null
+      },
+      "notes": "Installation is observed; authentication, model identity and a repeatable OKF access path are not."
+    },
+    {
+      "id": "chatgpt-atlas",
+      "product": "OpenAI ChatGPT Atlas",
+      "surface": "desktop-browser",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": true,
+        "javascript": true,
+        "local_scratch": null,
+        "native_http_fetch": true,
+        "structured_output": null
+      },
+      "notes": "Installation is observed; authentication, model identity and a repeatable evaluation path are not."
+    },
+    {
+      "id": "microsoft-copilot",
+      "product": "Microsoft Copilot",
+      "surface": "desktop",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": null
+      },
+      "notes": "Do not score until authentication, model identity, access controls and trace capture are proven."
+    },
+    {
+      "id": "microsoft-365-copilot",
+      "product": "Microsoft 365 Copilot",
+      "surface": "desktop",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": null
+      },
+      "notes": "Do not score until authentication, model identity, access controls and trace capture are proven."
+    },
+    {
+      "id": "github-copilot",
+      "product": "GitHub Copilot",
+      "surface": "desktop",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": null
+      },
+      "notes": "The desktop app is installed; the VS Code host is evaluated separately."
+    },
+    {
+      "id": "github-copilot-xcode",
+      "product": "GitHub Copilot for Xcode",
+      "surface": "desktop-ide",
+      "observed_version": null,
+      "automation": "readiness-only",
+      "initial_smoke_suite": false,
+      "readiness": "installed-unverified",
+      "capture": ["manual-transcript-if-ready"],
+      "capabilities": {
+        "mcp_core": null,
+        "browser": null,
+        "javascript": null,
+        "local_scratch": null,
+        "native_http_fetch": null,
+        "structured_output": null
+      },
+      "notes": "Installation alone is not evidence of a suitable OKF evaluation path."
+    },
+    {
+      "id": "mcp-inspector",
+      "product": "Model Context Protocol Inspector",
+      "surface": "protocol-baseline",
+      "observed_version": null,
+      "automation": "deterministic-baseline",
+      "initial_smoke_suite": true,
+      "readiness": "probe-required",
+      "capture": ["mcp-trace", "structured-answer"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": false,
+        "javascript": false,
+        "local_scratch": false,
+        "native_http_fetch": false,
+        "structured_output": true
+      },
+      "notes": "Use as a protocol and broker baseline, not as an AI-quality comparator."
+    }
+  ]
+}

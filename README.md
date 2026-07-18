@@ -68,6 +68,35 @@ work package, demo route and questions for ONS. See also the
 [evaluation method](docs/evaluation.md), and
 [scope and denominator](docs/scope-and-denominator.md).
 
+## AI access research and evaluation
+
+The repository preserves a contemporaneous Claude Cowork / Fable 5 case study
+in [`research/`](research/README.md). The Markdown is authoritative; its DOCX
+is a formatted derivative. Both are SHA-256-pinned and the later verification
+notes keep partial-fetch observations separate from facts established by a
+complete bundle rebuild.
+
+The case study now seeds a provider-neutral, fixture-safe harness:
+
+```bash
+python3 scripts/ai_client_harness.py validate
+python3 scripts/ai_client_harness.py validate-research
+python3 scripts/ai_client_harness.py clients --initial-only
+python3 scripts/ai_client_harness.py probe-clients
+python3 scripts/ai_client_harness.py tasks
+```
+
+The harness defines OKF, open-web and raw-API arms; eight development smoke
+tasks; a common structured answer; answer-bound independent assessment;
+deterministic component scoring; enforced-versus-self-reported separation; and
+separate readiness outcomes so a blocked client is not scored as a wrong
+answer. CI performs no live, authenticated or paid model calls.
+
+See the
+[agent-access and multi-client evaluation proposal](docs/agent-access-and-evaluation-proposal.md)
+for the verified F1–F9 implications, the per-record hydration work package,
+client matrix and path to a preregistered ≥50-question comparative trial.
+
 ## What “all” means
 
 The repository may describe itself as covering **all public ONS metadata** only

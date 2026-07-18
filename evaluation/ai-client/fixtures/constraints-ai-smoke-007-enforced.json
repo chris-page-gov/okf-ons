@@ -1,0 +1,48 @@
+{
+  "schema": "okf-ons.enforcement-trace.v1",
+  "subject_type": "fault-profile",
+  "subject_sha256": "a703c2f643632e8fd9839651eb10eeb6232a96c6cb9eb8f07046d9090579820e",
+  "enforcer": {
+    "id": "fixture-capability-sandbox",
+    "version": "1"
+  },
+  "run_binding": {
+    "run_id": "constrained-cpih",
+    "client_profile_id": "codex-cli",
+    "arm_id": "okf-bundle",
+    "capture_sha256": "85322dfa158668c950d2cc664e9ad7fa3cdef2f6b0f3dad409e3454dca7727fa"
+  },
+  "results": [
+    {
+      "id": "constraint:browser",
+      "observed": false,
+      "passed": true
+    },
+    {
+      "id": "constraint:javascript",
+      "observed": false,
+      "passed": true
+    },
+    {
+      "id": "constraint:local_scratch",
+      "observed": false,
+      "passed": true
+    },
+    {
+      "id": "constraint:maximum_http_response_bytes",
+      "observed": 65536,
+      "passed": true
+    },
+    {
+      "id": "constraint:range_requests",
+      "observed": false,
+      "passed": true
+    },
+    {
+      "id": "constraint:shell_http",
+      "observed": false,
+      "passed": true
+    }
+  ],
+  "fixture_only": true
+}

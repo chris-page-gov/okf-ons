@@ -1,0 +1,120 @@
+{
+  "schema": "okf-ons.ai-client-observation.v1",
+  "observation_id": "claude-cowork-fable-5-20260718",
+  "study_id": null,
+  "controlled_comparison_eligible": false,
+  "capture": {
+    "fidelity": "contemporaneous-log",
+    "authoritative_artifact": "../../../research/OKF-ONS_AI_Access_Briefing_Input.md",
+    "artifact_sha256": "9a369917f08a0b0dfc5b2d19df6f0641231f7c864796e9059faf881a3954998e",
+    "native_provider_export": null,
+    "visible_transcript_preserved": "partial-in-authoritative-artifact",
+    "hidden_reasoning_collected": false
+  },
+  "client": {
+    "profile_id": "claude-cowork",
+    "host_surface": "Anthropic Cowork research preview",
+    "model_display_name": "Claude Fable 5",
+    "model_string": "claude-fable-5",
+    "model_effort": "not-captured",
+    "client_version": null
+  },
+  "bundle": {
+    "descriptor": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
+    "snapshot_id": "monday-2026-07-17"
+  },
+  "access": {
+    "arm": "okf-bundle",
+    "enforcement": "self-reported",
+    "methods_observed": ["HTTPS GET"],
+    "credentials_observed": false,
+    "local_scratch_observed": true,
+    "browser_attempted": true,
+    "browser_available": false,
+    "shell_http_available": false
+  },
+  "task_mapping": [
+    {
+      "source_task": "orient",
+      "smoke_task": "AI-SMOKE-001",
+      "status": "completed",
+      "fresh_context": false
+    },
+    {
+      "source_task": "standards briefing",
+      "smoke_task": "AI-SMOKE-002",
+      "status": "completed",
+      "fresh_context": false
+    },
+    {
+      "source_task": "key statistic and DCAT 3 / PROV-O demonstration",
+      "smoke_tasks": ["AI-SMOKE-003", "AI-SMOKE-005", "AI-SMOKE-008"],
+      "status": "degraded",
+      "fresh_context": false,
+      "outcome": {
+        "requested_record_id": "ons-data-api:dataset:cpih01",
+        "requested_record_located": true,
+        "requested_record_hydrated": false,
+        "substitute_record_id": "nomis:dataset:NM_1662_1",
+        "substitution_disclosed": true
+      }
+    }
+  ],
+  "telemetry": {
+    "tool_calls": {
+      "value": 35,
+      "unit": "calls",
+      "exact": true,
+      "source": "contemporaneous-log",
+      "scope": "three substantive tasks"
+    },
+    "estimated_context_tokens": {
+      "minimum": 19000,
+      "maximum": 24000,
+      "unit": "tokens",
+      "exact": false,
+      "source": "character-count reconstruction",
+      "scope": "three substantive tasks"
+    },
+    "spooled_returned_characters": {
+      "value": 503810,
+      "unit": "characters",
+      "exact": true,
+      "source": "tool spool notices",
+      "scope": "returned partial payloads, not complete upstream resources"
+    }
+  },
+  "failures": [
+    {
+      "code": "HTTP_RESPONSE_TRUNCATED",
+      "count": 3,
+      "stage": "record-hydration",
+      "classification": "client-capability-and-bundle-granularity"
+    },
+    {
+      "code": "HYDRATION_ROUTE_UNDECLARED",
+      "count": 1,
+      "stage": "record-hydration",
+      "classification": "bundle-contract"
+    },
+    {
+      "code": "AGENT_SEARCH_CONTRACT_UNCLEAR",
+      "count": 1,
+      "stage": "search",
+      "classification": "bundle-contract"
+    },
+    {
+      "code": "BROWSER_EXTENSION_DISCONNECTED",
+      "count": 4,
+      "stage": "fallback",
+      "classification": "client-readiness"
+    },
+    {
+      "code": "TRUNCATED_MCP_BINDINGS_MISINTERPRETED",
+      "count": 1,
+      "stage": "selection-binding-lookup",
+      "classification": "client-inference-after-truncation"
+    }
+  ],
+  "use_in_harness": "Regression seed and manual-import fidelity fixture only. Do not combine with controlled-arm scores."
+}

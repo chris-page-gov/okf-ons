@@ -1,0 +1,132 @@
+{
+  "schema": "okf-ons.research-evidence.v1",
+  "evidence_id": "claude-cowork-okf-access-2026-07-18",
+  "authority": {
+    "authoritative_artifact": "OKF-ONS_AI_Access_Briefing_Input.md",
+    "derivative_artifact": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
+    "rule": "The Markdown is authoritative. The public DOCX is a sanitized formatting derivative and does not override it."
+  },
+  "artifacts": [
+    {
+      "path": "OKF-ONS_AI_Access_Briefing_Input.md",
+      "role": "authoritative-research-record",
+      "media_type": "text/markdown",
+      "sha256": "9a369917f08a0b0dfc5b2d19df6f0641231f7c864796e9059faf881a3954998e"
+    },
+    {
+      "path": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
+      "role": "public-sanitized-formatted-derivative",
+      "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "4c45724e93261e5ee5d88ce4587925f54fc90a2129a50011815afbdbae4862ef",
+      "sanitized_from_sha256": "1e334a036fd6c27aa61463bb4613f0288ff5eb341f07a3cfa6c73f671d523ebf",
+      "redaction_log": {
+        "custom_properties_removed": 1,
+        "custom_relationships_removed": 1,
+        "external_relationships_redacted": 0,
+        "hyperlink_labels_redacted": 0
+      }
+    }
+  ],
+  "session": {
+    "date": "2026-07-18",
+    "host_surface": "Anthropic Cowork research preview",
+    "model_display_name": "Claude Fable 5",
+    "model_string": "claude-fable-5",
+    "model_effort": "not-captured",
+    "evidence_fidelity": "contemporaneous-log",
+    "native_provider_export_preserved": false,
+    "fresh_context_per_task": false,
+    "control_arms": [],
+    "controlled_trial_eligible": false,
+    "notes": [
+      "The user's label 'Fable 5 Max' is retained in surrounding context, but no separate Max model or effort identifier is evidenced in the artifacts.",
+      "Model identity, knowledge cutoff, chronology and transcript completeness are session-reported unless a native provider export is later attached.",
+      "Token values and some inline payload sizes in the source are estimates, not billing-grade telemetry."
+    ]
+  },
+  "later_verification": {
+    "repository_commit": "502c60e94e53a2acd7d26ebdb5b1b2ae376286f7",
+    "method": "Rebuilt the bundle from source/demo-snapshot and inspected the complete generated files.",
+    "generated_resource_bytes": {
+      "data/datasets-0.json": 5945923,
+      "data/datasets-3.json": 5203093,
+      "data/datasets-4.json": 6657633,
+      "data/search/doc-map.json": 333961,
+      "data/search/manifest.json": 75239,
+      "data/ons/mcp-bindings.json": 3037383
+    },
+    "canonical_single_record_bytes": {
+      "record_count": 4989,
+      "minimum": 5564,
+      "median": 12070,
+      "p90": 13116,
+      "p95": 13488,
+      "p99": 14866,
+      "maximum": 30708,
+      "records_over_65536": 0,
+      "cpih": 7131,
+      "serialization": "UTF-8 canonical pretty JSON produced by okf_ons.build.canonical_json"
+    }
+  },
+  "qualifications": [
+    {
+      "finding": "F1",
+      "status": "supported-for-orientation-only",
+      "qualification": "Named entrypoints enabled efficient overview and standards orientation. Exact record hydration later required a guessed path, so the evidence does not establish a guess-free end-to-end journey."
+    },
+    {
+      "finding": "F2",
+      "status": "hypothesis",
+      "qualification": "The session reports caveat relay, but n=1 without a raw export or stripped-caveat control does not establish that the format caused the behaviour."
+    },
+    {
+      "finding": "F3",
+      "status": "alignment-demonstration",
+      "qualification": "The hydrated record supports an evidence-mapping demonstration. It is not independent DCAT, PROV-O, statistical-product or legal-compliance certification."
+    },
+    {
+      "finding": "F4",
+      "status": "plausible-not-measured",
+      "qualification": "Confusable alternatives and reconciliation were available, but the trace does not measure whether they reduce wrong selections."
+    },
+    {
+      "finding": "F5",
+      "status": "confirmed-and-underestimated",
+      "qualification": "Fetch truncation was real. Complete dataset chunks are approximately 5.2 to 6.8 MB, not the source document's estimated 0.5 MB. No declared canonical per-record hydration path exists."
+    },
+    {
+      "finding": "F6",
+      "status": "confirmed-with-correction",
+      "qualification": "The current search contract is browser-oriented and poorly documented for agents. Shards use deterministic token prefixes rather than hashes, and one flat index would itself exceed common fetch caps."
+    },
+    {
+      "finding": "F7",
+      "status": "confirmed-client-and-contract-failures",
+      "qualification": "Spooling recovered partial evidence; the browser failure was a client readiness issue, while the empty guessed URL exposed an undeclared hydration contract."
+    },
+    {
+      "finding": "F8",
+      "status": "hypothesis",
+      "qualification": "Token economics may be favourable, but the reported token range is estimated and returned partial bytes must not be described as full-resource bytes."
+    },
+    {
+      "finding": "F9",
+      "status": "supported-for-one-session",
+      "qualification": "Unauthenticated read-only HTTPS plus scratch storage was sufficient in this session. Required capabilities may differ by client and must be probed."
+    },
+    {
+      "finding": "Appendix A call 28",
+      "status": "corrected-inference",
+      "qualification": "CPIH is present in the generated central MCP bindings file. The grep miss occurred because the client held only a truncated prefix of that multi-megabyte file."
+    }
+  ],
+  "document_validation": {
+    "docx_structurally_valid": true,
+    "page_number_fields_present": true,
+    "provenance_headers_present": true,
+    "macros_present": false,
+    "embedded_media_present": false,
+    "portability_warning": "A LibreOffice PDF render on macOS produced 13 pages and clipped top content on several even pages. This known source-layout limitation is preserved in the sanitized derivative; use the Markdown as content authority."
+  },
+  "assurance_boundary": "This manifest preserves and qualifies research evidence. It does not certify model performance, statistical accuracy, standards compliance, legal compliance or current standards currency."
+}

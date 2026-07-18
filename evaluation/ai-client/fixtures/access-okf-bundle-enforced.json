@@ -1,0 +1,35 @@
+{
+  "schema": "okf-ons.enforcement-trace.v1",
+  "subject_type": "access-policy",
+  "subject_sha256": "6f0bddeb54ec8e57eec50034546a2b45ef127712fe04eb2af14dc2511055f4c5",
+  "enforcer": {
+    "id": "fixture-origin-path-proxy",
+    "version": "1"
+  },
+  "run_binding": {
+    "run_id": "test-cpih",
+    "client_profile_id": "codex-cli",
+    "arm_id": "okf-bundle",
+    "capture_sha256": "85322dfa158668c950d2cc664e9ad7fa3cdef2f6b0f3dad409e3454dca7727fa"
+  },
+  "redirects_checked": true,
+  "results": [
+    {
+      "id": "origin-path-policy",
+      "passed": true
+    },
+    {
+      "id": "http-method-policy",
+      "passed": true
+    },
+    {
+      "id": "credential-policy",
+      "passed": true
+    },
+    {
+      "id": "redirect-policy",
+      "passed": true
+    }
+  ],
+  "fixture_only": true
+}

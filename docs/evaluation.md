@@ -237,3 +237,19 @@ The twelve cases are a strong regression seed, not a complete representation
 of all ONS user needs. Extend toward the MCP Geo research target of at least 20
 canonical tasks, including revision-sensitive and small-area cases, as bundle
 coverage stabilises.
+
+## AI-client utility is a separate study
+
+Static ranking quality and agent utility must not be folded into one score.
+The provider-neutral harness under
+[`evaluation/ai-client/`](../evaluation/ai-client/) measures whether a
+particular host/model combination can orient, select, hydrate, preserve
+caveats, expose alternatives and prepare an MCP hand-off under a declared
+access arm.
+
+Its eight public tasks are a development smoke suite. They do not satisfy the
+confirmatory design target of at least 50 unseen subject-reviewed questions,
+three access arms, repeated runs and blinded assessment. See the
+[agent-access and multi-client evaluation proposal](agent-access-and-evaluation-proposal.md)
+for that protocol and the separation between readiness blocks, task failures
+and answer-quality scores.
