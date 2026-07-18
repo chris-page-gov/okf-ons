@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from okf_ons.build import check_bundle, compile_bundle, default_inputs  # noqa: E402
+from okf_ons.build import canonical_json, check_bundle, compile_bundle, default_inputs  # noqa: E402
 
 
 def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
@@ -77,6 +77,22 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         for row in json.loads((output / path).read_text())
     ]
     dataset_names = {row["name"] for row in dataset_rows}
+    research_manifest = json.loads((ROOT / "research" / "manifest.json").read_text())
+    measured = research_manifest["later_verification"]
+    for relative, expected_bytes in measured["generated_resource_bytes"].items():
+        assert (output / relative).stat().st_size == expected_bytes
+    record_sizes = sorted(len(canonical_json(row).encode("utf-8")) for row in dataset_rows)
+    recorded_sizes = measured["canonical_single_record_bytes"]
+    assert recorded_sizes["record_count"] == len(record_sizes)
+    assert recorded_sizes["minimum"] == record_sizes[0]
+    assert recorded_sizes["median"] == record_sizes[int((len(record_sizes) - 1) * 0.5)]
+    assert recorded_sizes["p90"] == record_sizes[int((len(record_sizes) - 1) * 0.9)]
+    assert recorded_sizes["p95"] == record_sizes[int((len(record_sizes) - 1) * 0.95)]
+    assert recorded_sizes["p99"] == record_sizes[int((len(record_sizes) - 1) * 0.99)]
+    assert recorded_sizes["maximum"] == record_sizes[-1]
+    assert recorded_sizes["records_over_65536"] == sum(size > 65_536 for size in record_sizes)
+    cpih_row = next(row for row in dataset_rows if row["id"] == "ons-data-api:dataset:cpih01")
+    assert recorded_sizes["cpih"] == len(canonical_json(cpih_row).encode("utf-8"))
     resource_datasets = {
         row["dataset"]
         for path in data_manifest["chunks"]["resources"]

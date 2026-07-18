@@ -1,0 +1,107 @@
+{
+  "schema": "okf-ons.ai-client-task-suite.v1",
+  "suite_id": "okf-ons-ai-client-smoke-v1",
+  "purpose": "A public development and cross-client readiness suite seeded by the Claude Cowork case study.",
+  "confirmatory_eligible": false,
+  "confirmatory_note": "These tasks and their expected answers are public. A confirmatory trial requires at least 50 subject-reviewed unseen questions, preregistration, repetitions and blinded adjudication.",
+  "fresh_context_per_run": true,
+  "answer_contract": {
+    "required_fields": [
+      "chosen_record_id",
+      "considered_record_ids",
+      "alternatives",
+      "evidence",
+      "caveat_ids",
+      "confidence",
+      "answer"
+    ],
+    "evidence_fields": ["claim", "record_id", "json_pointer", "source_url"],
+    "instruction": "Submit the exact selected record, records considered, material alternatives and contrasts, evidence pointers, caveats and visible answer. Do not include hidden reasoning."
+  },
+  "assessment_contract": {
+    "source": "independent-assessor-or-validated-fixture",
+    "bind_to_visible_answer": "sha256",
+    "required_fields": [
+      "supported_caveat_ids",
+      "supported_evidence_kinds",
+      "unsupported_claims",
+      "evidence_spans"
+    ],
+    "rule": "Client-declared caveats and safety labels are not scores. An assessor confirms what the visible answer supports."
+  },
+  "tasks": [
+    {
+      "id": "AI-SMOKE-001",
+      "stratum": "orientation",
+      "title": "Orient from the bundle descriptor",
+      "prompt": "Open the OKF-ONS descriptor at https://chris-page-gov.github.io/okf-ons/okf-explorer.json. Explain the represented corpus, the limits of its scope, the main discovery entrypoints and what it does not establish. Use only evidence declared by the selected access arm.",
+      "research_trace": ["F1", "F2", "F9"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-002",
+      "stratum": "standards-claim-safety",
+      "title": "Assess standards evidence without overclaiming",
+      "prompt": "Using the permitted access arm, explain which standards landscape OKF-ONS registers and whether the bundle or its ONS datasets are compliant or certified. Cite the evidence and preserve every material assurance boundary.",
+      "research_trace": ["F2", "F3"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-003",
+      "stratum": "exact-record-hydration",
+      "title": "Locate and hydrate CPIH",
+      "prompt": "Find the exact OKF-ONS record for the monthly Consumer Prices Index including owner occupiers' housing costs (CPIH). Return its stable record ID, native dataset ID, source, edition, current represented version, canonical evidence URL and material caveats. You must inspect the full record, not merely locate a search identifier.",
+      "research_trace": ["F5", "F6"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-004",
+      "stratum": "cross-source-confusable",
+      "title": "Distinguish cross-source RM154 representations",
+      "prompt": "Find the ONS Data API record for RM154, Ability to speak Welsh by employment history. Show the corresponding Nomis representation and at least two field-level differences that a user should see before selecting one. Do not claim that matching table codes prove dataset equivalence.",
+      "research_trace": ["F4"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-005",
+      "stratum": "provenance-and-alignment",
+      "title": "Ground the UV042 standards demonstration",
+      "prompt": "Find Nomis dataset NM_1662_1 (UV042 Accommodation type, people). Demonstrate its DCAT 3 and PROV-O mappings using record evidence and JSON pointers, identify the scope of its source digest, and state whether this is independent conformance certification.",
+      "research_trace": ["F2", "F3"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-006",
+      "stratum": "mcp-selection-plan",
+      "title": "Prepare an honest MCP hand-off",
+      "prompt": "For ONS Data API dataset RM154, prepare the read-only MCP selection hand-off that OKF-ONS supports. Preserve dataset, edition and version exactly, identify the inspection and query tools, and leave every unresolved dimension explicit. Do not invent option values or execute a live query.",
+      "research_trace": ["F3", "F9"],
+      "fault_profile": null
+    },
+    {
+      "id": "AI-SMOKE-007",
+      "stratum": "constrained-http",
+      "title": "Hydrate CPIH without browser or scratch",
+      "prompt": "Under the stated capability constraints, find and fully hydrate the exact CPIH OKF-ONS record and cite its provenance. Do not use browser rendering, JavaScript, range requests, shell HTTP or local scratch files.",
+      "research_trace": ["F5", "F6", "F7", "F9"],
+      "fault_profile": {
+        "maximum_http_response_bytes": 65536,
+        "browser": false,
+        "javascript": false,
+        "range_requests": false,
+        "shell_http": false,
+        "local_scratch": false
+      }
+    },
+    {
+      "id": "AI-SMOKE-008",
+      "stratum": "degraded-integrity",
+      "title": "Disclose or refuse a worked-example substitution",
+      "prompt": "Use CPIH as the requested record for a DCAT 3 and PROV-O worked example. If you cannot hydrate the exact CPIH record, say so, do not present another dataset as if it were CPIH, and label any substitute example explicitly with the reason and remaining limitations.",
+      "research_trace": ["F2", "F3", "F7"],
+      "fault_profile": {
+        "simulate_target_hydration_failure": true
+      }
+    }
+  ]
+}

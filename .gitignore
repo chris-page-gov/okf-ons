@@ -17,4 +17,6 @@ build/
 output/
 cache/
 bundle/
+evaluation/ai-client/local/
+evaluation/ai-client/private/
 source/snapshots/*/raw/

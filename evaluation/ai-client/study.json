@@ -1,0 +1,156 @@
+{
+  "schema": "okf-ons.ai-client-study.v1",
+  "study_id": "okf-ons-ai-client-smoke-v1",
+  "status": "development-smoke-suite",
+  "bundle": {
+    "descriptor": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
+    "snapshot_id": "monday-2026-07-17",
+    "repository_commit": "502c60e94e53a2acd7d26ebdb5b1b2ae376286f7",
+    "descriptor_sha256": "8b33f729a03a7e26956542c4c47e5728be5bdfe4609349469340bc9bbf2c39a7"
+  },
+  "inputs": {
+    "tasks": "evaluation/ai-client/tasks.json",
+    "tasks_sha256": "f3b2237c9009e947ef67c54ec37b7ce8e6bf101f39ca68e9136de027e6d3d518",
+    "expected": "evaluation/ai-client/expected.json",
+    "expected_sha256": "8c4ae366c85ecdce471da43835a6a3106a7390de9bbd7b004ca43f0d76609e33",
+    "client_profiles": "evaluation/ai-client/client-profiles.json",
+    "client_profiles_sha256": "d1e35249fc5cd800a6e0c27ba46b02e313b5547b84e31085ede2de9ebc51e561"
+  },
+  "delivery_modes": [
+    {
+      "id": "native-access",
+      "purpose": "Measure the real fetch, browser, JavaScript, spooling and file constraints of each host."
+    },
+    {
+      "id": "controlled-broker",
+      "purpose": "Give each MCP-capable host the same descriptor, search, get-record, compare and submit-answer tools."
+    }
+  ],
+  "arms": [
+    {
+      "id": "okf-bundle",
+      "purpose": "Use only the pinned OKF-ONS bundle.",
+      "allowed_targets": [
+        {
+          "origin": "https://chris-page-gov.github.io",
+          "path_prefixes": ["/okf-ons/"]
+        }
+      ],
+      "denied_targets": [
+        {
+          "origin": "https://api.beta.ons.gov.uk",
+          "path_prefixes": ["/"]
+        },
+        {
+          "origin": "https://www.nomisweb.co.uk",
+          "path_prefixes": ["/"]
+        },
+        {
+          "origin": "https://geoportal.statistics.gov.uk",
+          "path_prefixes": ["/"]
+        }
+      ],
+      "allowed_http_methods": ["GET"],
+      "credentials_allowed": false
+    },
+    {
+      "id": "open-web",
+      "purpose": "Use ordinary public web search and pages without the OKF bundle or raw catalogue APIs.",
+      "allowed_targets": [
+        {
+          "origin": "*",
+          "path_prefixes": ["*"]
+        }
+      ],
+      "denied_targets": [
+        {
+          "origin": "https://chris-page-gov.github.io",
+          "path_prefixes": ["/okf-ons/"]
+        },
+        {
+          "origin": "https://api.beta.ons.gov.uk",
+          "path_prefixes": ["/"]
+        },
+        {
+          "origin": "https://www.nomisweb.co.uk",
+          "path_prefixes": ["/api/"]
+        },
+        {
+          "origin": "https://geoportal.statistics.gov.uk",
+          "path_prefixes": ["/api/"]
+        }
+      ],
+      "allowed_http_methods": ["GET"],
+      "credentials_allowed": false
+    },
+    {
+      "id": "raw-api",
+      "purpose": "Use official ONS catalogue APIs without OKF or generic search.",
+      "allowed_targets": [
+        {
+          "origin": "https://api.beta.ons.gov.uk",
+          "path_prefixes": ["/v1/"]
+        },
+        {
+          "origin": "https://www.nomisweb.co.uk",
+          "path_prefixes": ["/api/v01/"]
+        },
+        {
+          "origin": "https://geoportal.statistics.gov.uk",
+          "path_prefixes": ["/api/search/"]
+        }
+      ],
+      "denied_targets": [
+        {
+          "origin": "https://chris-page-gov.github.io",
+          "path_prefixes": ["/okf-ons/"]
+        }
+      ],
+      "allowed_http_methods": ["GET"],
+      "credentials_allowed": false
+    }
+  ],
+  "run_contract": {
+    "fresh_context_per_run": true,
+    "arm_enforcement_values": ["enforced", "observed", "self-reported"],
+    "readiness_outcomes": [
+      "ready",
+      "blocked",
+      "manual-required",
+      "not-probed"
+    ],
+    "task_statuses": [
+      "completed",
+      "degraded",
+      "failed",
+      "blocked",
+      "not-run"
+    ],
+    "raw_exports_committed": false,
+    "hidden_reasoning_collected": false,
+    "comparative_runs_require_enforced_access": true,
+    "access_enforcement_requires_evidence": true,
+    "fault_profiles_require_enforcement_evidence": true,
+    "ci_live_network": false,
+    "ci_paid_calls": false
+  },
+  "primary_outcome": {
+    "id": "safe-exact-selection",
+    "definition": "The correct source-qualified target and required edition/version are selected, the exact record is hydrated when required, material caveats are retained and no critical unsupported claim is made.",
+    "report_components_separately": true
+  },
+  "confirmatory_extension": {
+    "minimum_subject_reviewed_tasks": 50,
+    "minimum_replicates_per_cell": 3,
+    "paired_by_task": true,
+    "randomised_order": true,
+    "fresh_context_per_run": true,
+    "gold_hidden_until_collection_frozen": true,
+    "blind_human_assessors": 2,
+    "adjudication_required": true,
+    "report_host_and_model_combination": true,
+    "causal_client_effect_claim_allowed": false,
+    "stopping_rule": "Attempt every preregistered client, arm, task and replicate cell once; report readiness blocks separately."
+  },
+  "assurance_boundary": "Deterministic means assignment, capture, replay and scoring are repeatable. Model output is stochastic. The study evaluates metadata discovery behaviour, not statistical accuracy."
+}

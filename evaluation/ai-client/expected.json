@@ -1,0 +1,188 @@
+{
+  "schema": "okf-ons.ai-client-expected.v1",
+  "suite_id": "okf-ons-ai-client-smoke-v1",
+  "visibility": "public-development-gold",
+  "warning": "This file is suitable for deterministic regression scoring, not blinded confirmatory research.",
+  "caveat_register": {
+    "metadata-only": "The bundle stores metadata, not observation values.",
+    "incomplete-ons-corpus": "The demonstrator does not represent every ONS metadata surface.",
+    "accuracy-not-evaluated": "Metadata evidence does not establish statistical accuracy.",
+    "alignment-not-certification": "Vocabulary or profile alignment is not standards, product or legal-compliance certification.",
+    "evidence-not-fitness-certification": "Evidence availability does not establish methodological quality or fitness for use.",
+    "reconciliation-not-equivalence": "A shared code or cross-source match does not prove statistical equivalence.",
+    "selection-incomplete-no-execution": "Missing dimensions and options remain explicit and no live query is executed.",
+    "substitution-disclosed": "A substitute worked example is named and distinguished from the requested record."
+  },
+  "tasks": [
+    {
+      "task_id": "AI-SMOKE-001",
+      "acceptable_record_ids": [],
+      "acceptable_native_ids": [],
+      "acceptable_source_surfaces": [],
+      "acceptable_editions": [],
+      "acceptable_versions": [],
+      "allowed_hydration_statuses": ["not-required"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "metadata-only",
+        "incomplete-ons-corpus",
+        "accuracy-not-evaluated",
+        "alignment-not-certification"
+      ],
+      "required_evidence_kinds": ["descriptor", "entrypoint", "scope"],
+      "mcp_plan_required": false,
+      "substitution_policy": "not-applicable"
+    },
+    {
+      "task_id": "AI-SMOKE-002",
+      "acceptable_record_ids": [],
+      "acceptable_native_ids": [],
+      "acceptable_source_surfaces": [],
+      "acceptable_editions": [],
+      "acceptable_versions": [],
+      "allowed_hydration_statuses": ["not-required"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "accuracy-not-evaluated",
+        "alignment-not-certification",
+        "evidence-not-fitness-certification"
+      ],
+      "required_evidence_kinds": ["standards-register", "standards-evaluation"],
+      "mcp_plan_required": false,
+      "substitution_policy": "not-applicable"
+    },
+    {
+      "task_id": "AI-SMOKE-003",
+      "acceptable_record_ids": ["ons-data-api:dataset:cpih01"],
+      "acceptable_native_ids": ["cpih01"],
+      "acceptable_source_surfaces": ["ons-data-api"],
+      "acceptable_editions": ["time-series"],
+      "acceptable_versions": ["67"],
+      "allowed_hydration_statuses": ["complete"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "accuracy-not-evaluated",
+        "evidence-not-fitness-certification"
+      ],
+      "required_evidence_kinds": ["identity", "provenance", "quality"],
+      "mcp_plan_required": false,
+      "substitution_policy": "forbidden"
+    },
+    {
+      "task_id": "AI-SMOKE-004",
+      "acceptable_record_ids": ["ons-data-api:dataset:RM154"],
+      "acceptable_native_ids": ["RM154"],
+      "acceptable_source_surfaces": ["ons-data-api"],
+      "acceptable_editions": ["2021"],
+      "acceptable_versions": ["3"],
+      "allowed_hydration_statuses": ["complete"],
+      "required_alternative_ids": ["nomis:dataset:NM_2254_1"],
+      "required_contrast_fields": ["source surface", "record type"],
+      "required_caveat_ids": ["reconciliation-not-equivalence"],
+      "required_evidence_kinds": ["identity", "alternative", "reconciliation"],
+      "mcp_plan_required": false,
+      "substitution_policy": "forbidden"
+    },
+    {
+      "task_id": "AI-SMOKE-005",
+      "acceptable_record_ids": ["nomis:dataset:NM_1662_1"],
+      "acceptable_native_ids": ["NM_1662_1"],
+      "acceptable_source_surfaces": ["nomis"],
+      "acceptable_editions": [],
+      "acceptable_versions": [],
+      "allowed_hydration_statuses": ["complete"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "alignment-not-certification",
+        "accuracy-not-evaluated",
+        "evidence-not-fitness-certification"
+      ],
+      "required_evidence_kinds": ["identity", "provenance", "standards"],
+      "mcp_plan_required": false,
+      "substitution_policy": "forbidden"
+    },
+    {
+      "task_id": "AI-SMOKE-006",
+      "acceptable_record_ids": ["ons-data-api:dataset:RM154"],
+      "acceptable_native_ids": ["RM154"],
+      "acceptable_source_surfaces": ["ons-data-api"],
+      "acceptable_editions": ["2021"],
+      "acceptable_versions": ["3"],
+      "allowed_hydration_statuses": ["complete"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": ["selection-incomplete-no-execution"],
+      "required_evidence_kinds": ["identity", "mcp-selection"],
+      "mcp_plan_required": true,
+      "mcp_plan_expected": {
+        "source": "ons-data-api",
+        "record_id": "ons-data-api:dataset:RM154",
+        "inspection_tool": "ons_data.dimensions",
+        "query_tool": "ons_data.query",
+        "arguments": {
+          "dataset": "RM154",
+          "edition": "2021",
+          "version": "3"
+        },
+        "complete": false,
+        "minimum_unknown_dimensions": 1,
+        "unknown_dimension_evidence": {
+          "record_id": "ons-data-api:dataset:RM154",
+          "json_pointer": "/selection/reason"
+        },
+        "executed": false
+      },
+      "substitution_policy": "forbidden"
+    },
+    {
+      "task_id": "AI-SMOKE-007",
+      "acceptable_record_ids": ["ons-data-api:dataset:cpih01"],
+      "acceptable_native_ids": ["cpih01"],
+      "acceptable_source_surfaces": ["ons-data-api"],
+      "acceptable_editions": ["time-series"],
+      "acceptable_versions": ["67"],
+      "allowed_hydration_statuses": ["complete"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "accuracy-not-evaluated",
+        "evidence-not-fitness-certification"
+      ],
+      "required_evidence_kinds": ["identity", "provenance"],
+      "mcp_plan_required": false,
+      "substitution_policy": "forbidden"
+    },
+    {
+      "task_id": "AI-SMOKE-008",
+      "acceptable_record_ids": ["ons-data-api:dataset:cpih01"],
+      "acceptable_native_ids": ["cpih01"],
+      "acceptable_source_surfaces": ["ons-data-api"],
+      "acceptable_editions": [],
+      "acceptable_versions": [],
+      "allowed_hydration_statuses": ["unavailable", "partial"],
+      "required_alternative_ids": [],
+      "required_contrast_fields": [],
+      "required_caveat_ids": [
+        "alignment-not-certification",
+        "substitution-disclosed"
+      ],
+      "required_evidence_kinds": ["identity"],
+      "mcp_plan_required": false,
+      "substitution_policy": "disclose-or-abstain"
+    }
+  ],
+  "critical_claim_review_prompts": [
+    "metadata evidence proves statistical accuracy",
+    "aligned means certified",
+    "cross-source code match proves equivalence",
+    "missing dimensions may be silently defaulted"
+  ],
+  "statistical_accuracy": {
+    "evaluated": false,
+    "statement": "The harness scores discovery behaviour and evidence handling. It does not establish the accuracy of ONS observations or estimates."
+  }
+}
