@@ -34,6 +34,14 @@ RUN_SCHEMA = "okf-ons.ai-client-run.v1"
 SCORE_SCHEMA = "okf-ons.ai-client-score.v1"
 REPORT_SCHEMA = "okf-ons.ai-client-report.v1"
 
+CONNECTION_STATE_TRANSPORTS = {
+    "repository-configured": frozenset({"local-stdio"}),
+    "setup-required": frozenset({"local-stdio"}),
+    "execution-mode-dependent": frozenset({"local-or-remote-mcp"}),
+    "remote-endpoint-required": frozenset({"remote-https-mcp"}),
+    "not-established": frozenset({"none-established"}),
+    "protocol-baseline": frozenset({"local-stdio"}),
+}
 TASK_STATUSES = frozenset({"completed", "degraded", "failed", "blocked", "not-run"})
 ENFORCEMENT_VALUES = frozenset({"enforced", "observed", "self-reported"})
 CONSTRAINT_ENFORCEMENT_VALUES = frozenset(
@@ -346,11 +354,45 @@ def validate_public_value(value: object) -> None:
             )
 
 
-def validate_profiles(profiles: Mapping[str, Any]) -> set[str]:
+def validate_profiles(profiles: Mapping[str, Any], *, root: Path) -> set[str]:
     if profiles.get("schema") != PROFILES_SCHEMA:
         raise AIEvaluationError(f"unsupported profiles schema: {profiles.get('schema')!r}")
+    guide = profiles.get("connection_guide")
+    if not isinstance(guide, Mapping):
+        raise AIEvaluationError("profiles.connection_guide must be an object")
+    guide_path_text = _require_string(
+        guide.get("path"),
+        "profiles.connection_guide.path",
+    )
+    guide_path = Path(guide_path_text)
+    if guide_path.is_absolute() or ".." in guide_path.parts:
+        raise AIEvaluationError(
+            "profiles.connection_guide.path must be repository-relative"
+        )
+    guide_file = root / guide_path
+    if not guide_file.is_file():
+        raise AIEvaluationError(
+            f"profiles.connection_guide.path does not exist: {guide_path_text}"
+        )
+    guide_digest = _require_string(
+        guide.get("sha256"),
+        "profiles.connection_guide.sha256",
+    )
+    if not _is_sha256(guide_digest) or _file_digest(guide_file) != guide_digest:
+        raise AIEvaluationError("profiles connection-guide digest mismatch")
+    verified_on = _require_string(
+        guide.get("verified_on"),
+        "profiles.connection_guide.verified_on",
+    )
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", verified_on):
+        raise AIEvaluationError(
+            "profiles.connection_guide.verified_on must use YYYY-MM-DD"
+        )
+    guide_text = guide_file.read_text(encoding="utf-8")
+
     identifiers = _unique_ids(profiles.get("profiles"), "profiles")
     for index, profile in enumerate(profiles["profiles"]):
+        profile_id = _require_string(profile.get("id"), f"profiles[{index}].id")
         _require_string(profile.get("product"), f"profiles[{index}].product")
         _require_string(profile.get("surface"), f"profiles[{index}].surface")
         _require_string(profile.get("automation"), f"profiles[{index}].automation")
@@ -361,6 +403,43 @@ def validate_profiles(profiles: Mapping[str, Any]) -> set[str]:
             )
         if not isinstance(profile.get("capabilities"), Mapping):
             raise AIEvaluationError(f"profiles[{index}].capabilities must be an object")
+        connection = profile.get("connection")
+        if not isinstance(connection, Mapping):
+            raise AIEvaluationError(f"profiles[{index}].connection must be an object")
+        state = _require_string(
+            connection.get("state"),
+            f"profiles[{index}].connection.state",
+        )
+        transport = _require_string(
+            connection.get("transport"),
+            f"profiles[{index}].connection.transport",
+        )
+        allowed_transports = CONNECTION_STATE_TRANSPORTS.get(state)
+        if allowed_transports is None:
+            raise AIEvaluationError(
+                f"profiles[{index}].connection.state is unsupported: {state}"
+            )
+        if transport not in allowed_transports:
+            raise AIEvaluationError(
+                f"profiles[{index}] connection {state} cannot use {transport}"
+            )
+        _require_string(
+            connection.get("configuration_scope"),
+            f"profiles[{index}].connection.configuration_scope",
+        )
+        guide_section = _require_string(
+            connection.get("guide_section"),
+            f"profiles[{index}].connection.guide_section",
+        )
+        if f"## {guide_section}\n" not in guide_text:
+            raise AIEvaluationError(
+                f"profiles[{index}] references a missing connection-guide section: "
+                f"{guide_section}"
+            )
+        if f"| `{profile_id}` |" not in guide_text:
+            raise AIEvaluationError(
+                f"connection guide does not cover profile ID: {profile_id}"
+            )
     validate_public_value(profiles)
     return identifiers
 
@@ -834,7 +913,7 @@ def load_harness(root: str | Path) -> dict[str, Any]:
     validate_expected(loaded["expected"], task_ids=task_ids)
     if loaded["expected"]["suite_id"] != study["study_id"]:
         raise AIEvaluationError("study and expected suite identifiers differ")
-    profile_ids = validate_profiles(loaded["client_profiles"])
+    profile_ids = validate_profiles(loaded["client_profiles"], root=repository)
     if profile_ids != set(LOCAL_CLIENT_PROBES):
         missing = sorted(profile_ids - set(LOCAL_CLIENT_PROBES))
         extra = sorted(set(LOCAL_CLIENT_PROBES) - profile_ids)
@@ -1899,10 +1978,14 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
         raise AIEvaluationError("unsupported research evidence register schema")
     trial_ids = _unique_ids(manifest.get("trials"), "research trials")
     verified: list[dict[str, Any]] = []
+    manifest_artifacts: dict[str, Mapping[str, Any]] = {}
     for row in manifest.get("artifacts", []):
         if not isinstance(row, Mapping):
             raise AIEvaluationError("research manifest artifact must be an object")
         relative = _require_string(row.get("path"), "research artifact path")
+        if relative in manifest_artifacts:
+            raise AIEvaluationError(f"duplicate research artifact path: {relative}")
+        manifest_artifacts[relative] = row
         if Path(relative).is_absolute() or ".." in Path(relative).parts:
             raise AIEvaluationError(f"unsafe research artifact path: {relative}")
         if row.get("trial_id") not in trial_ids:
@@ -2011,6 +2094,25 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
         raise AIEvaluationError(
             "research register must not imply formal information-governance clearance"
         )
+    if public_release.get("private_raw_packages_in_repository") is not False:
+        raise AIEvaluationError("research register must exclude private raw Office packages")
+    repository_docx = {path.name for path in research.glob("*.docx")}
+    manifest_docx = {
+        artifact["path"] for artifact in verified if artifact["path"].endswith(".docx")
+    }
+    if repository_docx != manifest_docx:
+        raise AIEvaluationError(
+            "research DOCX files and public manifest entries differ: "
+            f"repository_only={sorted(repository_docx - manifest_docx)}, "
+            f"manifest_only={sorted(manifest_docx - repository_docx)}"
+        )
+    unsafe_docx_names = sorted(
+        path for path in repository_docx if not path.endswith("-public-sanitized.docx")
+    )
+    if unsafe_docx_names:
+        raise AIEvaluationError(
+            f"research directory contains non-sanitized DOCX names: {unsafe_docx_names}"
+        )
     reviewed_hashes = public_release.get("reviewed_artifact_sha256")
     if not isinstance(reviewed_hashes, Mapping):
         raise AIEvaluationError("research public-release hashes are missing")
@@ -2020,6 +2122,61 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
                 f"research public-release review digest mismatch: {report['path']}"
             )
 
+    document_validation = manifest.get("document_validation")
+    if not isinstance(document_validation, list):
+        raise AIEvaluationError("research document-validation register is missing")
+    validation_by_artifact: dict[str, Mapping[str, Any]] = {}
+    for index, row in enumerate(document_validation):
+        if not isinstance(row, Mapping):
+            raise AIEvaluationError(
+                f"research document_validation[{index}] must be an object"
+            )
+        artifact = _require_string(
+            row.get("artifact"),
+            f"research document_validation[{index}].artifact",
+        )
+        if artifact in validation_by_artifact:
+            raise AIEvaluationError(
+                f"duplicate rendered-document validation: {artifact}"
+            )
+        validation_by_artifact[artifact] = row
+        if row.get("docx_structurally_valid") is not True:
+            raise AIEvaluationError(f"DOCX structural review failed: {artifact}")
+        rendered_pages = row.get("rendered_pages")
+        if (
+            not isinstance(rendered_pages, int)
+            or isinstance(rendered_pages, bool)
+            or rendered_pages < 1
+        ):
+            raise AIEvaluationError(
+                f"DOCX all-page rendered review is missing: {artifact}"
+            )
+        _require_string(
+            row.get("portability_warning"),
+            f"research document_validation[{index}].portability_warning",
+        )
+    if set(validation_by_artifact) != manifest_docx:
+        raise AIEvaluationError(
+            "rendered-document review coverage differs from public DOCX artifacts"
+        )
+
+    capture_artifact_fields = (
+        (
+            "authoritative_artifact",
+            "artifact_sha256",
+            "sanitized_from_sha256",
+        ),
+        (
+            "produced_output",
+            "produced_output_sha256",
+            None,
+        ),
+        (
+            "additional_artifact",
+            "additional_artifact_sha256",
+            "additional_artifact_sanitized_from_sha256",
+        ),
+    )
     for trial in manifest["trials"]:
         observation = _require_string(
             trial.get("observation"),
@@ -2045,6 +2202,65 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
             raise AIEvaluationError(
                 f"research trial observation digest mismatch: {trial['id']}"
             )
+        capture = normalized.get("capture")
+        if not isinstance(capture, Mapping):
+            raise AIEvaluationError(
+                f"research trial observation has no capture object: {trial['id']}"
+            )
+        for path_key, digest_key, source_digest_key in capture_artifact_fields:
+            if path_key not in capture:
+                continue
+            capture_relative = _require_string(
+                capture.get(path_key),
+                f"research trial {trial['id']} capture.{path_key}",
+            )
+            capture_path = (observation_path.parent / capture_relative).resolve()
+            try:
+                manifest_relative = capture_path.relative_to(research).as_posix()
+            except ValueError as error:
+                raise AIEvaluationError(
+                    f"research trial capture escapes research directory: "
+                    f"{trial['id']} {capture_relative}"
+                ) from error
+            manifest_row = manifest_artifacts.get(manifest_relative)
+            if manifest_row is None:
+                raise AIEvaluationError(
+                    f"research trial capture is absent from manifest: "
+                    f"{trial['id']} {manifest_relative}"
+                )
+            if manifest_row.get("trial_id") != trial["id"]:
+                raise AIEvaluationError(
+                    f"research trial capture belongs to another trial: "
+                    f"{trial['id']} {manifest_relative}"
+                )
+            capture_digest = _require_string(
+                capture.get(digest_key),
+                f"research trial {trial['id']} capture.{digest_key}",
+            )
+            if (
+                capture_digest != manifest_row.get("sha256")
+                or _file_digest(capture_path) != capture_digest
+            ):
+                raise AIEvaluationError(
+                    f"research trial capture digest mismatch: "
+                    f"{trial['id']} {manifest_relative}"
+                )
+            if (
+                source_digest_key is not None
+                and "sanitized_from_sha256" in manifest_row
+            ):
+                source_digest = _require_string(
+                    capture.get(source_digest_key),
+                    f"research trial {trial['id']} capture.{source_digest_key}",
+                )
+                if (
+                    source_digest != manifest_row.get("sanitized_from_sha256")
+                    or source_digest == capture_digest
+                ):
+                    raise AIEvaluationError(
+                        f"research trial sanitized-source digest mismatch: "
+                        f"{trial['id']} {manifest_relative}"
+                    )
 
     return {
         "schema": "okf-ons.research-validation.v1",
@@ -2057,6 +2273,8 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
         "docx_macros_present": False,
         "docx_page_field_present": True,
         "docx_public_metadata_safe": True,
+        "observation_artifact_links_valid": True,
+        "rendered_document_review_complete": True,
         "public_release_review": dict(public_release),
     }
 

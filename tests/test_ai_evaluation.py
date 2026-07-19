@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -20,6 +21,12 @@ from okf_ons.ai_evaluation import (  # noqa: E402
     score_run,
     validate_research_artifacts,
     validate_run,
+)
+from okf_ons.mcp_broker import (  # noqa: E402
+    PROTOCOL_VERSION,
+    SERVER_NAME,
+    SERVER_VERSION,
+    TOOL_DEFINITIONS,
 )
 
 ASSESSMENT_PROVENANCE = hashlib.sha256(b"okf-ons-validated-test-assessor-v1").hexdigest()
@@ -129,8 +136,28 @@ def test_committed_harness_is_cross_validated_and_has_three_arms(harness: dict) 
     assert harness["expected"]["statistical_accuracy"]["evaluated"] is False
 
 
+def test_connection_guide_is_pinned_and_covers_the_broker_and_every_profile(
+    harness: dict,
+) -> None:
+    profiles = harness["client_profiles"]
+    guide_path = ROOT / profiles["connection_guide"]["path"]
+    guide = guide_path.read_text(encoding="utf-8")
+
+    assert profiles["connection_guide"]["verified_on"] == "2026-07-19"
+    assert SERVER_NAME in guide
+    assert SERVER_VERSION in guide
+    assert PROTOCOL_VERSION in guide
+    for tool in TOOL_DEFINITIONS:
+        assert f"`{tool['name']}`" in guide
+    for profile in profiles["profiles"]:
+        assert f"| `{profile['id']}` |" in guide
+        assert f"## {profile['connection']['guide_section']}\n" in guide
+
+
 def test_research_sources_are_hash_pinned_and_docx_is_safe() -> None:
     report = validate_research_artifacts(ROOT)
+    manifest = json.loads((ROOT / "research" / "manifest.json").read_text())
+    trials = {trial["id"]: trial for trial in manifest["trials"]}
 
     assert report["trial_count"] == 3
     assert report["authoritative_artifact"] == (
@@ -140,11 +167,32 @@ def test_research_sources_are_hash_pinned_and_docx_is_safe() -> None:
     assert report["docx_macros_present"] is False
     assert report["docx_page_field_present"] is True
     assert report["docx_public_metadata_safe"] is True
+    assert report["observation_artifact_links_valid"] is True
+    assert report["rendered_document_review_complete"] is True
     assert len(report["docx_artifacts"]) == 3
     assert all(
         row["public_inspection"]["public_metadata_safe"]
         for row in report["docx_artifacts"]
     )
+    assert (
+        trials["claude-desktop-cowork-fable-5-20260718"]["execution_mode"]
+        == "not-captured"
+    )
+    m365_trial = trials["m365-copilot-researcher-edge-20260718"]
+    assert {
+        key: m365_trial[key]
+        for key in (
+            "remote_federated_connector_required",
+            "deployment_verified",
+            "user_source_connection_verified",
+            "licensed_test_user_required",
+        )
+    } == {
+        "remote_federated_connector_required": True,
+        "deployment_verified": False,
+        "user_source_connection_verified": False,
+        "licensed_test_user_required": True,
+    }
     assert {row["path"] for row in report["artifacts"]} == {
         "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
         (

@@ -1,17 +1,22 @@
 # Agent access and multi-client evaluation proposal
 
-> Historical design note: the local controlled broker and expanded evidence
-> model proposed here are now implemented. See
-> [`ai-client-trial-analysis.md`](ai-client-trial-analysis.md) for the
-> cross-client synthesis and [`mcp-client-rollout.md`](mcp-client-rollout.md)
-> for current client configuration.
+> **Historical design note.** This document records the proposal that preceded
+> the current local broker and expanded evidence model; future-tense sections
+> below are retained to show that design history and are not a current setup
+> guide. Use [`mcp-client-rollout.md`](mcp-client-rollout.md) for the canonical
+> client-by-client connection status,
+> [`ai-client-trial-analysis.md`](ai-client-trial-analysis.md) for the current
+> synthesis, and
+> [`client-profiles.json`](../evaluation/ai-client/client-profiles.json) for
+> the complete machine-readable registry.
 
 ## Decision
 
-The Claude Cowork session is strong enough to justify a focused next work
-package, but not to claim that OKF improves AI performance yet.
+At the time of this proposal, the Claude Cowork session was strong enough to
+justify a focused next work package, but not to claim that OKF improved AI
+performance.
 
-The recommended package is:
+The recommended package was:
 
 1. make exact record hydration a first-class, byte-bounded OKF contract;
 2. expose the same contract through a small metadata-only MCP broker;
@@ -155,14 +160,16 @@ NDJSON can be added for streaming bulk use, but it is not a substitute for an
 exact record route. A very large flat lexicon or doc-map should not become the
 new bottleneck.
 
-## Controlled metadata broker
+## Controlled metadata broker (subsequently implemented locally)
 
-The same access contract should be exposed by a small read-only MCP/HTTP
-broker. Its portable core should require only `tools/list`, `tools/call` and
-ordinary JSON results. Resources, Apps, elicitation, sampling and browser
-support are useful capability strata, not prerequisites.
+The same access contract was to be exposed by a small read-only MCP/HTTP
+broker. Its local stdio form is now implemented with the tool set below. A
+remote HTTP deployment is not implemented. Its portable core requires only
+`tools/list`, `tools/call` and ordinary JSON results. Resources, Apps,
+elicitation, sampling and browser support are useful capability strata, not
+prerequisites.
 
-Recommended tools:
+Implemented local tools:
 
 - `okf.descriptor` — return the pinned descriptor and agent profile;
 - `okf.search` — return ranked compact candidates and reduced-set
@@ -297,6 +304,11 @@ Client, host surface and model must be recorded separately. A result is named
 for the exact host/model combination; it is not a “client effect” when host
 and model change together.
 
+This section records the evaluation design, not current connection
+instructions. The rollout guide is the current source for connection routes
+and explicitly covers all profile IDs, including the installed-but-unverified
+ChatGPT, Microsoft Copilot and GitHub Copilot candidates.
+
 ### Initial smoke-suite tracks
 
 | Profile | Surface | Capture route | Current status |
@@ -323,7 +335,9 @@ ChatGPT Classic, ChatGPT Atlas, Microsoft Copilot, Microsoft 365 Copilot,
 GitHub Copilot and GitHub Copilot for Xcode are installed candidates. They
 remain readiness-only until authentication, model identity, arm enforcement
 and a repeatable evidence export are demonstrated. Installation is not a
-successful test.
+successful test. Their inclusion in the registry does not prove that the local
+stdio broker has been connected to them, even where a compatible setup route is
+documented.
 
 ## Three access arms
 
@@ -379,17 +393,17 @@ alternative exposure, contrast, caveat fidelity, provenance and citation
 validity, standards-claim calibration, hallucinations, MCP-plan validity,
 calls, bytes, latency and exact tokens where available.
 
-## Follow-up work packages
+## Original follow-up work packages and current position
 
-| Package | Deliverable | Exit gate |
+| Package | Current position | Remaining exit gate |
 |---|---|---|
-| WP1 agent access | Per-record files, byte-bounded hydration/search indexes, root agent profile and reference client | CPIH and all smoke records hydrate without browser or scratch under 64 KiB |
-| WP2 neutral broker | Descriptor, search, get, compare, plan and submit MCP tools with traces | Inspector and one CLI complete all controlled-broker tasks |
-| WP3 all-client smoke | Readiness probes, isolated adapters/manual packs and eight-case report | Every listed profile is ready, blocked, manual-required or explicitly unverified; no silent exclusions |
-| WP4 confirmatory design | Subject-reviewed ≥50-question private gold, preregistration and blind-review pack | Digests committed before runs; stopping and exclusion rules frozen |
-| WP5 comparative trial | Three arms, ≥3 replicates, adjudicated report and public redacted evidence | RQ1–RQ4 answered with uncertainty and assurance boundaries intact |
+| WP1 agent access | Static per-record files and byte-bounded hydration/search indexes are not implemented | CPIH and all smoke records hydrate natively without browser or scratch under 64 KiB |
+| WP2 neutral broker | Local metadata-only stdio tools for descriptor, search, get, compare, plan and submit are implemented and protocol-tested | Add a controlled client run; remote HTTP parity remains a separate deployment |
+| WP3 all-client smoke | Complete 16-profile registry, readiness model, public tasks and manual/automated capture contracts are implemented | Run or explicitly block every preregistered profile with no silent exclusions |
+| WP4 confirmatory design | Six personas, eight journeys and 12 development gold queries are public regression inputs | Add subject-reviewed ≥50-question private gold, preregistration and blind-review pack |
+| WP5 comparative trial | Not run | Complete three enforced arms, at least three replicates per cell and an adjudicated report |
 
 WP1 should be implemented before interpreting current cross-client hydration
-differences. Otherwise the trial would mostly measure a known multi-megabyte
-chunk defect rather than the value of OKF metadata and confusable-dataset
-design.
+differences in the native static-bundle arm. The local broker provides a
+controlled bounded-access arm, but neither route by itself is evidence that
+OKF improves AI performance.

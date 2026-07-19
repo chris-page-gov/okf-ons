@@ -412,10 +412,10 @@
           "observation_id": "local-client-audit-20260718",
           "artifact": "docs/mcp-client-rollout.md",
           "status": "later-verified",
-          "summary": "AGY can load a workspace stdio server; Claude Desktop chat can use a local extension/server; Claude Cowork and M365 Researcher require remote connectors for this evaluation mode."
+          "summary": "AGY can load a workspace stdio server. Claude Cowork can use plugins or local MCP in an existing local Desktop session subject to configuration and MDM policy, but local MCP does not run in remote sessions. M365 Researcher requires an admin-governed federated connector and a user-authenticated source connection."
         }
       ],
-      "design_implication": "One copied local JSON configuration cannot create a comparable MCP arm across command-line, desktop research and enterprise browser clients.",
+      "design_implication": "One copied local JSON configuration cannot create a comparable MCP arm across command-line, local desktop, remote research and enterprise browser execution modes.",
       "remediations": [
         {
           "priority": "P0",
@@ -427,7 +427,7 @@
         },
         {
           "priority": "P1",
-          "action": "Deploy the same read-only tool contract as an authenticated public HTTPS Streamable HTTP server for Claude research and M365 federated-connector trials."
+          "action": "Deploy the same read-only tool contract at an authenticated Microsoft-reachable HTTPS MCP endpoint for M365 federated-connector trials, then test protocol compatibility instead of assuming that the current local broker or a particular remote transport is sufficient."
         }
       ],
       "evaluation": {
@@ -510,6 +510,10 @@
     {
       "id": "critical-remediation-owned",
       "rule": "Every critical issue has at least one P0 remediation and a typed failure code."
+    },
+    {
+      "id": "office-artifact-public-release",
+      "rule": "Every public Office artifact MUST be a sanitized derivative listed in research/manifest.json with its public hash, private source hash and redaction log; it MUST pass package inspection and an all-page rendered-document review under a hash-bound technical public-release review, and the raw Office package MUST be excluded from the repository."
     }
   ]
 }

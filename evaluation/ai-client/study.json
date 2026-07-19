@@ -14,11 +14,11 @@
     "expected": "evaluation/ai-client/expected.json",
     "expected_sha256": "8c4ae366c85ecdce471da43835a6a3106a7390de9bbd7b004ca43f0d76609e33",
     "client_profiles": "evaluation/ai-client/client-profiles.json",
-    "client_profiles_sha256": "421ebe6a1b36f160d86b360f252e345744429444c4dc5ef848761ada53371457",
+    "client_profiles_sha256": "e8e059652e4615fb5b7c4dbeca73c50d1fb46bd073d9f523a15ff63f958f20d1",
     "personas_and_journeys": "evaluation/ai-client/personas-and-journeys.json",
     "personas_and_journeys_sha256": "b1101129aeea20567fefd07699849949281609d80571c9a7c50a3ffb8ec9eba7",
     "issue_register": "evaluation/ai-client/issue-register.json",
-    "issue_register_sha256": "36ef6f164bebb1ab47b225d34fbe6d1998bc03eaf760412ab19f759ce4d04aba"
+    "issue_register_sha256": "9bc34eb90269253d2ce8cf91c08c75fd20d6310edf1a39f56e0f000d169966e7"
   },
   "delivery_modes": [
     {
@@ -27,7 +27,7 @@
     },
     {
       "id": "controlled-broker",
-      "purpose": "Give each MCP-capable host the same descriptor, search, get-record, compare and submit-answer tools."
+      "purpose": "Give compatible hosts the same descriptor, search, get-record, compare, prepare-plan and submit-answer semantics; record any client-specific remote connector subset."
     }
   ],
   "arms": [

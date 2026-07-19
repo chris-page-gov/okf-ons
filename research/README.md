@@ -3,12 +3,16 @@
 This directory preserves three AI-access trials against, or prompted about, the
 public OKF-ONS demonstrator on 18 July 2026:
 
-- Claude Desktop in Cowork/research mode, with the session-reported model
-  “Claude Fable 5”;
+- Claude Desktop in Cowork/research mode (local-versus-remote execution mode
+  was not captured), with the session-reported model “Claude Fable 5”;
 - Google Antigravity CLI (`agy`), with the session-reported model
   “Gemini 3.1 Pro (High)”; and
 - Microsoft 365 Copilot Researcher in Microsoft Edge, whose resolved model was
   not exposed.
+
+These dated artefacts record observed trial behaviour, not current installation
+guidance. Supported but unverified client routes are maintained in the
+[connection guide](../docs/mcp-client-rollout.md).
 
 The date/client/task filenames make the host surface explicit without turning a
 session-reported model label into provider-verified telemetry.

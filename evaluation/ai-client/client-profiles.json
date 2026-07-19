@@ -2,6 +2,11 @@
   "schema": "okf-ons.ai-client-profiles.v1",
   "observed_on": "2026-07-18",
   "warning": "Availability is a run-time property. Installed or previously ready does not mean authenticated and ready for a future run.",
+  "connection_guide": {
+    "path": "docs/mcp-client-rollout.md",
+    "sha256": "b77f55cd9548c5e9b1fcb60e7b60fd4dba2cff9bec5308d7098e225586cbe28c",
+    "verified_on": "2026-07-19"
+  },
   "profiles": [
     {
       "id": "codex-cli",
@@ -11,6 +16,12 @@
       "automation": "unattended",
       "initial_smoke_suite": true,
       "readiness": "previously-ready-fresh-probe-required",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "shared Codex user or trusted-project configuration",
+        "guide_section": "OpenAI Codex CLI, desktop and IDE"
+      },
       "capture": ["jsonl", "structured-answer", "mcp-trace", "usage-when-reported"],
       "capabilities": {
         "mcp_core": true,
@@ -30,6 +41,12 @@
       "automation": "unattended",
       "initial_smoke_suite": true,
       "readiness": "previously-ready-fresh-probe-required",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "Claude Code project configuration",
+        "guide_section": "Anthropic Claude Code"
+      },
       "capture": ["stream-json", "structured-answer", "mcp-trace", "provider-usage"],
       "capabilities": {
         "mcp_core": true,
@@ -49,6 +66,12 @@
       "automation": "unattended",
       "initial_smoke_suite": false,
       "readiness": "installed-distinct-client-not-configured",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "Gemini CLI project configuration",
+        "guide_section": "Google Gemini CLI"
+      },
       "capture": ["stream-json", "structured-answer", "mcp-trace", "provider-usage"],
       "capabilities": {
         "mcp_core": true,
@@ -58,7 +81,7 @@
         "native_http_fetch": null,
         "structured_output": true
       },
-      "notes": "This is the older Gemini CLI, not Antigravity CLI. Its .gemini/settings.json does not configure AGY; retain it only as a separately preregistered client."
+      "notes": "Gemini CLI is a separate current client, not Antigravity CLI. Its .gemini/settings.json does not configure AGY; no Gemini CLI MCP run is claimed."
     },
     {
       "id": "google-antigravity-cli",
@@ -68,6 +91,12 @@
       "automation": "unattended-runner-not-yet-implemented",
       "initial_smoke_suite": true,
       "readiness": "workspace-mcp-config-installed-fresh-probe-required",
+      "connection": {
+        "state": "repository-configured",
+        "transport": "local-stdio",
+        "configuration_scope": "repository .agents/mcp_config.json",
+        "guide_section": "Google Antigravity CLI"
+      },
       "capture": ["structured-answer", "mcp-trace", "visible-transcript", "usage-when-reported"],
       "capabilities": {
         "mcp_core": true,
@@ -87,6 +116,12 @@
       "automation": "experimental-unattended",
       "initial_smoke_suite": true,
       "readiness": "fresh-memory-and-cleanup-probe-required",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "VS Code workspace configuration",
+        "guide_section": "VS Code Agent and GitHub Copilot Chat"
+      },
       "capture": ["structured-answer", "mcp-trace", "ui-events", "visible-transcript"],
       "capabilities": {
         "mcp_core": true,
@@ -106,10 +141,16 @@
       "automation": "manual-import",
       "initial_smoke_suite": true,
       "readiness": "historical-evidence-only",
+      "connection": {
+        "state": "execution-mode-dependent",
+        "transport": "local-or-remote-mcp",
+        "configuration_scope": "Cowork local plugin MCP or remote custom connector",
+        "guide_section": "Anthropic Claude Desktop and Cowork"
+      },
       "capture": ["contemporaneous-log", "visible-transcript-when-exported", "tool-log-when-exported"],
       "capabilities": {
         "mcp_core": true,
-        "local_stdio_mcp": false,
+        "local_stdio_mcp": "execution-mode-dependent",
         "remote_connector_mcp": true,
         "browser": "extension-dependent",
         "javascript": null,
@@ -117,7 +158,7 @@
         "native_http_fetch": true,
         "structured_output": false
       },
-      "notes": "The preserved Fable 5 trace was run in the Claude Desktop application. Cowork/research must use a remote connector for the controlled broker; the app's local stdio configuration applies to normal Desktop chat, not this profile."
+      "notes": "Remote Cowork sessions now run by default and cannot run local MCP; existing desktop-local sessions can run local plugin or configured MCP subject to device policy. Claude Research cannot invoke local MCP. The preserved Fable 5 trial used the public web bundle and proved neither broker route."
     },
     {
       "id": "claude-desktop",
@@ -126,7 +167,13 @@
       "observed_version": "1.19367.0",
       "automation": "manual-import",
       "initial_smoke_suite": true,
-      "readiness": "client-ready-server-not-ready",
+      "readiness": "connection-not-configured-fresh-probe-required",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "Claude Desktop user configuration or extension",
+        "guide_section": "Anthropic Claude Desktop and Cowork"
+      },
       "capture": ["structured-answer", "mcp-trace", "visible-transcript"],
       "capabilities": {
         "mcp_core": true,
@@ -148,6 +195,12 @@
       "automation": "manual-import",
       "initial_smoke_suite": true,
       "readiness": "manual-path-available",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "shared Codex user or trusted-project configuration",
+        "guide_section": "OpenAI Codex CLI, desktop and IDE"
+      },
       "capture": ["structured-answer", "mcp-trace", "visible-transcript"],
       "capabilities": {
         "mcp_core": true,
@@ -167,6 +220,12 @@
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "not-established",
+        "transport": "none-established",
+        "configuration_scope": "none established for this installed desktop profile",
+        "guide_section": "OpenAI ChatGPT web custom app"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
         "mcp_core": null,
@@ -186,6 +245,12 @@
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "not-established",
+        "transport": "none-established",
+        "configuration_scope": "none established for this installed desktop-browser profile",
+        "guide_section": "OpenAI ChatGPT web custom app"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
         "mcp_core": null,
@@ -205,6 +270,12 @@
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "not-established",
+        "transport": "none-established",
+        "configuration_scope": "none established for this installed desktop profile",
+        "guide_section": "Microsoft 365 Copilot Researcher"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
         "mcp_core": null,
@@ -224,6 +295,12 @@
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "not-established",
+        "transport": "none-established",
+        "configuration_scope": "none established for this installed desktop profile",
+        "guide_section": "Microsoft 365 Copilot Researcher"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
         "mcp_core": null,
@@ -243,7 +320,13 @@
       "automation": "manual-import",
       "initial_smoke_suite": true,
       "readiness": "remote-admin-connector-required",
-      "capture": ["produced-document", "visible-transcript-when-exported", "mcp-trace-when-admin-enabled"],
+      "connection": {
+        "state": "remote-endpoint-required",
+        "transport": "remote-https-mcp",
+        "configuration_scope": "tenant-created Microsoft 365 federated connector",
+        "guide_section": "Microsoft 365 Copilot Researcher"
+      },
+      "capture": ["produced-document", "visible-transcript-when-exported", "broker-side-redacted-mcp-events-when-deployed"],
       "capabilities": {
         "mcp_core": true,
         "local_stdio_mcp": false,
@@ -254,26 +337,32 @@
         "native_http_fetch": true,
         "structured_output": false
       },
-      "notes": "The preserved trial ran in Edge and could not retrieve the supplied descriptor. A comparable MCP arm requires an admin-deployed, authenticated, read-only HTTPS federated connector staged to the test user; the resolved model may remain unknown."
+      "notes": "The preserved Edge trial used no OKF-ONS federated connector and could not retrieve the supplied descriptor. Microsoft documents Researcher support for admin-governed, user-authenticated, read-only federated connectors, but a controlled OKF arm still requires a licensed staged user, a deployed HTTPS endpoint, authentication, source activation and broker-side evidence. Platform capability is not trial evidence."
     },
     {
       "id": "github-copilot",
-      "product": "GitHub Copilot",
+      "product": "GitHub Copilot app",
       "surface": "desktop",
       "observed_version": null,
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "Copilot CLI workspace configuration or app MCP settings",
+        "guide_section": "GitHub Copilot app, CLI and Xcode"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
-        "mcp_core": null,
+        "mcp_core": true,
         "browser": null,
         "javascript": null,
         "local_scratch": null,
         "native_http_fetch": null,
         "structured_output": null
       },
-      "notes": "The desktop app is installed; the VS Code host is evaluated separately."
+      "notes": "The product documents MCP through Copilot CLI workspace configuration or app settings. The desktop app was observed installed, but OKF-ONS connection, authentication, model identity and capture were not verified; VS Code remains a separate host."
     },
     {
       "id": "github-copilot-xcode",
@@ -283,16 +372,22 @@
       "automation": "readiness-only",
       "initial_smoke_suite": false,
       "readiness": "installed-unverified",
+      "connection": {
+        "state": "setup-required",
+        "transport": "local-stdio",
+        "configuration_scope": "GitHub Copilot for Xcode MCP settings",
+        "guide_section": "GitHub Copilot app, CLI and Xcode"
+      },
       "capture": ["manual-transcript-if-ready"],
       "capabilities": {
-        "mcp_core": null,
+        "mcp_core": true,
         "browser": null,
         "javascript": null,
         "local_scratch": null,
         "native_http_fetch": null,
         "structured_output": null
       },
-      "notes": "Installation alone is not evidence of a suitable OKF evaluation path."
+      "notes": "The product documents local and remote MCP. Installation alone is not evidence that OKF-ONS is connected or that authentication, model identity, arm enforcement and capture are suitable."
     },
     {
       "id": "mcp-inspector",
@@ -302,6 +397,12 @@
       "automation": "deterministic-baseline",
       "initial_smoke_suite": true,
       "readiness": "probe-required",
+      "connection": {
+        "state": "protocol-baseline",
+        "transport": "local-stdio",
+        "configuration_scope": "one-off Inspector launch",
+        "guide_section": "MCP Inspector"
+      },
       "capture": ["mcp-trace", "structured-answer"],
       "capabilities": {
         "mcp_core": true,

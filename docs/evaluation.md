@@ -249,10 +249,11 @@ access arm.
 
 Its eight public tasks are a development smoke suite. They do not satisfy the
 confirmatory design target of at least 50 unseen subject-reviewed questions,
-three access arms, repeated runs and blinded assessment. See the
+three access arms, repeated runs and blinded assessment. See the current
+[cross-client trial analysis](ai-client-trial-analysis.md) and
+[connection guide](mcp-client-rollout.md). The
 [agent-access and multi-client evaluation proposal](agent-access-and-evaluation-proposal.md)
-for that protocol and the separation between readiness blocks, task failures
-and answer-quality scores.
+is the historical design note that preceded the implemented local broker.
 
 The harness now cross-validates
 [`personas-and-journeys.json`](../evaluation/ai-client/personas-and-journeys.json)
