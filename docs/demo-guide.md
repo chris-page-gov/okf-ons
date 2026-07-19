@@ -15,8 +15,8 @@ ONS, Nomis or MCP request.
 
 The one-sentence framing is:
 
-> OKF makes ONS data findable and distinguishable; MCP retrieves it only after
-> the dataset-specific choices are explicit.
+> OKF makes ONS data findable and distinguishable; a downstream live-data MCP
+> retrieves it only after the dataset-specific choices are explicit.
 
 1. Start with the coverage strip. Explain that “all” is measured with expected,
    represented, excluded, errored and unexplained counts per official source.
@@ -46,7 +46,8 @@ The one-sentence framing is:
 | Similar records expose material discriminators before selection. | Similar titles identify the same statistical product. |
 | Standards alignment is reported with source evidence. | Every source dataset is certified compliant. |
 | A zero-omission ledger supports its stated source scope. | “All ONS” without a measured denominator. |
-| MCP performs live retrieval after validation. | GitHub Pages executes authenticated API calls. |
+| The local OKF broker prepares a non-executing selection plan. | The repository broker retrieves live observations. |
+| A downstream MCP integration may retrieve live data after validation. | GitHub Pages executes authenticated API calls. |
 
 Metadata completeness is evidence availability. It is not proof of statistical
 accuracy, methodological fitness or comparability for a specific analysis.
@@ -65,6 +66,30 @@ accuracy, methodological fitness or comparability for a specific analysis.
 
 These files are ordinary static JSON. Agents do not need to screen-scrape the
 human interface.
+
+## Optional AI-client route
+
+For a technical audience, show the local metadata-only broker after the static
+demo:
+
+1. Explain that `scripts/okf_ons_mcp.py` exposes bounded descriptor, search,
+   exact-record, comparison, non-executing selection-plan and evaluation
+   submission tools over local stdio.
+2. Point to the repository-scoped `.agents/mcp_config.json` as the AGY example.
+   It was added after the preserved Antigravity trial and is configuration
+   evidence, not a fresh model result.
+3. Use the [MCP rollout guide](mcp-client-rollout.md) to show the separate
+   Codex, Claude, Gemini, VS Code/Copilot, ChatGPT, Microsoft 365 and Inspector
+   routes and their current readiness.
+4. State the boundary: the repository has no deployed remote broker or secure
+   tunnel, makes no live or paid model call in CI, and never retrieves
+   observations. ChatGPT custom apps, Claude Research and remote-session
+   Cowork, and M365 Researcher therefore remain planned integrations; the M365
+   admin connector has not been deployed.
+
+Do not spend the Monday demo authenticating a client. The reproducible proof is
+the frozen static site, deterministic local protocol tests and explicit
+connection/readiness register.
 
 ## If the network is unreliable
 

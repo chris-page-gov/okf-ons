@@ -6,9 +6,11 @@
   "capture": {
     "fidelity": "reconstruction",
     "authoritative_artifact": "../../../research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
-    "artifact_sha256": "a44999d6033552e691b92986729d47f58f872eb499dabe89dcbf2bf73cb7da11",
+    "artifact_sha256": "ba7c424bbf021df812fcf7133e22bf42d413e1d737970352b233558abd2bf870",
+    "sanitized_from_sha256": "a44999d6033552e691b92986729d47f58f872eb499dabe89dcbf2bf73cb7da11",
     "additional_artifact": "../../../research/2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx",
-    "additional_artifact_sha256": "2203b3fcecce9ba0002df0ac9470ee191c68a8694e11524ff5153786ad1ad6d5",
+    "additional_artifact_sha256": "685986c8f525f3fd465d84cb0aa8788ae593ffff6974152c409021ced9e8d790",
+    "additional_artifact_sanitized_from_sha256": "2203b3fcecce9ba0002df0ac9470ee191c68a8694e11524ff5153786ad1ad6d5",
     "native_provider_export": null,
     "visible_transcript_preserved": "produced-documents-only",
     "hidden_reasoning_collected": false
@@ -43,7 +45,13 @@
     "credentials_observed": "enterprise-session-not-exported",
     "local_scratch_observed": null,
     "browser_available": true,
-    "local_stdio_mcp_available": false
+    "local_stdio_mcp_available": false,
+    "remote_federated_connector_required": true,
+    "deployment_verified": false,
+    "user_source_connection_verified": false,
+    "licensed_test_user_required": true,
+    "licensed_test_user_verified": false,
+    "eligible_license": "Microsoft 365 Copilot add-on or Microsoft 365 E7"
   },
   "task_mapping": [
     {
@@ -131,11 +139,15 @@
   "architecture_findings": [
     {
       "status": "proposal-requiring-current-platform-validation",
-      "finding": "Use GitHub as source control, SharePoint as governed publication, a synced Graph connector for indexed Copilot discovery, and federated MCP as a live read-only complement."
+      "finding": "Use GitHub as source control, SharePoint as governed publication, a synced Copilot connector that indexes content into Microsoft Graph for indexed discovery, and federated MCP as a live read-only complement."
     },
     {
       "status": "later-verified-against-current-microsoft-documentation",
-      "finding": "M365 Copilot federated connectors use remote MCP, are admin-managed and read-only, and support Researcher without indexing source content into Microsoft 365."
+      "finding": "Microsoft documents federated connectors as admin-governed, user-authenticated and read-only, with live MCP retrieval and no Microsoft 365 indexing. Researcher is a supported surface."
+    },
+    {
+      "status": "not-verified-in-this-trial",
+      "finding": "No OKF-ONS federated connector was configured or tested in this trial. A future trial requires a Microsoft-reachable HTTPS MCP endpoint, and its protocol compatibility must be tested rather than inferred from the current local broker."
     }
   ],
   "public_release": {
@@ -146,5 +158,5 @@
     "portable_source_urls_complete": false,
     "derived_analysis_repeats_enterprise_details": false
   },
-  "use_in_harness": "Issue seed and manual-import observation only. Do not combine with controlled-arm scores. A future M365 run requires an admin-deployed remote federated connector and an enforced access arm."
+  "use_in_harness": "Issue seed and manual-import observation only. Do not combine with controlled-arm scores. A future M365 run requires an admin-deployed remote federated connector, a verified user source connection, an eligible licensed test user, protocol-compatibility testing and an enforced access arm."
 }

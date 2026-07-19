@@ -6,9 +6,9 @@
   "capture": {
     "fidelity": "reconstruction",
     "authoritative_artifact": "../../../research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
-    "artifact_sha256": "37379fa458ce26bb855679675b82e530ba594158e8bb6f28c40906ca82c29d6c",
+    "artifact_sha256": "011c593c841dc37520699ea9e403e42e3a50b84a64b224702ae0438db697745f",
     "produced_output": "../../../research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
-    "produced_output_sha256": "42f318c99bcbe6146d4e430f88a224aca0cdf2904a50ef7dab964eccadf14e26",
+    "produced_output_sha256": "cc61ed4c8bff07fd43716b841b2f1887823357481cc4cce53e89e7616ca610c9",
     "native_provider_export": null,
     "visible_transcript_preserved": "summary-and-tool-sequence-only",
     "hidden_reasoning_collected": false

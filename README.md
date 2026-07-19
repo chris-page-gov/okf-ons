@@ -3,23 +3,29 @@
 `okf-ons` is a metadata-only discovery layer for public Office for National
 Statistics data. It is designed to help a person or an agent find the exact
 dataset, see easily confused alternatives, understand the statistical-quality
-evidence that is available, and hand a validated selection to MCP for live
-retrieval.
+evidence that is available, and hand a validated selection to a downstream MCP
+server for live retrieval.
 
-The project deliberately separates three jobs:
+The project deliberately separates four jobs:
 
-1. **OKF discovers and explains** datasets, versions, dimensions, provenance,
-   standards evidence, and alternatives.
+1. **The static OKF bundle discovers and explains** datasets, versions,
+   dimensions, provenance, standards evidence, and alternatives.
 2. **OKF Explorer narrows and compares** a large static corpus without an LLM
    or a hosted search service.
-3. **MCP executes** a live ONS or Nomis query only after the required
-   dataset-specific choices are complete.
+3. **The repository's local MCP broker gives AI clients bounded access** to
+   the same frozen metadata and prepares a non-executing selection plan.
+4. **A downstream live-data MCP server executes** an ONS or Nomis query only
+   after the required dataset-specific choices are complete.
 
-No observations, API keys, or private data are stored in the bundle.
+The local broker is not the downstream live-data server: it makes no network
+calls and returns no observation values. No observations, API keys, or private
+data are stored in the bundle.
 
 ## Monday demonstrator
 
-The first demonstrator publishes:
+The pre-hackathon demonstrator is frozen so the Monday presentation can use a
+reproducible, reviewable snapshot rather than changing live acquisitions. It
+publishes:
 
 - a source and coverage ledger that makes incompleteness explicit;
 - a frozen 4,989-record metadata snapshot from ONS Data API (337), Nomis
@@ -30,6 +36,10 @@ The first demonstrator publishes:
 - statistical-quality and standards evidence without false assurance claims;
 - an MCP selection-plan contract; and
 - a reproducible retrieval and metadata-quality evaluation report.
+
+The immutable snapshot ID `monday-2026-07-17` records the Friday 17 July freeze
+for the Monday 20 July 2026 hackathon; it is not a claim that 17 July was a
+Monday.
 
 The public descriptor is designed to be:
 
@@ -44,6 +54,10 @@ https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-g
 ```
 
 ## Build
+
+Python 3.11 or later is required. To refresh a snapshot, keep the raw
+acquisition cache outside the repository; the checked-in Monday build is
+generated from `source/demo-snapshot`.
 
 ```bash
 python scripts/acquire_snapshot.py \
@@ -72,9 +86,11 @@ work package, demo route and questions for ONS. See also the
 
 The repository preserves and SHA-256-pins 18 July 2026 trials from Claude
 Desktop Cowork, Google Antigravity CLI and Microsoft 365 Copilot Researcher in
-[`research/`](research/README.md). Normalized observations keep raw produced
-documents, session-reported identity, later verification and our
-interpretations distinct.
+[`research/`](research/README.md). Only technically reviewed, sanitized public
+DOCX derivatives are published. The original Office packages are withheld
+outside Git and identified only by their pinned source hashes. Normalized
+observations keep public derivatives, session-reported identity, later
+verification and our interpretations distinct.
 
 The case study now seeds a provider-neutral, fixture-safe harness:
 
@@ -95,17 +111,50 @@ answer. CI performs no live, authenticated or paid model calls.
 
 A dependency-free, metadata-only MCP broker now exposes deterministic
 descriptor, search, exact-record, comparison, read-only MCP-plan and
-answer-submission tools. Antigravity CLI (`agy`) loads it from the
-repository-scoped [`.agents/mcp_config.json`](.agents/mcp_config.json). It uses
-the frozen corpus, makes no network call, stores no credentials and returns no
-observation values.
+answer-submission tools. Antigravity CLI (`agy`) can load it from the
+repository-scoped [`.agents/mcp_config.json`](.agents/mcp_config.json). That
+configuration was added after the preserved Antigravity trial; no new paid or
+live model run is claimed. The broker uses the frozen corpus, makes no network
+call, stores no credentials and returns no observation values.
+
+## AI-system connection map
+
+The [MCP rollout guide](docs/mcp-client-rollout.md) is the canonical setup and
+status guide for every AI surface in the evaluation registry. It distinguishes
+four access and deployment layers:
+
+- **Static bundle access:** any permitted HTTP client can read the Pages
+  descriptor and JSON, but native fetch limits differ by host.
+- **Local metadata MCP:** command-line and desktop clients that support local
+  stdio MCP can start `scripts/okf_ons_mcp.py`. The committed AGY workspace
+  configuration is the only repository-scoped client configuration; the guide
+  gives the separate Codex, Claude, Gemini, VS Code/Copilot and Inspector
+  routes without treating installation as a successful trial.
+- **Planned remote metadata MCP:** ChatGPT custom apps need a supported remote
+  endpoint or tunnel route; Claude Research, remote-session Cowork and
+  Microsoft 365 Copilot Researcher need an authenticated remote endpoint.
+  Desktop-local Cowork may use local MCP, subject to device policy. This
+  repository deploys neither a remote endpoint nor a tunnel. The M365
+  federated-connector route is documented, but it has not been created or
+  enabled for a tenant.
+- **Downstream live MCP:** once selection is complete, a separate ONS or Nomis
+  integration may execute the plan. The repository broker deliberately never
+  does so.
+
+The machine-readable
+[`client-profiles.json`](evaluation/ai-client/client-profiles.json) is the
+complete 16-profile client registry; [`study.json`](evaluation/ai-client/study.json)
+pins the evaluation design. The public
+[`tasks.json`](evaluation/ai-client/tasks.json),
+[`personas-and-journeys.json`](evaluation/ai-client/personas-and-journeys.json)
+and [`issue-register.json`](evaluation/ai-client/issue-register.json) keep the
+tasks, users, journeys, observed failures and remediations in lockstep with
+that design.
 
 See the
 [cross-client trial analysis](docs/ai-client-trial-analysis.md) for the
 evidence, issue/remediation matrix, personas, efficiency protocol and
-prioritized work packages. The
-[MCP rollout guide](docs/mcp-client-rollout.md) records what can be configured
-locally and why Claude research and M365 Researcher need a remote connector.
+prioritized work packages.
 
 ## What “all” means
 

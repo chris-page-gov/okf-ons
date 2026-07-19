@@ -95,10 +95,11 @@
     {
       "id": "claude-desktop-cowork-fable-5-20260718",
       "observation": "../evaluation/ai-client/evidence/claude-desktop-cowork-fable-5-20260718.json",
-      "observation_sha256": "63c39c4c93879cbdfdb5494b56a77ad0d1e85242ba912e830bf6d0545d05784d",
+      "observation_sha256": "270effed85b488488b3428fb45402987cc75839d5a6501eb25a545e311089bbc",
       "date": "2026-07-18",
       "host_product": "Claude Desktop",
       "host_surface": "Cowork research preview",
+      "execution_mode": "not-captured",
       "host_version": "1.19367.0",
       "model_display_name": "Claude Fable 5",
       "model_string": "claude-fable-5",
@@ -112,7 +113,7 @@
     {
       "id": "antigravity-cli-gemini-3-1-pro-20260718",
       "observation": "../evaluation/ai-client/evidence/antigravity-gemini-3-1-pro-20260718.json",
-      "observation_sha256": "b1d8c1e034845d8c9ffc454faa91de31d3ac7158cc4be5664e1da7451b4cbf4c",
+      "observation_sha256": "30c70a098e19673bb83f538c0c7f0f1b1b6bc802217f91d35054223e120fe6a3",
       "date": "2026-07-18",
       "host_product": "Google Antigravity CLI",
       "host_surface": "command-line",
@@ -130,7 +131,7 @@
     {
       "id": "m365-copilot-researcher-edge-20260718",
       "observation": "../evaluation/ai-client/evidence/m365-copilot-researcher-20260718.json",
-      "observation_sha256": "0856846269eac92fa0c833f3832a0dd4315920d9a294583dfc30b7803d4a547e",
+      "observation_sha256": "633d536663190c328e5dac997589038862c864a7fe97bd5a11d26c0559444df4",
       "date": "2026-07-18",
       "host_product": "Microsoft Edge",
       "host_surface": "Microsoft 365 Copilot Researcher",
@@ -141,6 +142,10 @@
       "identity_status": "host-user-reported-model-not-exposed",
       "capture_fidelity": "reconstruction",
       "native_provider_export_preserved": false,
+      "remote_federated_connector_required": true,
+      "deployment_verified": false,
+      "user_source_connection_verified": false,
+      "licensed_test_user_required": true,
       "fresh_context_per_task": "not-captured",
       "controlled_trial_eligible": false
     }
@@ -182,11 +187,18 @@
       "claude_desktop": {
         "installed": true,
         "version": "1.19367.0",
-        "local_stdio_available_in_cowork": false
+        "cowork_local_mcp_availability": "execution-mode-dependent",
+        "cowork_local_existing_desktop_sessions": "plugins-or-local-mcp-supported-subject-to-local-configuration-and-mdm",
+        "cowork_remote_sessions": "local-mcp-unavailable"
       },
       "m365_copilot_researcher_edge": {
         "local_stdio_available": false,
-        "remote_admin_connector_required": true
+        "remote_federated_connector_required": true,
+        "deployment_verified": false,
+        "user_source_connection_verified": false,
+        "licensed_test_user_required": true,
+        "licensed_test_user_verified": false,
+        "eligible_license": "Microsoft 365 Copilot add-on or Microsoft 365 E7"
       }
     }
   },
@@ -259,7 +271,7 @@
     {
       "finding": "M365 hosting recommendation",
       "status": "architecture-proposal",
-      "qualification": "The hybrid GitHub, SharePoint, synced Graph connector and federated MCP pattern is a useful proposal. Current platform capabilities and departmental governance must be validated at implementation time."
+      "qualification": "This is an architecture proposal. Microsoft documentation supports the synced-versus-federated distinction, but neither the target tenant's custom-connector availability nor an OKF-ONS deployment was verified."
     }
   ],
   "document_validation": [

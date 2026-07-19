@@ -26,6 +26,8 @@ evidence needed to distinguish them before it produces an MCP request plan.
 - [Open the bundle in OKF Explorer](https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json)
 - [Machine-readable coverage ledger](https://chris-page-gov.github.io/okf-ons/data/coverage/ledger.json)
 - [Evaluation report](https://chris-page-gov.github.io/okf-ons/data/evaluation/report.json)
+- [AI-system MCP rollout guide](mcp-client-rollout.md)
+- [Cross-client trial analysis](ai-client-trial-analysis.md)
 
 These URLs become live from the repository's Pages deployment. No API key,
 observation values or private data are included.
@@ -83,6 +85,21 @@ OKF prevents the MCP interaction from starting as an open-ended conversation
 with thousands of poorly distinguished choices. MCP prevents the static
 catalogue from pretending that versions, codelists and availability never
 change.
+
+## AI-system access boundary
+
+The repository includes a local, provider-neutral MCP broker for bounded
+descriptor, search, exact-record, comparison and non-executing selection-plan
+operations over the frozen metadata. It has a committed AGY workspace example;
+the rollout guide records separate configuration and readiness for Codex,
+Claude, Gemini, VS Code/Copilot, ChatGPT, Microsoft 365 and MCP Inspector.
+
+This is not a live-data or hosted remote server. ChatGPT custom apps require a
+future supported remote or tunnel route; Claude Research, remote-session Cowork
+and M365 Copilot Researcher require a future authenticated remote deployment.
+The M365 federated connector is documented but not deployed. A separate
+downstream ONS or Nomis MCP integration would execute a validated plan and
+return observations.
 
 ## Standards and statistical-quality position
 

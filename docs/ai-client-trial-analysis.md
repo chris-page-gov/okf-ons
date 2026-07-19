@@ -12,8 +12,10 @@ metadata-only MCP broker over the frozen OKF corpus, coupled to a controlled
 evaluation. It should make orientation, bounded search, exact-record hydration,
 comparison and read-only query planning explicit. This repository now contains
 that local broker and its Antigravity workspace configuration. A later remote
-deployment should expose the same tool contract to Claude research modes and
-Microsoft 365 Copilot Researcher.
+or supported tunnel route should expose the same tool contract to ChatGPT
+custom apps; Claude Research, remote-session Cowork and Microsoft 365 Copilot
+Researcher need a remote deployment. Desktop-local Cowork can use local MCP
+only where its execution mode and device policy allow it.
 
 This is not yet evidence that OKF is more efficient than the open web or raw ONS
 APIs. The preserved trials did not hold prompts, host capabilities, model,
@@ -25,15 +27,16 @@ comparative benchmark.
 
 | Trial | Host and model identity | Exact bundle access | Useful result | Main limitation |
 | --- | --- | --- | --- | --- |
-| Claude | Claude Desktop, Cowork/research mode; “Claude Fable 5” is session-reported | Partial | Good orientation and caveat relay; disclosed substitute example | Multi-megabyte fetch truncation, guessed hydration path and disconnected browser extension |
+| Claude | Claude Desktop Cowork/research session; execution mode not recorded; “Claude Fable 5” is session-reported | Partial | Good orientation and caveat relay; disclosed substitute example | Multi-megabyte fetch truncation, guessed hydration path and disconnected browser extension |
 | Gemini | Antigravity CLI (`agy` 1.1.4 later verified); “Gemini 3.1 Pro (High)” is session-reported | Yes | Traversed descriptor and standards entrypoints; generated a concrete worked example | Downloaded a 5.9 MB shard, chose a convenient early record, and overstated compliance and efficiency |
 | M365 | M365 Copilot Researcher in Edge; resolved model not exposed | No | Honest access caveat; useful M365 hosting and connector architecture research | Substituted web and enterprise context; no exact telemetry or native transcript; citations are not portable |
 
-The raw artefacts are hash-pinned in
-[`research/manifest.json`](../research/manifest.json). Normalized observations
-under [`evaluation/ai-client/evidence/`](../evaluation/ai-client/evidence/)
-separate direct observation, session report, later verification and inference.
-None is eligible for the controlled comparison.
+The withheld original artefact hashes and the sanitized public derivatives are
+pinned in [`research/manifest.json`](../research/manifest.json). Normalized
+observations under
+[`evaluation/ai-client/evidence/`](../evaluation/ai-client/evidence/) separate
+direct observation, session report, later verification and inference. None is
+eligible for the controlled comparison.
 
 ## What the trials establish
 
@@ -244,39 +247,70 @@ needed before these are treated as representative of all ONS users.
 
 ## MCP delivery by client
 
-The same tool semantics should be used everywhere, but transport and
-administration differ.
+The same tool semantics should be used everywhere, but transport,
+administration and evidence capture differ. The
+[`mcp-client-rollout.md`](mcp-client-rollout.md) guide is the canonical setup
+reference; the machine-readable
+[`client-profiles.json`](../evaluation/ai-client/client-profiles.json) registry
+is authoritative for readiness. The grouped table below accounts for all 16
+registry profile IDs as at 19 July 2026.
 
-| Client surface | Viable configuration now | Limitation / next step |
+| Registry profile IDs | Connection route | Evidence boundary / next step |
 | --- | --- | --- |
-| Antigravity CLI (`agy`) | Repository-scoped `.agents/mcp_config.json` starts the local stdio broker | Start AGY from this repository and verify server/tool readiness before a paid/model run |
-| Older Gemini CLI | Separate `.gemini/settings.json`; intentionally not modified | Treat as a separate client profile if retained |
-| Claude Desktop normal chat | Local stdio server or packaged desktop extension | A local entry can support manual chat trials; package an `.mcpb` for repeatable distribution |
-| Claude Desktop Cowork/research | Remote connector | Deploy Streamable HTTP and add it through the connector UI; do not assume the local Desktop config is visible |
-| M365 Copilot Researcher in Edge | Admin-deployed federated connector to remote MCP | Requires public HTTPS, read-only tools, Entra SSO or OAuth, admin creation and staged rollout |
+| `google-antigravity-cli` | Repository-scoped `.agents/mcp_config.json` starts the local stdio broker | The configuration post-dates the preserved trial. Verify MCP tools and resolved model before any fresh model run. |
+| `codex-cli`, `codex-desktop` | Local stdio MCP through Codex configuration; CLI and Desktop remain distinct host surfaces | CLI previously worked in an isolated setup; Desktop has a manual path. Both need a fresh run-bound readiness check. |
+| `claude-code` | Local stdio MCP in an isolated project/client configuration | Previously ready, but no current OKF model run is claimed; re-probe and capture the resolved model. |
+| `claude-desktop` | Local stdio server or packaged desktop extension in normal Desktop chat | Client path is available; the app/server connection still needs a run-bound probe. |
+| `claude-cowork` | Desktop-local sessions may use local MCP subject to device policy; remote sessions need a remote connector; Research cannot invoke local MCP | Historical evidence only. The preserved trial used the public web bundle and demonstrated neither broker connection path. Record the execution mode in every future run. |
+| `gemini-cli` | Its own `.gemini/settings.json` local stdio configuration | Installed but deliberately separate from AGY and not configured for the initial suite. |
+| `vscode-agent` | Workspace/local MCP through Visual Studio Code Agent / Copilot Chat | Initial-suite surface; isolate the window and re-check memory, cleanup and resolved-model evidence. |
+| `m365-copilot-researcher-edge` | Admin-deployed, authenticated federated connector to a read-only remote MCP endpoint | The route is documented but not deployed. The preserved Researcher trial could not access the descriptor. |
+| `chatgpt-classic`, `chatgpt-atlas` | ChatGPT web custom-app access uses remote MCP or a supported secure tunnel; the installed desktop labels have no proven OKF path | Readiness-only. This repository configures neither route and has no repeatable trial evidence for either profile. |
+| `microsoft-copilot`, `microsoft-365-copilot` | No proven repository connection for the installed desktop clients | Readiness-only; do not substitute the Researcher federated-connector design for a successful desktop path. |
+| `github-copilot`, `github-copilot-xcode` | The Copilot app/CLI-backed surface and Xcode document local MCP setup; the VS Code host is represented separately by `vscode-agent` | Setup is not committed and no OKF trial is proven; authentication, model identity, arm enforcement and export still need evidence. |
+| `mcp-inspector` | Local stdio protocol baseline | Use to test protocol and broker behaviour, never as an AI-quality comparator. |
 
-Current official documentation supports these distinctions:
+The repository currently implements only the local, metadata-only stdio
+broker. It does not publish an HTTPS/Streamable HTTP endpoint, execute ONS or
+Nomis observation queries, or make a client ready merely because that client
+is installed.
 
+Current official documentation supports the established routes:
+
+- [OpenAI Codex MCP configuration](https://learn.chatgpt.com/docs/customization-mcp)
+  documents the shared CLI, desktop and IDE configuration.
+- [OpenAI ChatGPT developer mode and MCP apps](https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt-beta)
+  distinguishes remote web apps from local Codex configuration.
+- [Claude Code MCP configuration](https://code.claude.com/docs/en/mcp)
+  documents project-scoped stdio servers.
 - [Antigravity CLI MCP configuration](https://antigravity.google/docs/mcp)
   documents workspace `.agents/mcp_config.json`, stdio `command`/`args`/`cwd`
   and remote `serverUrl`.
+- [Gemini CLI MCP configuration](https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html)
+  documents its separate `.gemini/settings.json` surface.
 - [Claude Desktop local MCP guidance](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
   describes local desktop extensions.
-- [Claude remote connector guidance](https://support.claude.com/en/articles/11175166-about-custom-integrations-using-remote-mcp)
-  distinguishes internet-hosted connectors.
+- [Claude Cowork architecture](https://support.claude.com/en/articles/14479288-claude-cowork-architecture-overview)
+  distinguishes remote sessions from desktop-local execution.
+- [Claude remote connector guidance](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp)
+  covers internet-hosted custom connectors.
 - [Microsoft’s federated connector overview](https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/federated-connectors-overview)
   states that M365 Copilot fetches through MCP in real time, does not index that
   content, governs connectors through admins, and supports Researcher.
 - [Microsoft’s custom federated connector setup](https://learn.microsoft.com/en-us/microsoft-365/copilot/connectors/set-up-custom-federated-connectors)
   requires a read-only remote MCP URL, admin permissions, authentication and a
   staged rollout.
+- [GitHub’s MCP-in-IDE guidance](https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp-in-your-ide/extend-copilot-chat-with-mcp)
+  documents VS Code and Xcode, while the rollout guide separately records the
+  Copilot app/CLI configuration and cloud-agent boundary.
 
 The M365 hosting report’s broader architecture proposal is sound as a work
 package hypothesis: keep source control in GitHub, use SharePoint when an
-organisation needs governed human publication, use a synced Graph connector
-when tenant indexing is the objective, and use federated MCP for live,
-non-indexed retrieval. It must not be simplified to “MCP provides full M365
-indexing”; Microsoft explicitly separates those modes.
+organisation needs governed human publication, use a synced Copilot connector,
+which indexes content into Microsoft Graph, when tenant indexing is the
+objective, and use federated MCP for live, non-indexed retrieval. It must not be
+simplified to “MCP provides full M365 indexing”; Microsoft explicitly separates
+those modes.
 
 ## Evaluation design for OKF efficiency
 
@@ -288,8 +322,10 @@ Run the eight public smoke tasks against the controlled broker first:
 2. AGY;
 3. Codex CLI;
 4. Claude Code;
-5. Claude Desktop manual run; and
-6. M365/Claude research modes only after the remote connector is deployed.
+5. VS Code Agent / Copilot Chat;
+6. Codex Desktop and Claude Desktop manual runs; and
+7. M365, ChatGPT and Claude research modes only after the remote connector is
+   deployed.
 
 Use fresh context for every task. Record readiness before task assignment.
 Store no hidden reasoning, credentials or provider-private trace. Bind the
@@ -326,11 +362,14 @@ quality threshold; a fast wrong selection is not an efficiency success.
 
 ### WP1 — remote parity
 
-- expose the same tool schemas over HTTPS Streamable HTTP;
+- expose equivalent read-only retrieval semantics at an authenticated HTTPS
+  endpoint, using Streamable HTTP as the OKF implementation target;
+- record and test each client-specific connector profile instead of assuming
+  every remote surface accepts all six local tools;
 - add OAuth/Entra authentication without changing read-only semantics;
 - log redacted, run-bound tool events and exact response bytes;
 - deploy to a non-production test domain; and
-- connect Claude research and an M365 staged test user.
+- connect ChatGPT web, Claude remote modes and an M365 staged test user.
 
 ### WP2 — controlled runner adapters
 
