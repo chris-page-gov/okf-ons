@@ -45,10 +45,10 @@
       "id": "gemini-cli",
       "product": "Google Gemini CLI",
       "surface": "command-line",
-      "observed_version": "0.38.2",
+      "observed_version": "0.46.0",
       "automation": "unattended",
-      "initial_smoke_suite": true,
-      "readiness": "previously-ready-fresh-probe-required",
+      "initial_smoke_suite": false,
+      "readiness": "installed-distinct-client-not-configured",
       "capture": ["stream-json", "structured-answer", "mcp-trace", "provider-usage"],
       "capabilities": {
         "mcp_core": true,
@@ -58,7 +58,26 @@
         "native_http_fetch": null,
         "structured_output": true
       },
-      "notes": "Use a stable isolated project workspace and project-scoped MCP policy. Previous runs showed workspace and settings-path sensitivity."
+      "notes": "This is the older Gemini CLI, not Antigravity CLI. Its .gemini/settings.json does not configure AGY; retain it only as a separately preregistered client."
+    },
+    {
+      "id": "google-antigravity-cli",
+      "product": "Google Antigravity CLI",
+      "surface": "command-line",
+      "observed_version": "1.1.4",
+      "automation": "unattended-runner-not-yet-implemented",
+      "initial_smoke_suite": true,
+      "readiness": "workspace-mcp-config-installed-fresh-probe-required",
+      "capture": ["structured-answer", "mcp-trace", "visible-transcript", "usage-when-reported"],
+      "capabilities": {
+        "mcp_core": true,
+        "browser": false,
+        "javascript": false,
+        "local_scratch": true,
+        "native_http_fetch": true,
+        "structured_output": true
+      },
+      "notes": "Launch with agy from this repository. The repo-scoped .agents/mcp_config.json starts the metadata-only broker; confirm /mcp readiness and resolved model in every fresh run."
     },
     {
       "id": "vscode-agent",
@@ -81,22 +100,24 @@
     },
     {
       "id": "claude-cowork",
-      "product": "Anthropic Cowork",
-      "surface": "desktop-research-preview",
-      "observed_version": null,
+      "product": "Claude Desktop Cowork",
+      "surface": "desktop-cowork-research",
+      "observed_version": "1.19367.0",
       "automation": "manual-import",
       "initial_smoke_suite": true,
       "readiness": "historical-evidence-only",
       "capture": ["contemporaneous-log", "visible-transcript-when-exported", "tool-log-when-exported"],
       "capabilities": {
-        "mcp_core": null,
+        "mcp_core": true,
+        "local_stdio_mcp": false,
+        "remote_connector_mcp": true,
         "browser": "extension-dependent",
         "javascript": null,
         "local_scratch": true,
         "native_http_fetch": true,
         "structured_output": false
       },
-      "notes": "The preserved Fable 5 trace observed approximately 92 to 95 KB fetch truncation, automatic spooling, no shell HTTP and a disconnected browser extension. It is not a controlled run."
+      "notes": "The preserved Fable 5 trace was run in the Claude Desktop application. Cowork/research must use a remote connector for the controlled broker; the app's local stdio configuration applies to normal Desktop chat, not this profile."
     },
     {
       "id": "claude-desktop",
@@ -109,13 +130,15 @@
       "capture": ["structured-answer", "mcp-trace", "visible-transcript"],
       "capabilities": {
         "mcp_core": true,
+        "local_stdio_mcp": true,
+        "remote_connector_mcp": true,
         "browser": "extension-dependent",
         "javascript": null,
         "local_scratch": null,
         "native_http_fetch": null,
         "structured_output": true
       },
-      "notes": "A July trace reached MCP initialization, but the existing MCP-Geo Docker wrapper was unavailable. Use a lightweight metadata-only broker for this evaluation."
+      "notes": "Normal Desktop chat can use the local metadata-only broker. Treat Cowork/research as the separate claude-cowork profile because its connector path and capabilities differ."
     },
     {
       "id": "codex-desktop",
@@ -211,6 +234,27 @@
         "structured_output": null
       },
       "notes": "Do not score until authentication, model identity, access controls and trace capture are proven."
+    },
+    {
+      "id": "m365-copilot-researcher-edge",
+      "product": "Microsoft 365 Copilot Researcher",
+      "surface": "browser-edge-research-agent",
+      "observed_version": null,
+      "automation": "manual-import",
+      "initial_smoke_suite": true,
+      "readiness": "remote-admin-connector-required",
+      "capture": ["produced-document", "visible-transcript-when-exported", "mcp-trace-when-admin-enabled"],
+      "capabilities": {
+        "mcp_core": true,
+        "local_stdio_mcp": false,
+        "remote_connector_mcp": true,
+        "browser": true,
+        "javascript": true,
+        "local_scratch": null,
+        "native_http_fetch": true,
+        "structured_output": false
+      },
+      "notes": "The preserved trial ran in Edge and could not retrieve the supplied descriptor. A comparable MCP arm requires an admin-deployed, authenticated, read-only HTTPS federated connector staged to the test user; the resolved model may remain unknown."
     },
     {
       "id": "github-copilot",

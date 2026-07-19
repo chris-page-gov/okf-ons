@@ -14,7 +14,11 @@
     "expected": "evaluation/ai-client/expected.json",
     "expected_sha256": "8c4ae366c85ecdce471da43835a6a3106a7390de9bbd7b004ca43f0d76609e33",
     "client_profiles": "evaluation/ai-client/client-profiles.json",
-    "client_profiles_sha256": "d1e35249fc5cd800a6e0c27ba46b02e313b5547b84e31085ede2de9ebc51e561"
+    "client_profiles_sha256": "421ebe6a1b36f160d86b360f252e345744429444c4dc5ef848761ada53371457",
+    "personas_and_journeys": "evaluation/ai-client/personas-and-journeys.json",
+    "personas_and_journeys_sha256": "b1101129aeea20567fefd07699849949281609d80571c9a7c50a3ffb8ec9eba7",
+    "issue_register": "evaluation/ai-client/issue-register.json",
+    "issue_register_sha256": "36ef6f164bebb1ab47b225d34fbe6d1998bc03eaf760412ab19f759ce4d04aba"
   },
   "delivery_modes": [
     {
@@ -131,6 +135,8 @@
     "comparative_runs_require_enforced_access": true,
     "access_enforcement_requires_evidence": true,
     "fault_profiles_require_enforcement_evidence": true,
+    "efficiency_claims_require_comparative_arms": true,
+    "missing_telemetry_remains_null": true,
     "ci_live_network": false,
     "ci_paid_calls": false
   },
@@ -138,6 +144,48 @@
     "id": "safe-exact-selection",
     "definition": "The correct source-qualified target and required edition/version are selected, the exact record is hydrated when required, material caveats are retained and no critical unsupported claim is made.",
     "report_components_separately": true
+  },
+  "efficiency_outcomes": {
+    "interpretation": "Efficiency is reported only alongside answer quality. A fast or cheap wrong selection is not an efficiency success.",
+    "claim_rule": "A comparative efficiency claim requires the same task and host/model cell, enforced access arms, a declared denominator, and exact or explicitly qualified source measurements.",
+    "measures": [
+      {
+        "id": "elapsed_time",
+        "unit": "milliseconds",
+        "scope": "task start to submitted visible structured answer"
+      },
+      {
+        "id": "tool_calls",
+        "unit": "calls",
+        "scope": "all successful and failed calls by tool"
+      },
+      {
+        "id": "response_bytes",
+        "unit": "bytes",
+        "scope": "complete and partial responses reported separately"
+      },
+      {
+        "id": "provider_input_tokens",
+        "unit": "tokens",
+        "scope": "native provider telemetry only; null when not exposed"
+      },
+      {
+        "id": "provider_output_tokens",
+        "unit": "tokens",
+        "scope": "native provider telemetry only; null when not exposed"
+      },
+      {
+        "id": "selection_attempts",
+        "unit": "attempts",
+        "scope": "candidate reductions, comparisons and exact-record hydration attempts"
+      },
+      {
+        "id": "provider_cost",
+        "unit": "declared-currency",
+        "scope": "provider-reported or tariff-derived with method and price date"
+      }
+    ],
+    "single_composite_score": false
   },
   "confirmatory_extension": {
     "minimum_subject_reviewed_tasks": 50,

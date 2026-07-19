@@ -70,11 +70,11 @@ work package, demo route and questions for ONS. See also the
 
 ## AI access research and evaluation
 
-The repository preserves a contemporaneous Claude Cowork / Fable 5 case study
-in [`research/`](research/README.md). The Markdown is authoritative; its DOCX
-is a formatted derivative. Both are SHA-256-pinned and the later verification
-notes keep partial-fetch observations separate from facts established by a
-complete bundle rebuild.
+The repository preserves and SHA-256-pins 18 July 2026 trials from Claude
+Desktop Cowork, Google Antigravity CLI and Microsoft 365 Copilot Researcher in
+[`research/`](research/README.md). Normalized observations keep raw produced
+documents, session-reported identity, later verification and our
+interpretations distinct.
 
 The case study now seeds a provider-neutral, fixture-safe harness:
 
@@ -87,15 +87,25 @@ python3 scripts/ai_client_harness.py tasks
 ```
 
 The harness defines OKF, open-web and raw-API arms; eight development smoke
-tasks; a common structured answer; answer-bound independent assessment;
+tasks; six ONS-specific personas and eight journeys; a ten-item observed-issue
+register; a common structured answer; answer-bound independent assessment;
 deterministic component scoring; enforced-versus-self-reported separation; and
 separate readiness outcomes so a blocked client is not scored as a wrong
 answer. CI performs no live, authenticated or paid model calls.
 
+A dependency-free, metadata-only MCP broker now exposes deterministic
+descriptor, search, exact-record, comparison, read-only MCP-plan and
+answer-submission tools. Antigravity CLI (`agy`) loads it from the
+repository-scoped [`.agents/mcp_config.json`](.agents/mcp_config.json). It uses
+the frozen corpus, makes no network call, stores no credentials and returns no
+observation values.
+
 See the
-[agent-access and multi-client evaluation proposal](docs/agent-access-and-evaluation-proposal.md)
-for the verified F1–F9 implications, the per-record hydration work package,
-client matrix and path to a preregistered ≥50-question comparative trial.
+[cross-client trial analysis](docs/ai-client-trial-analysis.md) for the
+evidence, issue/remediation matrix, personas, efficiency protocol and
+prioritized work packages. The
+[MCP rollout guide](docs/mcp-client-rollout.md) records what can be configured
+locally and why Claude research and M365 Researcher need a remote connector.
 
 ## What “all” means
 

@@ -253,3 +253,17 @@ three access arms, repeated runs and blinded assessment. See the
 [agent-access and multi-client evaluation proposal](agent-access-and-evaluation-proposal.md)
 for that protocol and the separation between readiness blocks, task failures
 and answer-quality scores.
+
+The harness now cross-validates
+[`personas-and-journeys.json`](../evaluation/ai-client/personas-and-journeys.json)
+and [`issue-register.json`](../evaluation/ai-client/issue-register.json).
+Together they assign every public smoke task and all 12 confusable ONS gold
+queries to an ONS-specific user journey, and map every preserved trial issue to
+typed failures and remediations.
+
+Efficiency is secondary to safe exact selection. Elapsed time, calls, complete
+and partial response bytes, provider tokens, selection attempts and cost are
+reported separately. Missing telemetry remains null; estimates cannot be
+relabeled exact; and a comparative efficiency claim requires the same task and
+host/model cell under enforced access arms. See the
+[cross-client trial analysis](ai-client-trial-analysis.md) for the full design.

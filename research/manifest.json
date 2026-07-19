@@ -1,20 +1,42 @@
 {
-  "schema": "okf-ons.research-evidence.v1",
-  "evidence_id": "claude-cowork-okf-access-2026-07-18",
+  "schema": "okf-ons.research-evidence-register.v1",
+  "evidence_id": "okf-ons-ai-client-trials-2026-07-18",
   "authority": {
-    "authoritative_artifact": "OKF-ONS_AI_Access_Briefing_Input.md",
-    "derivative_artifact": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
-    "rule": "The Markdown is authoritative. The public DOCX is a sanitized formatting derivative and does not override it."
+    "rule": "Private raw Office packages are retained outside the repository by source hash. Public DOCX files are sanitized derivatives. A produced briefing does not override a trace or postmortem, and a session-authored record does not become a native provider export.",
+    "trial_authorities": [
+      {
+        "trial_id": "claude-desktop-cowork-fable-5-20260718",
+        "authoritative_artifact": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+        "derivative_artifact": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
+        "rule": "The Markdown is authoritative. The public DOCX is a sanitized formatting derivative and does not override it."
+      },
+      {
+        "trial_id": "antigravity-cli-gemini-3-1-pro-20260718",
+        "authoritative_artifact": "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+        "produced_artifact": "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
+        "rule": "The postmortem is the session-authored access record. The briefing is a produced output. Neither is a native provider export."
+      },
+      {
+        "trial_id": "m365-copilot-researcher-edge-20260718",
+        "produced_artifacts": [
+          "2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx"
+        ],
+        "rule": "The public DOCX files are sanitized derivatives of produced research outputs with no native transcript or resolved-model export; package-access and telemetry claims are limited to what the documents disclose."
+      }
+    ]
   },
   "artifacts": [
     {
-      "path": "OKF-ONS_AI_Access_Briefing_Input.md",
+      "path": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+      "trial_id": "claude-desktop-cowork-fable-5-20260718",
       "role": "authoritative-research-record",
       "media_type": "text/markdown",
       "sha256": "9a369917f08a0b0dfc5b2d19df6f0641231f7c864796e9059faf881a3954998e"
     },
     {
       "path": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
+      "trial_id": "claude-desktop-cowork-fable-5-20260718",
       "role": "public-sanitized-formatted-derivative",
       "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "sha256": "4c45724e93261e5ee5d88ce4587925f54fc90a2129a50011815afbdbae4862ef",
@@ -25,25 +47,104 @@
         "external_relationships_redacted": 0,
         "hyperlink_labels_redacted": 0
       }
+    },
+    {
+      "path": "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+      "trial_id": "antigravity-cli-gemini-3-1-pro-20260718",
+      "role": "session-authored-postmortem",
+      "media_type": "text/markdown",
+      "sha256": "011c593c841dc37520699ea9e403e42e3a50b84a64b224702ae0438db697745f"
+    },
+    {
+      "path": "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
+      "trial_id": "antigravity-cli-gemini-3-1-pro-20260718",
+      "role": "produced-briefing",
+      "media_type": "text/markdown",
+      "sha256": "cc61ed4c8bff07fd43716b841b2f1887823357481cc4cce53e89e7616ca610c9"
+    },
+    {
+      "path": "2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+      "trial_id": "m365-copilot-researcher-edge-20260718",
+      "role": "public-sanitized-produced-access-briefing",
+      "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "ba7c424bbf021df812fcf7133e22bf42d413e1d737970352b233558abd2bf870",
+      "sanitized_from_sha256": "a44999d6033552e691b92986729d47f58f872eb499dabe89dcbf2bf73cb7da11",
+      "redaction_log": {
+        "custom_properties_removed": 0,
+        "custom_relationships_removed": 0,
+        "external_relationships_redacted": 53,
+        "hyperlink_labels_redacted": 53
+      }
+    },
+    {
+      "path": "2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx",
+      "trial_id": "m365-copilot-researcher-edge-20260718",
+      "role": "public-sanitized-produced-architecture-research",
+      "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "685986c8f525f3fd465d84cb0aa8788ae593ffff6974152c409021ced9e8d790",
+      "sanitized_from_sha256": "2203b3fcecce9ba0002df0ac9470ee191c68a8694e11524ff5153786ad1ad6d5",
+      "redaction_log": {
+        "custom_properties_removed": 0,
+        "custom_relationships_removed": 0,
+        "external_relationships_redacted": 35,
+        "hyperlink_labels_redacted": 35
+      }
     }
   ],
-  "session": {
-    "date": "2026-07-18",
-    "host_surface": "Anthropic Cowork research preview",
-    "model_display_name": "Claude Fable 5",
-    "model_string": "claude-fable-5",
-    "model_effort": "not-captured",
-    "evidence_fidelity": "contemporaneous-log",
-    "native_provider_export_preserved": false,
-    "fresh_context_per_task": false,
-    "control_arms": [],
-    "controlled_trial_eligible": false,
-    "notes": [
-      "The user's label 'Fable 5 Max' is retained in surrounding context, but no separate Max model or effort identifier is evidenced in the artifacts.",
-      "Model identity, knowledge cutoff, chronology and transcript completeness are session-reported unless a native provider export is later attached.",
-      "Token values and some inline payload sizes in the source are estimates, not billing-grade telemetry."
-    ]
-  },
+  "trials": [
+    {
+      "id": "claude-desktop-cowork-fable-5-20260718",
+      "observation": "../evaluation/ai-client/evidence/claude-desktop-cowork-fable-5-20260718.json",
+      "observation_sha256": "63c39c4c93879cbdfdb5494b56a77ad0d1e85242ba912e830bf6d0545d05784d",
+      "date": "2026-07-18",
+      "host_product": "Claude Desktop",
+      "host_surface": "Cowork research preview",
+      "host_version": "1.19367.0",
+      "model_display_name": "Claude Fable 5",
+      "model_string": "claude-fable-5",
+      "model_effort": "not-captured",
+      "identity_status": "host-later-verified-model-session-reported",
+      "capture_fidelity": "contemporaneous-log",
+      "native_provider_export_preserved": false,
+      "fresh_context_per_task": false,
+      "controlled_trial_eligible": false
+    },
+    {
+      "id": "antigravity-cli-gemini-3-1-pro-20260718",
+      "observation": "../evaluation/ai-client/evidence/antigravity-gemini-3-1-pro-20260718.json",
+      "observation_sha256": "b1d8c1e034845d8c9ffc454faa91de31d3ac7158cc4be5664e1da7451b4cbf4c",
+      "date": "2026-07-18",
+      "host_product": "Google Antigravity CLI",
+      "host_surface": "command-line",
+      "host_command": "agy",
+      "host_version": "1.1.4",
+      "model_display_name": "Gemini 3.1 Pro (High)",
+      "model_string": null,
+      "model_effort": "High",
+      "identity_status": "host-later-verified-model-session-reported",
+      "capture_fidelity": "reconstruction",
+      "native_provider_export_preserved": false,
+      "fresh_context_per_task": false,
+      "controlled_trial_eligible": false
+    },
+    {
+      "id": "m365-copilot-researcher-edge-20260718",
+      "observation": "../evaluation/ai-client/evidence/m365-copilot-researcher-20260718.json",
+      "observation_sha256": "0856846269eac92fa0c833f3832a0dd4315920d9a294583dfc30b7803d4a547e",
+      "date": "2026-07-18",
+      "host_product": "Microsoft Edge",
+      "host_surface": "Microsoft 365 Copilot Researcher",
+      "host_version": null,
+      "model_display_name": null,
+      "model_string": null,
+      "model_effort": null,
+      "identity_status": "host-user-reported-model-not-exposed",
+      "capture_fidelity": "reconstruction",
+      "native_provider_export_preserved": false,
+      "fresh_context_per_task": "not-captured",
+      "controlled_trial_eligible": false
+    }
+  ],
   "later_verification": {
     "repository_commit": "502c60e94e53a2acd7d26ebdb5b1b2ae376286f7",
     "method": "Rebuilt the bundle from source/demo-snapshot and inspected the complete generated files.",
@@ -66,67 +167,153 @@
       "records_over_65536": 0,
       "cpih": 7131,
       "serialization": "UTF-8 canonical pretty JSON produced by okf_ons.build.canonical_json"
+    },
+    "local_clients": {
+      "agy": {
+        "installed": true,
+        "version": "1.1.4",
+        "workspace_mcp_config": ".agents/mcp_config.json"
+      },
+      "classic_gemini_cli": {
+        "installed": true,
+        "version": "0.46.0",
+        "same_configuration_as_agy": false
+      },
+      "claude_desktop": {
+        "installed": true,
+        "version": "1.19367.0",
+        "local_stdio_available_in_cowork": false
+      },
+      "m365_copilot_researcher_edge": {
+        "local_stdio_available": false,
+        "remote_admin_connector_required": true
+      }
     }
   },
   "qualifications": [
     {
-      "finding": "F1",
+      "finding": "Claude F1",
       "status": "supported-for-orientation-only",
       "qualification": "Named entrypoints enabled efficient overview and standards orientation. Exact record hydration later required a guessed path, so the evidence does not establish a guess-free end-to-end journey."
     },
     {
-      "finding": "F2",
+      "finding": "Claude F2",
       "status": "hypothesis",
       "qualification": "The session reports caveat relay, but n=1 without a raw export or stripped-caveat control does not establish that the format caused the behaviour."
     },
     {
-      "finding": "F3",
+      "finding": "Claude F3",
       "status": "alignment-demonstration",
       "qualification": "The hydrated record supports an evidence-mapping demonstration. It is not independent DCAT, PROV-O, statistical-product or legal-compliance certification."
     },
     {
-      "finding": "F4",
+      "finding": "Claude F4",
       "status": "plausible-not-measured",
       "qualification": "Confusable alternatives and reconciliation were available, but the trace does not measure whether they reduce wrong selections."
     },
     {
-      "finding": "F5",
+      "finding": "Claude F5",
       "status": "confirmed-and-underestimated",
       "qualification": "Fetch truncation was real. Complete dataset chunks are approximately 5.2 to 6.8 MB, not the source document's estimated 0.5 MB. No declared canonical per-record hydration path exists."
     },
     {
-      "finding": "F6",
+      "finding": "Claude F6",
       "status": "confirmed-with-correction",
       "qualification": "The current search contract is browser-oriented and poorly documented for agents. Shards use deterministic token prefixes rather than hashes, and one flat index would itself exceed common fetch caps."
     },
     {
-      "finding": "F7",
+      "finding": "Claude F7",
       "status": "confirmed-client-and-contract-failures",
       "qualification": "Spooling recovered partial evidence; the browser failure was a client readiness issue, while the empty guessed URL exposed an undeclared hydration contract."
     },
     {
-      "finding": "F8",
+      "finding": "Claude F8",
       "status": "hypothesis",
       "qualification": "Token economics may be favourable, but the reported token range is estimated and returned partial bytes must not be described as full-resource bytes."
     },
     {
-      "finding": "F9",
+      "finding": "Claude F9",
       "status": "supported-for-one-session",
-      "qualification": "Unauthenticated read-only HTTPS plus scratch storage was sufficient in this session. Required capabilities may differ by client and must be probed."
+      "qualification": "Unauthenticated read-only HTTPS plus scratch storage was sufficient in this session. Required capabilities differ by client and must be probed."
     },
     {
-      "finding": "Appendix A call 28",
+      "finding": "Claude Appendix A call 28",
       "status": "corrected-inference",
       "qualification": "CPIH is present in the generated central MCP bindings file. The grep miss occurred because the client held only a truncated prefix of that multi-megabyte file."
+    },
+    {
+      "finding": "Gemini resource efficiency",
+      "status": "unsupported-conclusion",
+      "qualification": "The session downloaded about 5.95 MB, exposed no exact provider-token telemetry and used no comparison arm. It demonstrates successful traversal, not high efficiency."
+    },
+    {
+      "finding": "Gemini compliance checking",
+      "status": "overclaim",
+      "qualification": "The bundle registers and maps standards evidence. The trial did not independently test compliance, certification, statistical quality or legal obligations."
+    },
+    {
+      "finding": "M365 exact bundle access",
+      "status": "failed-and-disclosed",
+      "qualification": "The Researcher output did not retrieve the supplied descriptor and therefore cannot support package-specific success or efficiency claims."
+    },
+    {
+      "finding": "M365 hosting recommendation",
+      "status": "architecture-proposal",
+      "qualification": "The hybrid GitHub, SharePoint, synced Graph connector and federated MCP pattern is a useful proposal. Current platform capabilities and departmental governance must be validated at implementation time."
     }
   ],
-  "document_validation": {
-    "docx_structurally_valid": true,
-    "page_number_fields_present": true,
-    "provenance_headers_present": true,
-    "macros_present": false,
-    "embedded_media_present": false,
-    "portability_warning": "A LibreOffice PDF render on macOS produced 13 pages and clipped top content on several even pages. This known source-layout limitation is preserved in the sanitized derivative; use the Markdown as content authority."
+  "document_validation": [
+    {
+      "artifact": "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx",
+      "docx_structurally_valid": true,
+      "page_number_fields_present": true,
+      "provenance_headers_present": true,
+      "macros_present": false,
+      "embedded_media_present": false,
+      "rendered_pages": 13,
+      "portability_warning": "A LibreOffice PDF render on macOS clipped top content on several even pages. This is a known source-layout limitation preserved in the sanitized derivative; use the Markdown as content authority."
+    },
+    {
+      "artifact": "2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+      "docx_structurally_valid": true,
+      "page_number_fields_present": true,
+      "provenance_headers_present": true,
+      "macros_present": false,
+      "embedded_media_present": false,
+      "rendered_pages": 10,
+      "portability_warning": "A LibreOffice PDF render showed repeated provenance-header and body collisions at the top of pages 2 to 10. This known source-layout limitation remains in the sanitized derivative; external citation labels and targets are redacted."
+    },
+    {
+      "artifact": "2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx",
+      "docx_structurally_valid": true,
+      "page_number_fields_present": true,
+      "provenance_headers_present": true,
+      "macros_present": false,
+      "embedded_media_present": true,
+      "rendered_pages": 13,
+      "portability_warning": "The seven-column options table is cramped and split across pages. This known source-layout limitation remains in the sanitized derivative; external citation labels and targets are redacted."
+    }
+  ],
+  "public_release": {
+    "owner_directed_inclusion": true,
+    "review_status": "technical-public-release-review",
+    "review_date": "2026-07-19",
+    "formal_information_governance_clearance": false,
+    "private_raw_packages_in_repository": false,
+    "private_raw_packages_retained_by_owner": true,
+    "secrets_detected": false,
+    "macros_detected": false,
+    "native_provider_exports_included": false,
+    "hidden_enterprise_locators_detected_in_sources": true,
+    "hidden_enterprise_locators_present_in_derivatives": false,
+    "enterprise_citation_labels_redacted": true,
+    "derived_analysis_minimises_enterprise_detail": true,
+    "reviewed_artifact_sha256": {
+      "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx": "4c45724e93261e5ee5d88ce4587925f54fc90a2129a50011815afbdbae4862ef",
+      "2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx": "685986c8f525f3fd465d84cb0aa8788ae593ffff6974152c409021ced9e8d790",
+      "2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx": "ba7c424bbf021df812fcf7133e22bf42d413e1d737970352b233558abd2bf870"
+    },
+    "warning": "This is a bounded technical review of package relationships, properties, tracked changes, macros and embedded-media metadata plus rendered-page inspection. It is not formal information-governance clearance."
   },
-  "assurance_boundary": "This manifest preserves and qualifies research evidence. It does not certify model performance, statistical accuracy, standards compliance, legal compliance or current standards currency."
+  "assurance_boundary": "This register preserves and qualifies research evidence. It does not certify model performance, statistical accuracy, standards compliance, legal compliance, information-governance clearance or current standards currency."
 }

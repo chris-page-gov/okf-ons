@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "okf-ons": {
+      "command": "python3",
+      "args": [
+        "scripts/okf_ons_mcp.py"
+      ],
+      "cwd": "."
+    }
+  }
+}

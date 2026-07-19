@@ -1,0 +1,150 @@
+{
+  "schema": "okf-ons.ai-client-observation.v1",
+  "observation_id": "m365-copilot-researcher-edge-20260718",
+  "study_id": null,
+  "controlled_comparison_eligible": false,
+  "capture": {
+    "fidelity": "reconstruction",
+    "authoritative_artifact": "../../../research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+    "artifact_sha256": "a44999d6033552e691b92986729d47f58f872eb499dabe89dcbf2bf73cb7da11",
+    "additional_artifact": "../../../research/2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx",
+    "additional_artifact_sha256": "2203b3fcecce9ba0002df0ac9470ee191c68a8694e11524ff5153786ad1ad6d5",
+    "native_provider_export": null,
+    "visible_transcript_preserved": "produced-documents-only",
+    "hidden_reasoning_collected": false
+  },
+  "client": {
+    "profile_id": "m365-copilot-researcher-edge",
+    "host_product": "Microsoft Edge",
+    "host_surface": "Microsoft 365 Copilot Researcher",
+    "client_version": null,
+    "model_display_name": null,
+    "model_string": null,
+    "model_effort": null,
+    "identity_evidence": {
+      "host_and_mode": "user clarification and document provenance header",
+      "model": "not exposed"
+    }
+  },
+  "bundle": {
+    "descriptor": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
+    "snapshot_id": null
+  },
+  "access": {
+    "arm": "mixed-public-web-and-enterprise-context",
+    "enforcement": "self-reported",
+    "methods_observed": [
+      "public web research",
+      "Microsoft 365 enterprise search",
+      "enterprise document access"
+    ],
+    "descriptor_retrieval_attempted": true,
+    "descriptor_retrieval_succeeded": false,
+    "credentials_observed": "enterprise-session-not-exported",
+    "local_scratch_observed": null,
+    "browser_available": true,
+    "local_stdio_mcp_available": false
+  },
+  "task_mapping": [
+    {
+      "source_task": "explain OKF-ONS and its standards role",
+      "smoke_tasks": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-002"
+      ],
+      "status": "degraded",
+      "fresh_context": false,
+      "comparability": "different-prompt-mixed-access-arm",
+      "outcome": "The supplied descriptor was unavailable, so the report explicitly bounded package-specific claims and used public and enterprise sources."
+    },
+    {
+      "source_task": "provide a worked standards example",
+      "smoke_task": "AI-SMOKE-008",
+      "status": "completed",
+      "fresh_context": false,
+      "comparability": "different-target-and-prompt",
+      "outcome": {
+        "requested_bundle_record_hydrated": false,
+        "substitute": "external ONS mid-2024 population publication",
+        "substitution_disclosed": true,
+        "remaining_limitation_disclosed": true
+      }
+    },
+    {
+      "source_task": "recommend an M365-native OKF hosting pattern",
+      "smoke_task": null,
+      "status": "completed",
+      "fresh_context": null,
+      "comparability": "architecture-research-not-a-suite-task",
+      "outcome": "The report distinguishes SharePoint governance, Graph synced indexing, Azure AI Search preprocessing and federated MCP live retrieval."
+    }
+  ],
+  "telemetry": {
+    "provider_tokens": {
+      "value": null,
+      "unit": "tokens",
+      "exact": false,
+      "source": "not exposed by the preserved runtime output",
+      "scope": "unknown"
+    },
+    "tool_calls": {
+      "value": null,
+      "unit": "calls",
+      "exact": false,
+      "source": "not exposed by the preserved runtime output",
+      "scope": "unknown"
+    },
+    "elapsed_time": {
+      "value": null,
+      "unit": "seconds",
+      "exact": false,
+      "source": "not exposed by the preserved runtime output",
+      "scope": "unknown"
+    }
+  },
+  "failures": [
+    {
+      "code": "DESCRIPTOR_ACCESS_UNAVAILABLE",
+      "count": 1,
+      "stage": "bundle-orientation",
+      "classification": "client-access-path"
+    },
+    {
+      "code": "MODEL_IDENTITY_UNKNOWN",
+      "count": 1,
+      "stage": "trial-provenance",
+      "classification": "client-telemetry"
+    },
+    {
+      "code": "CITATION_NOT_PORTABLE",
+      "count": null,
+      "stage": "document-handoff",
+      "classification": "generated-evidence-portability"
+    },
+    {
+      "code": "DOCUMENT_LAYOUT_DEFECT",
+      "count": null,
+      "stage": "document-handoff",
+      "classification": "generated-document-layout"
+    }
+  ],
+  "architecture_findings": [
+    {
+      "status": "proposal-requiring-current-platform-validation",
+      "finding": "Use GitHub as source control, SharePoint as governed publication, a synced Graph connector for indexed Copilot discovery, and federated MCP as a live read-only complement."
+    },
+    {
+      "status": "later-verified-against-current-microsoft-documentation",
+      "finding": "M365 Copilot federated connectors use remote MCP, are admin-managed and read-only, and support Researcher without indexing source content into Microsoft 365."
+    }
+  ],
+  "public_release": {
+    "owner_directed_inclusion": true,
+    "secrets_detected": false,
+    "native_provider_export_included": false,
+    "enterprise_document_titles_present": true,
+    "portable_source_urls_complete": false,
+    "derived_analysis_repeats_enterprise_details": false
+  },
+  "use_in_harness": "Issue seed and manual-import observation only. Do not combine with controlled-arm scores. A future M365 run requires an admin-deployed remote federated connector and an enforced access arm."
+}

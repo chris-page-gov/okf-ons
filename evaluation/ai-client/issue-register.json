@@ -1,0 +1,515 @@
+{
+  "schema": "okf-ons.ai-client-issue-register.v1",
+  "purpose": "Turn observed cross-client trial failures into explicit design requirements, evaluation coverage and release gates.",
+  "evidence_rule": "Observed means present in a preserved artefact. Session-reported means asserted by the trial output without a native provider export. Later-verified means reproduced from the repository or local client. Inferred means a proposed explanation and is never treated as an observation.",
+  "verification_observation_ids": [
+    "repository-verification-20260718",
+    "local-client-audit-20260718",
+    "repository-audit-20260718"
+  ],
+  "issues": [
+    {
+      "id": "AI-ISSUE-001",
+      "title": "OKF entrypoint and terminology were ambiguous to a new agent",
+      "severity": "material",
+      "classification": "orientation-contract",
+      "evidence": [
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+          "status": "observed",
+          "summary": "The agent first looked for a local package or MCP server and searched the web before treating the supplied descriptor as the bundle root."
+        }
+      ],
+      "design_implication": "A descriptor URL alone is navigable after discovery but is not a sufficient first-use instruction for agents unfamiliar with OKF.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Expose a compact descriptor/orientation MCP tool and resource that names scope, entrypoints, exact-record hydration and assurance boundaries."
+        },
+        {
+          "priority": "P1",
+          "action": "Add a stable agent quickstart relation to the public descriptor and OKF Explorer."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "orient-to-bundle"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001"
+        ],
+        "failure_codes": [
+          "ENTRYPOINT_AMBIGUOUS",
+          "UNNECESSARY_PACKAGE_SEARCH"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-002",
+      "title": "Large static shards obstruct exact-record hydration",
+      "severity": "critical",
+      "classification": "bundle-granularity",
+      "evidence": [
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+          "status": "observed",
+          "summary": "Several multi-megabyte resources were truncated and the target record could not be hydrated through a declared single-record route."
+        },
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+          "status": "observed",
+          "summary": "The client downloaded a 5.9 MB dataset shard and inspected only an initial slice."
+        },
+        {
+          "observation_id": "repository-verification-20260718",
+          "artifact": "research/manifest.json",
+          "status": "later-verified",
+          "summary": "Every canonical single record is below 65,536 bytes, so a bounded exact-record tool can avoid the shard-size failure."
+        }
+      ],
+      "design_implication": "Browser-oriented shards remain useful for static UI search, but agents need bounded search and exact-record retrieval contracts.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Provide deterministic metadata-only MCP search and get-record tools backed by the frozen corpus."
+        },
+        {
+          "priority": "P0",
+          "action": "Return stable record IDs and source-qualified evidence pointers from search so hydration never depends on a guessed URL."
+        },
+        {
+          "priority": "P1",
+          "action": "Publish canonical per-record static routes for clients that cannot use MCP."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "reduce-intent-to-candidates",
+          "hydrate-and-cite-exact-record"
+        ],
+        "task_ids": [
+          "AI-SMOKE-003",
+          "AI-SMOKE-007"
+        ],
+        "failure_codes": [
+          "HTTP_RESPONSE_TRUNCATED",
+          "HYDRATION_ROUTE_UNDECLARED"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-003",
+      "title": "A convenient substitute can displace the requested dataset",
+      "severity": "critical",
+      "classification": "selection-integrity",
+      "evidence": [
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+          "status": "observed",
+          "summary": "The requested CPIH record was located but not hydrated; a different Nomis record was used as a disclosed standards example."
+        },
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+          "status": "observed",
+          "summary": "The agent selected NM_66_1 from the first 800 lines as a worked example rather than showing that it was the best match for a user intent."
+        },
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "observed",
+          "summary": "When the descriptor was unavailable, the report used an external ONS population example and clearly disclosed that substitution."
+        }
+      ],
+      "design_implication": "Selection must be a first-class evaluated decision: agents should see alternatives and decisive contrasts before settling on an exact record.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Make considered records, alternatives and contrast fields required answer fields."
+        },
+        {
+          "priority": "P0",
+          "action": "Provide an MCP compare tool and enforce disclose-or-abstain behaviour when exact hydration fails."
+        },
+        {
+          "priority": "P1",
+          "action": "Use the 12 confusable ONS gold queries as persona-linked journey samples and expand them with unseen confirmatory items."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "compare-confusable-records",
+          "recover-without-substitution"
+        ],
+        "task_ids": [
+          "AI-SMOKE-004",
+          "AI-SMOKE-008"
+        ],
+        "failure_codes": [
+          "TARGET_SUBSTITUTED",
+          "FIRST_RECORD_CONVENIENCE_BIAS",
+          "ALTERNATIVES_NOT_EXPOSED"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-004",
+      "title": "Standards evidence was vulnerable to compliance overclaiming",
+      "severity": "critical",
+      "classification": "assurance-language",
+      "evidence": [
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
+          "status": "observed",
+          "summary": "The executive summary called the exercise autonomous compliance checking even though the same note retained the bundle's alignment-not-certification caveat."
+        },
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "observed",
+          "summary": "The report generally kept OKF as an experimental complement to DCAT, PROV-O and government controls rather than a certification."
+        }
+      ],
+      "design_implication": "Caveats embedded in a record are necessary but not sufficient; critical assurance phrases need independent visible-answer review.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Keep alignment-not-certification and accuracy-not-evaluated in public gold and require an independent assessor to bind caveat evidence to visible answer spans."
+        },
+        {
+          "priority": "P1",
+          "action": "Use typed claim statuses such as declared, mapped, evaluated, independently certified and not evaluated."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "assess-standards-and-quality"
+        ],
+        "task_ids": [
+          "AI-SMOKE-002",
+          "AI-SMOKE-005"
+        ],
+        "failure_codes": [
+          "ALIGNMENT_CALLED_COMPLIANCE",
+          "EVIDENCE_CALLED_CERTIFICATION"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-005",
+      "title": "Efficiency conclusions exceeded the captured telemetry",
+      "severity": "critical",
+      "classification": "measurement-validity",
+      "evidence": [
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+          "status": "observed",
+          "summary": "The report called the traversal highly token-efficient without exact provider token telemetry or a comparison arm, after reporting about 5.95 MB downloaded."
+        },
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+          "status": "observed",
+          "summary": "Token totals were explicitly estimates and some returned bytes represented truncated prefixes rather than complete resources."
+        },
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "observed",
+          "summary": "The runtime did not expose token usage or exact tool-call telemetry."
+        }
+      ],
+      "design_implication": "Efficiency is a comparative outcome, not an adjective inferred from one successful answer.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Capture elapsed time, tool calls, response bytes, complete-versus-partial byte scope, retries, exact-record hydration and provider tokens when natively reported."
+        },
+        {
+          "priority": "P0",
+          "action": "Keep missing telemetry null and reject exact labels sourced from estimates."
+        },
+        {
+          "priority": "P1",
+          "action": "Compare OKF, open-web and raw-API arms on the same tasks and host/model cells before making an efficiency claim."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001",
+          "AI-SMOKE-003",
+          "AI-SMOKE-007"
+        ],
+        "failure_codes": [
+          "EFFICIENCY_CLAIM_WITHOUT_CONTROL",
+          "ESTIMATE_LABELLED_EXACT",
+          "PARTIAL_BYTES_LABELLED_COMPLETE"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-006",
+      "title": "Client readiness and bundle failures were easy to conflate",
+      "severity": "material",
+      "classification": "failure-attribution",
+      "evidence": [
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
+          "status": "observed",
+          "summary": "The browser extension was disconnected while separate fetch truncation and undeclared hydration failures occurred."
+        },
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "observed",
+          "summary": "The Researcher environment could not retrieve the supplied descriptor but could use public web and enterprise sources."
+        }
+      ],
+      "design_implication": "A failed answer may be a readiness block, an access-arm violation, a client capability limit or a bundle defect; these require different denominators and remediations.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Probe installation, server connection, authentication and access policy separately before starting a task."
+        },
+        {
+          "priority": "P0",
+          "action": "Exclude blocked readiness from answer-quality denominators and retain typed failure stages."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "recover-without-substitution",
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-007",
+          "AI-SMOKE-008"
+        ],
+        "failure_codes": [
+          "CLIENT_NOT_READY",
+          "ACCESS_PATH_UNAVAILABLE",
+          "BUNDLE_CONTRACT_FAILURE"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-007",
+      "title": "Host, mode and resolved model identity were not consistently observable",
+      "severity": "material",
+      "classification": "trial-provenance",
+      "evidence": [
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "observed",
+          "summary": "The artefact identifies M365 Researcher but says the model is unknown."
+        },
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/manifest.json",
+          "status": "session-reported",
+          "summary": "The model label and Cowork mode are session-reported; the host application is Claude Desktop."
+        },
+        {
+          "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+          "artifact": "research/manifest.json",
+          "status": "session-reported",
+          "summary": "Gemini 3.1 Pro (High) is reported by the trial output; the installed host is later verified as AGY 1.1.4."
+        }
+      ],
+      "design_implication": "Results belong to a host-mode-model combination and must not be reported as a pure model or client effect.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Record host product, surface, version, mode, model requested, model resolved and identity evidence source independently."
+        },
+        {
+          "priority": "P1",
+          "action": "Use null for unexposed model identity and stratify reports by the complete observed combination."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001"
+        ],
+        "failure_codes": [
+          "MODEL_IDENTITY_UNKNOWN",
+          "HOST_MODE_CONFLATED"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-008",
+      "title": "Generated DOCX evidence retained hidden metadata and non-portable layout",
+      "severity": "material",
+      "classification": "evidence-portability",
+      "evidence": [
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx",
+          "status": "later-verified",
+          "summary": "The raw package contained hidden enterprise relationship locators and visible citation labels. The public derivative redacts them, while a LibreOffice render still shows source header/body collisions."
+        },
+        {
+          "observation_id": "m365-copilot-researcher-edge-20260718",
+          "artifact": "research/2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx",
+          "status": "later-verified",
+          "summary": "The raw package contained hidden enterprise relationship locators and visible citation labels. The public derivative redacts them, while the wide comparison table still spans pages."
+        },
+        {
+          "observation_id": "claude-desktop-cowork-fable-5-20260718",
+          "artifact": "research/manifest.json",
+          "status": "later-verified",
+          "summary": "The raw Claude DOCX contained MSIP/Purview custom-property metadata; the public derivative removes it and is bound to the private source hash."
+        }
+      ],
+      "design_implication": "A polished generated document is not automatically a durable evidence record.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Retain raw Office packages privately by hash and publish only validated sanitized derivatives with an explicit redaction log."
+        },
+        {
+          "priority": "P1",
+          "action": "Require package inspection, an all-page rendered-document visual check and a hash-bound technical public-release review before publication."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001",
+          "AI-SMOKE-002"
+        ],
+        "failure_codes": [
+          "CITATION_NOT_PORTABLE",
+          "DOCUMENT_LAYOUT_DEFECT",
+          "PUBLIC_RELEASE_REVIEW_REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-009",
+      "title": "MCP deployment differs materially by client surface",
+      "severity": "critical",
+      "classification": "client-integration",
+      "evidence": [
+        {
+          "observation_id": "local-client-audit-20260718",
+          "artifact": "docs/mcp-client-rollout.md",
+          "status": "later-verified",
+          "summary": "AGY can load a workspace stdio server; Claude Desktop chat can use a local extension/server; Claude Cowork and M365 Researcher require remote connectors for this evaluation mode."
+        }
+      ],
+      "design_implication": "One copied local JSON configuration cannot create a comparable MCP arm across command-line, desktop research and enterprise browser clients.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Ship a dependency-free local stdio broker and a repo-scoped AGY configuration."
+        },
+        {
+          "priority": "P1",
+          "action": "Package the broker as a Claude Desktop extension for local chat trials."
+        },
+        {
+          "priority": "P1",
+          "action": "Deploy the same read-only tool contract as an authenticated public HTTPS Streamable HTTP server for Claude research and M365 federated-connector trials."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "orient-to-bundle",
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001",
+          "AI-SMOKE-003"
+        ],
+        "failure_codes": [
+          "LOCAL_TRANSPORT_UNSUPPORTED",
+          "REMOTE_CONNECTOR_NOT_DEPLOYED",
+          "ADMIN_ROLLOUT_REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "AI-ISSUE-010",
+      "title": "ONS-specific personas and journeys were implicit rather than testable",
+      "severity": "material",
+      "classification": "evaluation-coverage",
+      "evidence": [
+        {
+          "observation_id": "repository-audit-20260718",
+          "artifact": "evaluation/ai-client/personas-and-journeys.json",
+          "status": "later-verified",
+          "summary": "The repository had confusable gold queries and smoke tasks, while explicit personas existed only in sibling OKF Explorer and MCP-Geo material."
+        }
+      ],
+      "design_implication": "A task list alone cannot show whose decision is improved, which errors matter to them, or whether the suite covers the discovery lifecycle.",
+      "remediations": [
+        {
+          "priority": "P0",
+          "action": "Cross-link every persona, journey, smoke task and ONS gold query in a machine-validated manifest."
+        },
+        {
+          "priority": "P1",
+          "action": "Have ONS subject-matter experts review persona coverage and author at least 50 unseen confirmatory questions."
+        }
+      ],
+      "evaluation": {
+        "journey_ids": [
+          "orient-to-bundle",
+          "reduce-intent-to-candidates",
+          "compare-confusable-records",
+          "hydrate-and-cite-exact-record",
+          "assess-standards-and-quality",
+          "prepare-read-only-mcp-plan",
+          "recover-without-substitution",
+          "share-reproducible-selection"
+        ],
+        "task_ids": [
+          "AI-SMOKE-001",
+          "AI-SMOKE-002",
+          "AI-SMOKE-003",
+          "AI-SMOKE-004",
+          "AI-SMOKE-005",
+          "AI-SMOKE-006",
+          "AI-SMOKE-007",
+          "AI-SMOKE-008"
+        ],
+        "failure_codes": [
+          "PERSONA_COVERAGE_UNDECLARED",
+          "JOURNEY_COVERAGE_UNDECLARED"
+        ]
+      }
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "issue-evidence-resolves",
+      "rule": "Every issue evidence path exists and every observation_id is declared in the research or evaluation evidence register."
+    },
+    {
+      "id": "issue-task-coverage",
+      "rule": "Every issue maps to at least one journey and one public smoke task."
+    },
+    {
+      "id": "critical-remediation-owned",
+      "rule": "Every critical issue has at least one P0 remediation and a typed failure code."
+    }
+  ]
+}
