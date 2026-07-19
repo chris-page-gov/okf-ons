@@ -1,50 +1,73 @@
 # Research evidence
 
-This directory preserves the evidence from one live AI-access session against
-the public OKF-ONS demonstrator on 18 July 2026.
+This directory preserves three AI-access trials against, or prompted about, the
+public OKF-ONS demonstrator on 18 July 2026:
+
+- Claude Desktop in Cowork/research mode, with the session-reported model
+  “Claude Fable 5”;
+- Google Antigravity CLI (`agy`), with the session-reported model
+  “Gemini 3.1 Pro (High)”; and
+- Microsoft 365 Copilot Researcher in Microsoft Edge, whose resolved model was
+  not exposed.
+
+The date/client/task filenames make the host surface explicit without turning a
+session-reported model label into provider-verified telemetry.
 
 ## Authority and derivation
 
-- `OKF-ONS_AI_Access_Briefing_Input.md` is the authoritative research record.
-- `2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx`
-  is a public formatting derivative of that Markdown record. Page numbering
-  and provenance formatting in the DOCX do not override the Markdown.
-- `manifest.json` pins both public files by SHA-256, records the private source
-  package hash in `sanitized_from_sha256`, and separates session-reported
-  observations from later repository verification.
+- `2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md` is the
+  authoritative Claude research record. The matching
+  `-public-sanitized.docx` is a formatting derivative.
+- `2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md` is the
+  Gemini session-authored postmortem. The matching briefing is a produced
+  output, not a native transcript.
+- The two Microsoft 365 Copilot `-public-sanitized.docx` files are public
+  derivatives of produced research outputs. They are not native provider
+  exports and neither identifies the resolved model.
+- `manifest.json` pins every public artefact by SHA-256, records each private
+  source package hash in `sanitized_from_sha256`, and separates observed,
+  session-reported, later-verified, and inferred statements.
 
-The raw Office package is retained privately by source hash and is not stored
-in Git because it contained MSIP/Purview custom-property metadata. The public
-derivative removes those properties without editorially correcting the
-research claims. Later checks found that several interpretations in the
-session were caused by partial fetches. Those qualifications are recorded in
-the manifest and in
-[`docs/agent-access-and-evaluation-proposal.md`](../docs/agent-access-and-evaluation-proposal.md).
+The raw Office packages are not stored in Git. Private owner-held backups retain
+the source hashes recorded in the manifest. Sanitization changes package
+metadata and replaces external link labels and targets with explicit public
+redaction markers; it does not editorially correct the research claims.
+Qualifications and corrections belong in the manifest, normalized observation
+records, and
+[`docs/ai-client-trial-analysis.md`](../docs/ai-client-trial-analysis.md).
 
 ## Evidence boundary
 
-This is a contemporaneous case-study trace, not a controlled benchmark:
+These artefacts are exploratory case studies, not controlled benchmark runs:
 
-- one model and host surface were observed;
-- the three substantive tasks shared one conversation;
-- there was no open-web or raw-API control arm;
-- token counts and some payload sizes are estimates;
-- model identity, tool chronology and transcript completeness are
-  session-reported because a native provider export is not included; and
-- standards alignment was assessed from bundle-declared evidence rather than
-  independently certified.
+- prompts, host capabilities, models, context and capture fidelity differed;
+- no trial contains a complete native provider export;
+- the M365 trial could not retrieve the supplied descriptor and used other
+  sources, including enterprise context;
+- exact provider token telemetry is absent;
+- the Gemini “highly token-efficient” conclusion is not supported by a control
+  arm and followed a 5.9 MB shard download;
+- standards mapping or vocabulary alignment is not independent conformance,
+  statistical-product, legal, or policy certification; and
+- the harness evaluates metadata discovery, not ONS observation accuracy.
 
-The artefacts are research input under the handling statement in the source
-document. Repository code is MIT licensed; upstream ONS metadata is normally
-published under the Open Government Licence. This repository does not assert
-that every statement or research artefact is itself OGL-licensed.
+Repository code is MIT licensed; upstream ONS metadata is normally published
+under the Open Government Licence. This repository does not assert that every
+research artefact is OGL-licensed.
 
-## Document portability
+## Public-release and document portability
 
-The sanitized DOCX is structurally valid and contains page-number fields and
-provenance headers. Package inspection found no macros and confirmed removal
-of the private custom-properties part. A LibreOffice rendering on macOS
-produced 13 pages but showed clipped top content on several even pages, while
-the odd-page layout rendered as intended. This is a renderer-specific
-portability warning, not a claim that the source layout was perfect. Use the
-Markdown for content and the DOCX for its intended Word formatting.
+The raw M365 packages contained hidden SharePoint/Outlook relationship
+locators, account-specific identifiers and visible enterprise citation labels.
+The raw Claude package contained MSIP/Purview custom-property metadata. Only the
+sanitized derivatives are published: custom properties are removed, external
+relationship targets and their visible labels are redacted, author/application
+properties are normalized, and embedded media is checked for metadata.
+
+Every derivative received a hash-bound technical public-release review and was
+rendered to PDF and PNG for all-page inspection. This is not formal
+information-governance clearance. Known source-layout limitations remain: the
+M365 access briefing has header/body collisions, the hosting report has a
+cramped page-spanning table, and the Claude derivative has clipping in
+LibreOffice. These are recorded in `manifest.json`; the Claude Markdown remains
+the content authority.

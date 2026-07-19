@@ -1,0 +1,455 @@
+{
+  "schema": "okf-ons.ai-persona-journeys.v1",
+  "purpose": "Define who must be able to discover ONS metadata through OKF, the decisions they make, and the journeys sampled by the public AI-client harness.",
+  "scope_boundary": "These journeys evaluate metadata discovery, differentiation, provenance and query planning. They do not validate ONS observations, estimates or statistical interpretations.",
+  "source_material": [
+    {
+      "path": "evaluation/gold-queries.json",
+      "role": "ONS-specific confusable-dataset intents and contrast requirements"
+    },
+    {
+      "path": "evaluation/ai-client/tasks.json",
+      "role": "Public AI-client development tasks"
+    },
+    {
+      "path": "../okf-explorer/evaluation/okf-explorer/journeys.json",
+      "role": "Generic OKF Explorer persona and journey precedent",
+      "availability": "sibling-repository-reference"
+    },
+    {
+      "path": "../mcp-geo/docs/spec_package/02_personas_user_stories.md",
+      "role": "MCP-Geo geospatial and ONS persona precedent",
+      "availability": "sibling-repository-reference"
+    }
+  ],
+  "personas": [
+    {
+      "id": "policy-researcher",
+      "title": "Policy and research analyst",
+      "goal": "Find the statistical product that answers a policy question and explain why it is preferable to plausible alternatives.",
+      "decision_risks": [
+        "selecting a familiar but differently defined series",
+        "using the wrong frequency, population or reference period",
+        "repeating an unsupported assurance claim"
+      ],
+      "journey_ids": [
+        "orient-to-bundle",
+        "reduce-intent-to-candidates",
+        "compare-confusable-records",
+        "hydrate-and-cite-exact-record",
+        "share-reproducible-selection"
+      ],
+      "task_ids": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-003",
+        "AI-SMOKE-004"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q002",
+        "ONS-Q003",
+        "ONS-Q004",
+        "ONS-Q006",
+        "ONS-Q008",
+        "ONS-Q009"
+      ]
+    },
+    {
+      "id": "government-statistician",
+      "title": "Government statistician or methodologist",
+      "goal": "Confirm the exact measure, population, geography, frequency, edition and version while retaining methodology and quality boundaries.",
+      "decision_risks": [
+        "treating related products as statistically equivalent",
+        "silently accepting an obsolete or mismatched version",
+        "confusing evidence availability with fitness or accuracy"
+      ],
+      "journey_ids": [
+        "reduce-intent-to-candidates",
+        "compare-confusable-records",
+        "hydrate-and-cite-exact-record",
+        "assess-standards-and-quality",
+        "recover-without-substitution"
+      ],
+      "task_ids": [
+        "AI-SMOKE-002",
+        "AI-SMOKE-003",
+        "AI-SMOKE-004",
+        "AI-SMOKE-005",
+        "AI-SMOKE-008"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q002",
+        "ONS-Q004",
+        "ONS-Q005",
+        "ONS-Q007",
+        "ONS-Q008",
+        "ONS-Q009",
+        "ONS-Q010",
+        "ONS-Q011"
+      ]
+    },
+    {
+      "id": "data-engineer",
+      "title": "Data engineer and MCP integrator",
+      "goal": "Resolve stable source-qualified identifiers and produce a complete, inspectable selection plan without inventing dimensions or credentials.",
+      "decision_risks": [
+        "guessing an undeclared hydration route",
+        "defaulting unresolved dimensions",
+        "executing a query before version and options are validated"
+      ],
+      "journey_ids": [
+        "orient-to-bundle",
+        "hydrate-and-cite-exact-record",
+        "prepare-read-only-mcp-plan",
+        "recover-without-substitution",
+        "share-reproducible-selection"
+      ],
+      "task_ids": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-003",
+        "AI-SMOKE-006",
+        "AI-SMOKE-007",
+        "AI-SMOKE-008"
+      ],
+      "gold_query_ids": [
+        "ONS-Q003",
+        "ONS-Q006",
+        "ONS-Q012"
+      ]
+    },
+    {
+      "id": "standards-assessor",
+      "title": "Data governance and standards assessor",
+      "goal": "Trace declared standards, provenance and licence evidence while keeping alignment, evaluation and certification distinct.",
+      "decision_risks": [
+        "calling a vocabulary mapping compliance certification",
+        "omitting the scope or currency of evidence",
+        "treating generated metadata as the authoritative statistical source"
+      ],
+      "journey_ids": [
+        "orient-to-bundle",
+        "hydrate-and-cite-exact-record",
+        "assess-standards-and-quality",
+        "share-reproducible-selection"
+      ],
+      "task_ids": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-002",
+        "AI-SMOKE-005"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q005",
+        "ONS-Q008"
+      ]
+    },
+    {
+      "id": "geography-analyst",
+      "title": "Geography and area analyst",
+      "goal": "Choose statistics and boundary products with the correct geography level, code family and vintage.",
+      "decision_risks": [
+        "mixing statistical and boundary vintages",
+        "selecting a national product for an area question",
+        "treating geography labels as interchangeable identifiers"
+      ],
+      "journey_ids": [
+        "reduce-intent-to-candidates",
+        "compare-confusable-records",
+        "hydrate-and-cite-exact-record",
+        "prepare-read-only-mcp-plan"
+      ],
+      "task_ids": [
+        "AI-SMOKE-003",
+        "AI-SMOKE-004",
+        "AI-SMOKE-006"
+      ],
+      "gold_query_ids": [
+        "ONS-Q003",
+        "ONS-Q006",
+        "ONS-Q009",
+        "ONS-Q012"
+      ]
+    },
+    {
+      "id": "ai-evaluation-operator",
+      "title": "AI evaluation operator",
+      "goal": "Run comparable client trials with known access controls, evidence fidelity, task outcomes and efficiency telemetry.",
+      "decision_risks": [
+        "scoring a readiness failure as a wrong answer",
+        "calling estimated or partial telemetry exact",
+        "attributing a host/model combination difference to a client alone"
+      ],
+      "journey_ids": [
+        "orient-to-bundle",
+        "reduce-intent-to-candidates",
+        "compare-confusable-records",
+        "hydrate-and-cite-exact-record",
+        "assess-standards-and-quality",
+        "prepare-read-only-mcp-plan",
+        "recover-without-substitution",
+        "share-reproducible-selection"
+      ],
+      "task_ids": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-002",
+        "AI-SMOKE-003",
+        "AI-SMOKE-004",
+        "AI-SMOKE-005",
+        "AI-SMOKE-006",
+        "AI-SMOKE-007",
+        "AI-SMOKE-008"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q002",
+        "ONS-Q003",
+        "ONS-Q004",
+        "ONS-Q005",
+        "ONS-Q006",
+        "ONS-Q007",
+        "ONS-Q008",
+        "ONS-Q009",
+        "ONS-Q010",
+        "ONS-Q011",
+        "ONS-Q012"
+      ]
+    }
+  ],
+  "journeys": [
+    {
+      "id": "orient-to-bundle",
+      "title": "Establish what the bundle is before searching",
+      "persona_ids": [
+        "policy-researcher",
+        "data-engineer",
+        "standards-assessor",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Open the declared descriptor rather than infer that OKF is an installed package.",
+        "Read corpus scope, source lanes, metadata-only boundary and assurance caveats.",
+        "Choose the declared search, record and standards entrypoints."
+      ],
+      "success_criteria": [
+        "No package-manager or generic web search is needed to discover the supplied bundle.",
+        "The answer states that the demonstrator is not the complete ONS corpus.",
+        "The answer does not claim statistical accuracy or standards certification."
+      ],
+      "task_ids": [
+        "AI-SMOKE-001"
+      ],
+      "gold_query_ids": []
+    },
+    {
+      "id": "reduce-intent-to-candidates",
+      "title": "Turn a human intent into a bounded candidate set",
+      "persona_ids": [
+        "policy-researcher",
+        "government-statistician",
+        "geography-analyst",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Extract measure, population, geography, time and frequency constraints from the question.",
+        "Search metadata using the supplied terms and filters.",
+        "Return a small source-qualified candidate set before selecting a record."
+      ],
+      "success_criteria": [
+        "The intended record is present at the evaluated cutoff when represented.",
+        "Candidates expose stable IDs and source surfaces.",
+        "No first-record convenience choice is presented as a completed search."
+      ],
+      "task_ids": [
+        "AI-SMOKE-003",
+        "AI-SMOKE-004"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q002",
+        "ONS-Q003",
+        "ONS-Q004",
+        "ONS-Q005",
+        "ONS-Q006",
+        "ONS-Q007",
+        "ONS-Q008",
+        "ONS-Q009",
+        "ONS-Q010",
+        "ONS-Q011",
+        "ONS-Q012"
+      ]
+    },
+    {
+      "id": "compare-confusable-records",
+      "title": "Expose plausible alternatives and decisive contrasts",
+      "persona_ids": [
+        "policy-researcher",
+        "government-statistician",
+        "geography-analyst",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Keep the intended record and plausible alternatives in the reduced set.",
+        "Compare the fields that make the products non-interchangeable.",
+        "State when a cross-source match is reconciliation evidence rather than equivalence."
+      ],
+      "success_criteria": [
+        "Required alternatives are exposed by their declared cutoff.",
+        "Every alternative has a source-qualified ID and material contrast.",
+        "Shared table codes are not treated as proof of statistical equivalence."
+      ],
+      "task_ids": [
+        "AI-SMOKE-004"
+      ],
+      "gold_query_ids": [
+        "ONS-Q001",
+        "ONS-Q002",
+        "ONS-Q003",
+        "ONS-Q004",
+        "ONS-Q005",
+        "ONS-Q006",
+        "ONS-Q007",
+        "ONS-Q008",
+        "ONS-Q009",
+        "ONS-Q010",
+        "ONS-Q011",
+        "ONS-Q012"
+      ]
+    },
+    {
+      "id": "hydrate-and-cite-exact-record",
+      "title": "Hydrate the selected record without downloading a corpus shard",
+      "persona_ids": [
+        "policy-researcher",
+        "government-statistician",
+        "data-engineer",
+        "standards-assessor",
+        "geography-analyst",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Resolve the exact stable record ID from search.",
+        "Retrieve the complete single-record metadata.",
+        "Cite identity, provenance, version and material quality evidence."
+      ],
+      "success_criteria": [
+        "The selected record is completely hydrated under the 65,536-byte constraint.",
+        "The route is declared rather than guessed.",
+        "The cited source and JSON pointers belong to the selected record."
+      ],
+      "task_ids": [
+        "AI-SMOKE-003",
+        "AI-SMOKE-005",
+        "AI-SMOKE-007"
+      ],
+      "gold_query_ids": []
+    },
+    {
+      "id": "assess-standards-and-quality",
+      "title": "Assess standards and quality evidence without certification language",
+      "persona_ids": [
+        "government-statistician",
+        "standards-assessor",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Inspect the standards register and its declared normative status and currency.",
+        "Trace mappings to record evidence and provenance.",
+        "Separate available evidence, bundle alignment and independent certification."
+      ],
+      "success_criteria": [
+        "The answer preserves alignment-not-certification and accuracy-not-evaluated caveats.",
+        "Legal, policy and technical standards are not collapsed into one compliance score.",
+        "Every worked example names the exact record used."
+      ],
+      "task_ids": [
+        "AI-SMOKE-002",
+        "AI-SMOKE-005"
+      ],
+      "gold_query_ids": []
+    },
+    {
+      "id": "prepare-read-only-mcp-plan",
+      "title": "Prepare, but do not execute, a validated MCP hand-off",
+      "persona_ids": [
+        "data-engineer",
+        "geography-analyst",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Copy native dataset, edition and version identifiers from the exact record.",
+        "Name the inspection and query tools declared for that source.",
+        "Leave unresolved dimensions explicit and record that no query ran."
+      ],
+      "success_criteria": [
+        "No dimension, option, geography or credential is invented.",
+        "An incomplete plan cannot be labelled executable.",
+        "The selection plan is reproducible and bound to the exact record."
+      ],
+      "task_ids": [
+        "AI-SMOKE-006"
+      ],
+      "gold_query_ids": []
+    },
+    {
+      "id": "recover-without-substitution",
+      "title": "Handle access and hydration failures honestly",
+      "persona_ids": [
+        "government-statistician",
+        "data-engineer",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Classify whether the failure belongs to client readiness, access policy or bundle contract.",
+        "Retry only through a declared path that respects the task constraints.",
+        "Abstain or label a substitute with its exact identity, reason and limitations."
+      ],
+      "success_criteria": [
+        "A convenient first record is never presented as the requested record.",
+        "A host access failure is not described as proof that the bundle is unavailable.",
+        "Blocked and degraded outcomes remain visible and are not silently scored as success."
+      ],
+      "task_ids": [
+        "AI-SMOKE-007",
+        "AI-SMOKE-008"
+      ],
+      "gold_query_ids": []
+    },
+    {
+      "id": "share-reproducible-selection",
+      "title": "Capture a comparable, evidence-backed result",
+      "persona_ids": [
+        "policy-researcher",
+        "data-engineer",
+        "standards-assessor",
+        "ai-evaluation-operator"
+      ],
+      "steps": [
+        "Submit the visible answer and structured selection without hidden reasoning.",
+        "Record host, resolved model, access arm, capture fidelity and exact known telemetry.",
+        "Keep unknown or estimated token and byte measurements explicitly non-exact."
+      ],
+      "success_criteria": [
+        "The result can be replayed and scored against the pinned public gold.",
+        "Efficiency claims name their denominator and comparison arm.",
+        "Readiness blocks and missing telemetry remain null rather than inferred."
+      ],
+      "task_ids": [
+        "AI-SMOKE-001",
+        "AI-SMOKE-002",
+        "AI-SMOKE-003",
+        "AI-SMOKE-004",
+        "AI-SMOKE-005",
+        "AI-SMOKE-006",
+        "AI-SMOKE-007",
+        "AI-SMOKE-008"
+      ],
+      "gold_query_ids": []
+    }
+  ],
+  "coverage": {
+    "all_task_ids_assigned": true,
+    "all_gold_query_ids_assigned": true,
+    "browser_interaction_evaluated_separately": true
+  }
+}

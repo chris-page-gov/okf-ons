@@ -1,11 +1,11 @@
 {
   "schema": "okf-ons.ai-client-observation.v1",
-  "observation_id": "claude-cowork-fable-5-20260718",
+  "observation_id": "claude-desktop-cowork-fable-5-20260718",
   "study_id": null,
   "controlled_comparison_eligible": false,
   "capture": {
     "fidelity": "contemporaneous-log",
-    "authoritative_artifact": "../../../research/OKF-ONS_AI_Access_Briefing_Input.md",
+    "authoritative_artifact": "../../../research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
     "artifact_sha256": "9a369917f08a0b0dfc5b2d19df6f0641231f7c864796e9059faf881a3954998e",
     "native_provider_export": null,
     "visible_transcript_preserved": "partial-in-authoritative-artifact",
@@ -13,11 +13,17 @@
   },
   "client": {
     "profile_id": "claude-cowork",
-    "host_surface": "Anthropic Cowork research preview",
+    "host_product": "Claude Desktop",
+    "host_surface": "Cowork research preview",
     "model_display_name": "Claude Fable 5",
     "model_string": "claude-fable-5",
     "model_effort": "not-captured",
-    "client_version": null
+    "client_version": "1.19367.0",
+    "identity_evidence": {
+      "host_product": "user clarification and later local application probe",
+      "host_version": "later local application probe",
+      "model": "session-reported"
+    }
   },
   "bundle": {
     "descriptor": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
@@ -116,5 +122,10 @@
       "classification": "client-inference-after-truncation"
     }
   ],
+  "public_release": {
+    "owner_directed_inclusion": true,
+    "secrets_detected": false,
+    "native_provider_export_included": false
+  },
   "use_in_harness": "Regression seed and manual-import fidelity fixture only. Do not combine with controlled-arm scores."
 }

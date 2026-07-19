@@ -1,5 +1,11 @@
 # Agent access and multi-client evaluation proposal
 
+> Historical design note: the local controlled broker and expanded evidence
+> model proposed here are now implemented. See
+> [`ai-client-trial-analysis.md`](ai-client-trial-analysis.md) for the
+> cross-client synthesis and [`mcp-client-rollout.md`](mcp-client-rollout.md)
+> for current client configuration.
+
 ## Decision
 
 The Claude Cowork session is strong enough to justify a focused next work
@@ -18,8 +24,8 @@ find the exact source-qualified dataset, see plausible alternatives and
 quality limitations, and hand an unambiguous plan to MCP without silently
 inventing statistical choices.
 
-The preserved research input is
-[`research/OKF-ONS_AI_Access_Briefing_Input.md`](../research/OKF-ONS_AI_Access_Briefing_Input.md).
+The preserved Claude research input is
+[`2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md`](../research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md).
 Its Word derivative, hashes, evidence boundary and later qualifications are
 registered in [`research/manifest.json`](../research/manifest.json).
 
@@ -188,9 +194,14 @@ The committed harness is deliberately provider-neutral and safe in CI:
   development gold and caveat IDs;
 - [`client-profiles.json`](../evaluation/ai-client/client-profiles.json)
   distinguishes readiness, automation and capability evidence;
-- [`claude-cowork-fable-5-20260718.json`](../evaluation/ai-client/evidence/claude-cowork-fable-5-20260718.json)
-  maps the preserved case study into the harness without treating it as a
-  controlled score; and
+- [`personas-and-journeys.json`](../evaluation/ai-client/personas-and-journeys.json)
+  connects six ONS-specific personas and eight journeys to every smoke task and
+  confusable gold query;
+- [`issue-register.json`](../evaluation/ai-client/issue-register.json) maps the
+  observed Claude, Gemini and M365 failure modes to remediations and tests;
+- [`claude-desktop-cowork-fable-5-20260718.json`](../evaluation/ai-client/evidence/claude-desktop-cowork-fable-5-20260718.json)
+  plus the Gemini and M365 observation records map the preserved trials into
+  the harness without treating them as controlled scores; and
 - [`ai_evaluation.py`](../src/okf_ons/ai_evaluation.py) validates inputs and
   public runs, creates run templates, scores components and builds
   deterministic reports.
@@ -292,11 +303,13 @@ and model change together.
 |---|---|---|---|
 | Codex CLI | Command line | Unattended JSONL, structured answer and MCP trace | Previously ready; fresh probe required |
 | Claude Code | Command line | Unattended stream JSON, structured answer, usage and MCP trace | Previously ready; fresh probe required |
-| Gemini CLI | Command line | Unattended stream JSON, structured answer, usage and MCP trace | Previously ready; fresh probe required |
+| Antigravity CLI (`agy`) | Command line | Repository-scoped MCP, structured answer, trace and usage when exposed | AGY 1.1.4 installed; fresh MCP/model probe required |
+| Gemini CLI | Command line | Separate legacy-client track | Installed but not configured for the initial suite |
 | VS Code Agent | Desktop IDE | Experimental isolated-window runner, submit tool and MCP trace | Fresh memory/cleanup probe required |
 | Claude Cowork | Research-preview desktop | Manual native export or contemporaneous log | Historical trace only |
-| Claude Desktop | Desktop | Manual transcript plus submit tool and MCP trace | Client initialized; lightweight broker needed |
+| Claude Desktop | Desktop | Manual transcript plus submit tool and MCP trace | Local broker implemented; app connection probe required |
 | Codex Desktop | Desktop | Manual transcript plus submit tool and MCP trace | Manual path available |
+| M365 Copilot Researcher | Edge research agent | Manual export plus remote MCP trace when enabled | Admin-deployed federated connector required |
 | MCP Inspector | Protocol baseline | Deterministic MCP trace and submit tool | Probe required; not an AI-quality comparator |
 
 The unattended implementation should reuse the readiness, trace, blocker and

@@ -1,0 +1,173 @@
+{
+  "schema": "okf-ons.ai-client-observation.v1",
+  "observation_id": "antigravity-cli-gemini-3-1-pro-20260718",
+  "study_id": null,
+  "controlled_comparison_eligible": false,
+  "capture": {
+    "fidelity": "reconstruction",
+    "authoritative_artifact": "../../../research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+    "artifact_sha256": "37379fa458ce26bb855679675b82e530ba594158e8bb6f28c40906ca82c29d6c",
+    "produced_output": "../../../research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
+    "produced_output_sha256": "42f318c99bcbe6146d4e430f88a224aca0cdf2904a50ef7dab964eccadf14e26",
+    "native_provider_export": null,
+    "visible_transcript_preserved": "summary-and-tool-sequence-only",
+    "hidden_reasoning_collected": false
+  },
+  "client": {
+    "profile_id": "google-antigravity-cli",
+    "host_product": "Google Antigravity CLI",
+    "host_surface": "command-line",
+    "host_command": "agy",
+    "client_version": "1.1.4",
+    "model_display_name": "Gemini 3.1 Pro (High)",
+    "model_string": null,
+    "model_effort": "High",
+    "identity_evidence": {
+      "host_command_and_version": "later local executable probe",
+      "model_and_effort": "session-reported"
+    }
+  },
+  "bundle": {
+    "descriptor": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
+    "snapshot_id": "monday-2026-07-17"
+  },
+  "access": {
+    "arm": "okf-bundle-with-context-search",
+    "enforcement": "self-reported",
+    "methods_observed": [
+      "HTTPS GET",
+      "local file reads",
+      "public web search"
+    ],
+    "credentials_observed": false,
+    "local_scratch_observed": true,
+    "browser_available": false,
+    "shell_http_available": false
+  },
+  "task_mapping": [
+    {
+      "source_task": "orient to the OKF package",
+      "smoke_task": "AI-SMOKE-001",
+      "status": "degraded",
+      "fresh_context": false,
+      "comparability": "different-prompt-and-open-web-used",
+      "outcome": "The descriptor was traversed successfully after local package discovery and a web search."
+    },
+    {
+      "source_task": "assess standards and civil-service utility",
+      "smoke_task": "AI-SMOKE-002",
+      "status": "degraded",
+      "fresh_context": false,
+      "comparability": "different-prompt",
+      "outcome": "The detailed note preserved alignment-not-certification, but its executive summary overclaimed autonomous compliance checking."
+    },
+    {
+      "source_task": "choose a DCAT 3 and PROV-O worked example",
+      "smoke_tasks": [
+        "AI-SMOKE-005",
+        "AI-SMOKE-008"
+      ],
+      "status": "degraded",
+      "fresh_context": false,
+      "comparability": "different-target-and-prompt",
+      "outcome": {
+        "selected_record_id": "nomis:dataset:NM_66_1",
+        "selection_method": "convenient record in the first inspected shard slice",
+        "requested_suite_record_id": "nomis:dataset:NM_1662_1",
+        "suite_target_matched": false,
+        "substitution_disclosed_in_original_context": "not-applicable-no-fixed-target-was-given"
+      }
+    }
+  ],
+  "telemetry": {
+    "system_steps": {
+      "value": 59,
+      "unit": "steps",
+      "exact": true,
+      "source": "session-authored transcript parsing script",
+      "scope": "one shared interaction thread"
+    },
+    "user_prompts": {
+      "value": 5,
+      "unit": "prompts",
+      "exact": true,
+      "source": "session-authored transcript parsing script",
+      "scope": "one shared interaction thread"
+    },
+    "model_responses_and_actions": {
+      "value": 33,
+      "unit": "responses-or-actions",
+      "exact": true,
+      "source": "session-authored transcript parsing script",
+      "scope": "one shared interaction thread"
+    },
+    "tool_calls": {
+      "value": 15,
+      "unit": "calls",
+      "exact": true,
+      "source": "session-authored transcript parsing script",
+      "scope": "one shared interaction thread"
+    },
+    "downloaded_bytes": {
+      "minimum": 5900000,
+      "maximum": 6000000,
+      "unit": "bytes",
+      "exact": false,
+      "source": "rounded sizes in the session-authored postmortem",
+      "scope": "five fetched OKF resources, dominated by datasets-0.json"
+    },
+    "provider_tokens": {
+      "value": null,
+      "unit": "tokens",
+      "exact": false,
+      "source": "not exposed in the preserved artefacts",
+      "scope": "unknown"
+    },
+    "elapsed_time": {
+      "minimum": 15,
+      "maximum": 17,
+      "unit": "minutes",
+      "exact": false,
+      "source": "rounded timestamps in the session-authored postmortem",
+      "scope": "one shared interaction thread"
+    }
+  },
+  "failures": [
+    {
+      "code": "ENTRYPOINT_AMBIGUOUS",
+      "count": 1,
+      "stage": "orientation",
+      "classification": "bundle-instruction-and-client-prior"
+    },
+    {
+      "code": "LARGE_SHARD_REQUIRED",
+      "count": 1,
+      "stage": "record-selection",
+      "classification": "bundle-granularity"
+    },
+    {
+      "code": "FIRST_RECORD_CONVENIENCE_BIAS",
+      "count": 1,
+      "stage": "worked-example-selection",
+      "classification": "client-selection"
+    },
+    {
+      "code": "ALIGNMENT_CALLED_COMPLIANCE",
+      "count": 1,
+      "stage": "briefing",
+      "classification": "client-assurance-language"
+    },
+    {
+      "code": "EFFICIENCY_CLAIM_WITHOUT_CONTROL",
+      "count": 1,
+      "stage": "postmortem",
+      "classification": "measurement-validity"
+    }
+  ],
+  "public_release": {
+    "owner_directed_inclusion": true,
+    "secrets_detected": false,
+    "native_provider_export_included": false
+  },
+  "use_in_harness": "Issue seed and manual-import observation only. Do not combine with controlled-arm scores or treat session-authored exact counts as provider billing telemetry."
+}

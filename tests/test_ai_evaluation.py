@@ -121,7 +121,9 @@ def test_committed_harness_is_cross_validated_and_has_three_arms(harness: dict) 
     assert set(harness["_ids"]["arms"]) == {"okf-bundle", "open-web", "raw-api"}
     assert len(harness["_ids"]["modes"]) == 2
     assert len(harness["_ids"]["tasks"]) == 8
-    assert len(harness["_ids"]["profiles"]) >= 12
+    assert len(harness["_ids"]["profiles"]) >= 14
+    assert len(harness["_ids"]["journeys"]) == 8
+    assert len(harness["_ids"]["issues"]) == 10
     assert set(harness["_ids"]["profiles"]) == set(LOCAL_CLIENT_PROBES)
     assert harness["tasks"]["confirmatory_eligible"] is False
     assert harness["expected"]["statistical_accuracy"]["evaluated"] is False
@@ -130,15 +132,34 @@ def test_committed_harness_is_cross_validated_and_has_three_arms(harness: dict) 
 def test_research_sources_are_hash_pinned_and_docx_is_safe() -> None:
     report = validate_research_artifacts(ROOT)
 
-    assert report["authoritative_artifact"].endswith(".md")
+    assert report["trial_count"] == 3
+    assert report["authoritative_artifact"] == (
+        "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md"
+    )
     assert report["docx_structurally_valid"] is True
     assert report["docx_macros_present"] is False
     assert report["docx_page_field_present"] is True
+    assert report["docx_public_metadata_safe"] is True
+    assert len(report["docx_artifacts"]) == 3
+    assert all(
+        row["public_inspection"]["public_metadata_safe"]
+        for row in report["docx_artifacts"]
+    )
     assert {row["path"] for row in report["artifacts"]} == {
-        "OKF-ONS_AI_Access_Briefing_Input.md",
+        "2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md",
         (
             "2026-07-18-claude-desktop-cowork-fable-5-"
             "okf-ons-access-trace-public-sanitized.docx"
+        ),
+        "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md",
+        "2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md",
+        (
+            "2026-07-18-m365-copilot-researcher-"
+            "okf-ons-access-briefing-public-sanitized.docx"
+        ),
+        (
+            "2026-07-18-m365-copilot-researcher-"
+            "okf-hosting-research-public-sanitized.docx"
         ),
     }
 
@@ -224,7 +245,7 @@ def test_blocked_readiness_is_excluded_instead_of_scored_zero(harness: dict) -> 
     )
     blocked["status"] = "blocked"
     blocked["failures"] = [
-        {"code": "SERVER_NOT_READY", "stage": "readiness", "detail": "No broker"}
+        {"code": "CLIENT_NOT_READY", "stage": "readiness", "detail": "No broker"}
     ]
 
     report = build_report([_complete_run(harness), blocked], harness)
@@ -242,6 +263,34 @@ def test_blocked_readiness_is_excluded_instead_of_scored_zero(harness: dict) -> 
         "denominator": 1,
     }
     assert report["descriptive_aggregate"]["eligible_run_count"] == 1
+    assert report["failure_summary"] == [
+        {
+            "code": "CLIENT_NOT_READY",
+            "count": 1,
+            "issue_ids": ["AI-ISSUE-006"],
+        }
+    ]
+    assert all(
+        coverage == {
+            "known_run_count": 0,
+            "exact_run_count": 0,
+            "qualified_run_count": 0,
+            "unknown_or_missing_run_count": 2,
+        }
+        for coverage in report["efficiency"]["telemetry_coverage"].values()
+    )
+
+
+def test_failure_codes_must_be_stable_identifiers(harness: dict) -> None:
+    run = _complete_run(harness)
+    run["failures"] = [{"code": "server-not-ready", "stage": "readiness"}]
+
+    with pytest.raises(AIEvaluationError, match="uppercase stable identifier"):
+        validate_run(run, harness)
+
+    run["failures"] = [{"code": "CLIENT_NOT_REDAY", "stage": "readiness"}]
+    with pytest.raises(AIEvaluationError, match="is not registered"):
+        validate_run(run, harness)
 
 
 def test_arm_violation_is_invalid_but_retained_in_report(harness: dict) -> None:
@@ -437,16 +486,43 @@ def test_client_self_assessment_method_is_rejected(harness: dict) -> None:
 def test_estimated_telemetry_cannot_be_relabelled_exact(harness: dict) -> None:
     run = _complete_run(harness)
     run["telemetry"] = {
-        "tokens": {
+        "provider_input_tokens": {
             "value": 2000,
             "unit": "tokens",
             "exact": True,
             "source": "estimated from characters",
-            "scope": "one run",
+            "scope": "native provider telemetry only; null when not exposed",
         }
     }
 
     with pytest.raises(AIEvaluationError, match="cannot label an estimate as exact"):
+        validate_run(run, harness)
+
+
+def test_telemetry_names_units_and_scopes_follow_the_study(harness: dict) -> None:
+    run = _complete_run(harness)
+    run["telemetry"] = {
+        "invented_metric": {
+            "value": 1,
+            "unit": "widgets",
+            "exact": True,
+            "source": "test",
+            "scope": "one run",
+        }
+    }
+    with pytest.raises(AIEvaluationError, match="unregistered measures"):
+        validate_run(run, harness)
+
+    run["telemetry"] = {
+        "elapsed_time": {
+            "value": 1,
+            "unit": "fortnights",
+            "exact": True,
+            "source": "monotonic clock",
+            "scope": "task start to submitted visible structured answer",
+        }
+    }
+    with pytest.raises(AIEvaluationError, match="unit must be 'milliseconds'"):
         validate_run(run, harness)
 
 
@@ -467,6 +543,15 @@ def test_public_run_rejects_secrets_machine_paths_and_hidden_reasoning(harness: 
 
 def test_report_is_byte_deterministic(harness: dict) -> None:
     run = _complete_run(harness)
+    run["telemetry"] = {
+        "elapsed_time": {
+            "value": 1250,
+            "unit": "milliseconds",
+            "exact": True,
+            "source": "monotonic clock",
+            "scope": "task start to submitted visible structured answer",
+        }
+    }
 
     first = build_report([run], harness)
     second = build_report([copy.deepcopy(run)], harness)
@@ -474,3 +559,14 @@ def test_report_is_byte_deterministic(harness: dict) -> None:
     assert dumps_json(first) == dumps_json(second)
     assert "generated_at" not in first
     assert first["interpretation"]["blocked_is_not_zero"] is True
+    assert len(first["personas_and_journeys_digest_sha256"]) == 64
+    assert len(first["issue_register_digest_sha256"]) == 64
+    assert set(first["efficiency"]["telemetry_coverage"]) == {
+        row["id"] for row in harness["study"]["efficiency_outcomes"]["measures"]
+    }
+    elapsed = first["efficiency"]["measures"]["elapsed_time"]
+    assert elapsed["coverage"]["exact_run_count"] == 1
+    assert elapsed["measurements"][0]["value"] == 1250
+    assert elapsed["measurements"][0]["source"] == "monotonic clock"
+    assert elapsed["measurements"][0]["comparative_eligible"] is False
+    assert elapsed["comparative_cells"] == []

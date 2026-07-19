@@ -10,20 +10,26 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
 import subprocess
 import zipfile
+from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from okf_ons.docx_release import DocxReleaseError, inspect_public_docx
+
 STUDY_SCHEMA = "okf-ons.ai-client-study.v1"
 TASKS_SCHEMA = "okf-ons.ai-client-task-suite.v1"
 EXPECTED_SCHEMA = "okf-ons.ai-client-expected.v1"
 PROFILES_SCHEMA = "okf-ons.ai-client-profiles.v1"
+PERSONAS_SCHEMA = "okf-ons.ai-persona-journeys.v1"
+ISSUES_SCHEMA = "okf-ons.ai-client-issue-register.v1"
 RUN_SCHEMA = "okf-ons.ai-client-run.v1"
 SCORE_SCHEMA = "okf-ons.ai-client-score.v1"
 REPORT_SCHEMA = "okf-ons.ai-client-report.v1"
@@ -69,6 +75,7 @@ LOCAL_CLIENT_PROBES: dict[str, dict[str, tuple[str, ...]]] = {
     "codex-cli": {"command": ("codex", "--version")},
     "claude-code": {"command": ("claude", "--version")},
     "gemini-cli": {"command": ("gemini", "--version")},
+    "google-antigravity-cli": {"command": ("agy", "--version")},
     "vscode-agent": {"command": ("code", "--version")},
     "claude-cowork": {"applications": ("Claude.app",)},
     "claude-desktop": {"applications": ("Claude.app",)},
@@ -77,6 +84,7 @@ LOCAL_CLIENT_PROBES: dict[str, dict[str, tuple[str, ...]]] = {
     "chatgpt-atlas": {"applications": ("ChatGPT Atlas.app",)},
     "microsoft-copilot": {"applications": ("Copilot.app",)},
     "microsoft-365-copilot": {"applications": ("Microsoft 365 Copilot.app",)},
+    "m365-copilot-researcher-edge": {"applications": ("Microsoft Edge.app",)},
     "github-copilot": {"applications": ("GitHub Copilot.app",)},
     "github-copilot-xcode": {"applications": ("GitHub Copilot for Xcode.app",)},
     "mcp-inspector": {"commands": ("mcp-inspector",)},
@@ -375,6 +383,238 @@ def validate_tasks(tasks: Mapping[str, Any]) -> set[str]:
     return identifiers
 
 
+def _reference_list(
+    value: object,
+    label: str,
+    *,
+    allowed: set[str],
+    allow_empty: bool = True,
+) -> set[str]:
+    values = _require_list(value, label)
+    if not allow_empty and not values:
+        raise AIEvaluationError(f"{label} must not be empty")
+    references: set[str] = set()
+    for index, item in enumerate(values):
+        reference = _require_string(item, f"{label}[{index}]")
+        if reference in references:
+            raise AIEvaluationError(f"{label} contains duplicate reference: {reference}")
+        references.add(reference)
+    unknown = references - allowed
+    if unknown:
+        raise AIEvaluationError(f"{label} contains unknown references: {sorted(unknown)}")
+    return references
+
+
+def validate_personas_and_journeys(
+    value: Mapping[str, Any],
+    *,
+    task_ids: set[str],
+    gold_query_ids: set[str],
+) -> set[str]:
+    if value.get("schema") != PERSONAS_SCHEMA:
+        raise AIEvaluationError(
+            f"unsupported personas schema: {value.get('schema')!r}"
+        )
+    persona_ids = _unique_ids(value.get("personas"), "personas")
+    journey_ids = _unique_ids(value.get("journeys"), "journeys")
+    assigned_tasks: set[str] = set()
+    assigned_gold: set[str] = set()
+    for index, persona in enumerate(value["personas"]):
+        _require_string(persona.get("title"), f"personas[{index}].title")
+        _require_string(persona.get("goal"), f"personas[{index}].goal")
+        _reference_list(
+            persona.get("journey_ids"),
+            f"personas[{index}].journey_ids",
+            allowed=journey_ids,
+            allow_empty=False,
+        )
+        assigned_tasks.update(
+            _reference_list(
+                persona.get("task_ids"),
+                f"personas[{index}].task_ids",
+                allowed=task_ids,
+                allow_empty=False,
+            )
+        )
+        assigned_gold.update(
+            _reference_list(
+                persona.get("gold_query_ids"),
+                f"personas[{index}].gold_query_ids",
+                allowed=gold_query_ids,
+            )
+        )
+    for index, journey in enumerate(value["journeys"]):
+        _require_string(journey.get("title"), f"journeys[{index}].title")
+        _reference_list(
+            journey.get("persona_ids"),
+            f"journeys[{index}].persona_ids",
+            allowed=persona_ids,
+            allow_empty=False,
+        )
+        assigned_tasks.update(
+            _reference_list(
+                journey.get("task_ids"),
+                f"journeys[{index}].task_ids",
+                allowed=task_ids,
+                allow_empty=False,
+            )
+        )
+        assigned_gold.update(
+            _reference_list(
+                journey.get("gold_query_ids"),
+                f"journeys[{index}].gold_query_ids",
+                allowed=gold_query_ids,
+            )
+        )
+        steps = _require_list(journey.get("steps"), f"journeys[{index}].steps")
+        criteria = _require_list(
+            journey.get("success_criteria"),
+            f"journeys[{index}].success_criteria",
+        )
+        if not steps or not criteria:
+            raise AIEvaluationError(
+                f"journeys[{index}] needs steps and success criteria"
+            )
+    missing_tasks = task_ids - assigned_tasks
+    missing_gold = gold_query_ids - assigned_gold
+    if missing_tasks or missing_gold:
+        raise AIEvaluationError(
+            "persona/journey coverage is incomplete; "
+            f"tasks={sorted(missing_tasks)}, gold={sorted(missing_gold)}"
+        )
+    coverage = value.get("coverage")
+    if not isinstance(coverage, Mapping):
+        raise AIEvaluationError("personas.coverage must be an object")
+    if coverage.get("all_task_ids_assigned") is not True:
+        raise AIEvaluationError("personas must assert all task IDs are assigned")
+    if coverage.get("all_gold_query_ids_assigned") is not True:
+        raise AIEvaluationError("personas must assert all gold query IDs are assigned")
+    validate_public_value(value)
+    return journey_ids
+
+
+def validate_issue_register(
+    value: Mapping[str, Any],
+    *,
+    root: Path,
+    task_ids: set[str],
+    journey_ids: set[str],
+) -> set[str]:
+    if value.get("schema") != ISSUES_SCHEMA:
+        raise AIEvaluationError(
+            f"unsupported issue-register schema: {value.get('schema')!r}"
+        )
+    issue_ids = _unique_ids(value.get("issues"), "issues")
+    verification_ids = {
+        _require_string(item, f"issue verification observation[{index}]")
+        for index, item in enumerate(
+            _require_list(
+                value.get("verification_observation_ids"),
+                "issue verification observations",
+            )
+        )
+    }
+    observation_ids = set(verification_ids)
+    evidence_directory = root / "evaluation" / "ai-client" / "evidence"
+    for path in sorted(evidence_directory.glob("*.json")):
+        observation = _load_object(path)
+        observation_ids.add(
+            _require_string(
+                observation.get("observation_id"),
+                f"{path.name}.observation_id",
+            )
+        )
+    for index, issue in enumerate(value["issues"]):
+        _require_string(issue.get("title"), f"issues[{index}].title")
+        severity = _require_string(issue.get("severity"), f"issues[{index}].severity")
+        if severity not in {"critical", "material", "minor"}:
+            raise AIEvaluationError(f"issues[{index}].severity is unsupported")
+        evidence = _require_list(issue.get("evidence"), f"issues[{index}].evidence")
+        if not evidence:
+            raise AIEvaluationError(f"issues[{index}] must have evidence")
+        for evidence_index, row in enumerate(evidence):
+            label = f"issues[{index}].evidence[{evidence_index}]"
+            if not isinstance(row, Mapping):
+                raise AIEvaluationError(f"{label} must be an object")
+            observation_id = _require_string(
+                row.get("observation_id"),
+                f"{label}.observation_id",
+            )
+            if observation_id not in observation_ids:
+                raise AIEvaluationError(
+                    f"{label} has unknown observation ID: {observation_id}"
+                )
+            relative = Path(_require_string(row.get("artifact"), f"{label}.artifact"))
+            if relative.is_absolute() or ".." in relative.parts:
+                raise AIEvaluationError(f"{label}.artifact is unsafe")
+            if not (root / relative).is_file():
+                raise AIEvaluationError(f"{label}.artifact does not exist: {relative}")
+            if row.get("status") not in {
+                "observed",
+                "session-reported",
+                "later-verified",
+                "inferred",
+            }:
+                raise AIEvaluationError(f"{label}.status is unsupported")
+        remediations = _require_list(
+            issue.get("remediations"),
+            f"issues[{index}].remediations",
+        )
+        if not remediations:
+            raise AIEvaluationError(f"issues[{index}] must have remediations")
+        priorities: set[str] = set()
+        for remediation_index, row in enumerate(remediations):
+            label = f"issues[{index}].remediations[{remediation_index}]"
+            if not isinstance(row, Mapping):
+                raise AIEvaluationError(f"{label} must be an object")
+            priorities.add(
+                _require_string(row.get("priority"), f"{label}.priority")
+            )
+            _require_string(row.get("action"), f"{label}.action")
+        if severity == "critical" and "P0" not in priorities:
+            raise AIEvaluationError(f"critical issue {issue['id']} needs a P0 remediation")
+        evaluation = issue.get("evaluation")
+        if not isinstance(evaluation, Mapping):
+            raise AIEvaluationError(f"issues[{index}].evaluation must be an object")
+        _reference_list(
+            evaluation.get("journey_ids"),
+            f"issues[{index}].evaluation.journey_ids",
+            allowed=journey_ids,
+            allow_empty=False,
+        )
+        _reference_list(
+            evaluation.get("task_ids"),
+            f"issues[{index}].evaluation.task_ids",
+            allowed=task_ids,
+            allow_empty=False,
+        )
+        failure_codes = _require_list(
+            evaluation.get("failure_codes"),
+            f"issues[{index}].evaluation.failure_codes",
+        )
+        if not failure_codes:
+            raise AIEvaluationError(f"issues[{index}] needs typed failure codes")
+        seen_failure_codes: set[str] = set()
+        for failure_index, code in enumerate(failure_codes):
+            stable_code = _require_string(
+                code,
+                f"issues[{index}].evaluation.failure_codes[{failure_index}]",
+            )
+            if not re.fullmatch(r"[A-Z][A-Z0-9_]*", stable_code):
+                raise AIEvaluationError(
+                    f"issues[{index}] failure code must be an uppercase stable identifier"
+                )
+            if stable_code in seen_failure_codes:
+                raise AIEvaluationError(
+                    f"issues[{index}] contains duplicate failure code: {stable_code}"
+                )
+            seen_failure_codes.add(stable_code)
+    if not _require_list(value.get("release_gates"), "issue release gates"):
+        raise AIEvaluationError("issue register must declare release gates")
+    validate_public_value(value)
+    return issue_ids
+
+
 def validate_expected(expected: Mapping[str, Any], *, task_ids: set[str]) -> None:
     if expected.get("schema") != EXPECTED_SCHEMA:
         raise AIEvaluationError(f"unsupported expected schema: {expected.get('schema')!r}")
@@ -532,6 +772,26 @@ def validate_study(study: Mapping[str, Any]) -> tuple[set[str], set[str]]:
         raise AIEvaluationError("access enforcement must require evidence")
     if run_contract.get("fault_profiles_require_enforcement_evidence") is not True:
         raise AIEvaluationError("fault profiles must require enforcement evidence")
+    if run_contract.get("efficiency_claims_require_comparative_arms") is not True:
+        raise AIEvaluationError("efficiency claims must require comparative arms")
+    if run_contract.get("missing_telemetry_remains_null") is not True:
+        raise AIEvaluationError("missing telemetry must remain null")
+    efficiency = study.get("efficiency_outcomes")
+    if not isinstance(efficiency, Mapping):
+        raise AIEvaluationError("study.efficiency_outcomes must be an object")
+    if efficiency.get("single_composite_score") is not False:
+        raise AIEvaluationError("efficiency must not use one composite score")
+    _require_string(efficiency.get("claim_rule"), "study.efficiency_outcomes.claim_rule")
+    _unique_ids(efficiency.get("measures"), "study.efficiency_outcomes.measures")
+    for index, measure in enumerate(efficiency["measures"]):
+        _require_string(
+            measure.get("unit"),
+            f"study.efficiency_outcomes.measures[{index}].unit",
+        )
+        _require_string(
+            measure.get("scope"),
+            f"study.efficiency_outcomes.measures[{index}].scope",
+        )
     validate_public_value(study)
     return arm_ids, mode_ids
 
@@ -548,7 +808,13 @@ def load_harness(root: str | Path) -> dict[str, Any]:
         "study": study,
         "_context": {"root": repository},
     }
-    for key in ("tasks", "expected", "client_profiles"):
+    for key in (
+        "tasks",
+        "expected",
+        "client_profiles",
+        "personas_and_journeys",
+        "issue_register",
+    ):
         relative = _require_string(study["inputs"].get(key), f"study.inputs.{key}")
         path = repository / relative
         expected_digest = _require_string(
@@ -575,8 +841,23 @@ def load_harness(root: str | Path) -> dict[str, Any]:
         raise AIEvaluationError(
             f"local client probe coverage mismatch; missing={missing}, extra={extra}"
         )
+    gold_suite = _load_object(repository / "evaluation" / "gold-queries.json")
+    gold_query_ids = _unique_ids(gold_suite.get("queries"), "gold queries")
+    journey_ids = validate_personas_and_journeys(
+        loaded["personas_and_journeys"],
+        task_ids=task_ids,
+        gold_query_ids=gold_query_ids,
+    )
+    issue_ids = validate_issue_register(
+        loaded["issue_register"],
+        root=repository,
+        task_ids=task_ids,
+        journey_ids=journey_ids,
+    )
     loaded["_ids"] = {
         "arms": {identifier: True for identifier in sorted(arm_ids)},
+        "issues": {identifier: True for identifier in sorted(issue_ids)},
+        "journeys": {identifier: True for identifier in sorted(journey_ids)},
         "modes": {identifier: True for identifier in sorted(mode_ids)},
         "tasks": {identifier: True for identifier in sorted(task_ids)},
         "profiles": {identifier: True for identifier in sorted(profile_ids)},
@@ -657,9 +938,18 @@ def probe_local_clients(harness: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _validate_telemetry(telemetry: object) -> None:
+def _validate_telemetry(
+    telemetry: object,
+    measures: Sequence[Mapping[str, Any]],
+) -> None:
     if not isinstance(telemetry, Mapping):
         raise AIEvaluationError("run.telemetry must be an object")
+    specifications = {str(measure["id"]): measure for measure in measures}
+    unknown = set(telemetry) - set(specifications)
+    if unknown:
+        raise AIEvaluationError(
+            f"run.telemetry contains unregistered measures: {sorted(unknown)}"
+        )
     for name, measurement in telemetry.items():
         if not isinstance(measurement, Mapping):
             raise AIEvaluationError(f"run.telemetry.{name} must be an object")
@@ -679,8 +969,38 @@ def _validate_telemetry(telemetry: object) -> None:
             raise AIEvaluationError(
                 f"run.telemetry.{name} cannot label an estimate as exact"
             )
-        _require_string(measurement.get("unit"), f"run.telemetry.{name}.unit")
-        _require_string(measurement.get("scope"), f"run.telemetry.{name}.scope")
+        specification = specifications[str(name)]
+        unit = _require_string(measurement.get("unit"), f"run.telemetry.{name}.unit")
+        if unit != specification["unit"]:
+            raise AIEvaluationError(
+                f"run.telemetry.{name}.unit must be {specification['unit']!r}"
+            )
+        scope = _require_string(measurement.get("scope"), f"run.telemetry.{name}.scope")
+        if scope != specification["scope"]:
+            raise AIEvaluationError(
+                f"run.telemetry.{name}.scope does not match the study contract"
+            )
+        numeric_values = {
+            field: measurement.get(field)
+            for field in ("value", "minimum", "maximum")
+            if measurement.get(field) is not None
+        }
+        for field, value in numeric_values.items():
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value < 0
+            ):
+                raise AIEvaluationError(
+                    f"run.telemetry.{name}.{field} must be a finite non-negative number"
+                )
+        minimum = measurement.get("minimum")
+        maximum = measurement.get("maximum")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            raise AIEvaluationError(
+                f"run.telemetry.{name}.minimum must not exceed maximum"
+            )
 
 
 def _task_row(tasks: Mapping[str, Any], task_id: str) -> Mapping[str, Any]:
@@ -873,8 +1193,29 @@ def validate_run(run: Mapping[str, Any], harness: Mapping[str, Any]) -> None:
             raise AIEvaluationError(
                 "fixture-only enforcement requires a validated-fixture assessment"
             )
-    _validate_telemetry(run.get("telemetry"))
-    _require_list(run.get("failures"), "run.failures")
+    _validate_telemetry(
+        run.get("telemetry"),
+        harness["study"]["efficiency_outcomes"]["measures"],
+    )
+    failures = _require_list(run.get("failures"), "run.failures")
+    registered_failure_codes = {
+        str(code)
+        for issue in harness["issue_register"]["issues"]
+        for code in issue["evaluation"]["failure_codes"]
+    }
+    for index, failure in enumerate(failures):
+        if not isinstance(failure, Mapping):
+            raise AIEvaluationError(f"run.failures[{index}] must be an object")
+        code = _require_string(failure.get("code"), f"run.failures[{index}].code")
+        if not re.fullmatch(r"[A-Z][A-Z0-9_]*", code):
+            raise AIEvaluationError(
+                f"run.failures[{index}].code must be an uppercase stable identifier"
+            )
+        if code not in registered_failure_codes:
+            raise AIEvaluationError(
+                f"run.failures[{index}].code is not registered: {code}"
+            )
+        _require_string(failure.get("stage"), f"run.failures[{index}].stage")
     validate_public_value(run)
 
 
@@ -1326,6 +1667,132 @@ def _aggregate(
     }
 
 
+def _numeric_measure_summary(values: Sequence[float]) -> dict[str, Any]:
+    ordered = sorted(values)
+    return {
+        "count": len(ordered),
+        "mean": _mean(ordered),
+        "minimum": ordered[0] if ordered else None,
+        "maximum": ordered[-1] if ordered else None,
+        "values": ordered,
+    }
+
+
+def _efficiency_report(
+    runs: Sequence[Mapping[str, Any]],
+    scores: Sequence[Mapping[str, Any]],
+    harness: Mapping[str, Any],
+) -> dict[str, Any]:
+    ordered_runs = sorted(runs, key=lambda row: str(row["run_id"]))
+    scores_by_run = {str(score["run_id"]): score for score in scores}
+    required_arm_ids = {str(arm["id"]) for arm in harness["study"]["arms"]}
+    coverage: dict[str, dict[str, int]] = {}
+    measure_reports: dict[str, dict[str, Any]] = {}
+
+    for specification in harness["study"]["efficiency_outcomes"]["measures"]:
+        measure_id = str(specification["id"])
+        measurements: list[dict[str, Any]] = []
+        comparative_cells: dict[str, dict[str, Any]] = {}
+        for run in ordered_runs:
+            measurement = run["telemetry"].get(measure_id)
+            if not isinstance(measurement, Mapping):
+                continue
+            known = any(
+                measurement.get(field) is not None
+                for field in ("value", "minimum", "maximum")
+            )
+            if not known:
+                continue
+            score = scores_by_run[str(run["run_id"])]
+            measurements.append(
+                {
+                    "run_id": run["run_id"],
+                    "task_id": run["task_id"],
+                    "client_profile_id": run["client"]["profile_id"],
+                    "arm_id": run["arm_id"],
+                    "delivery_mode": run["delivery_mode"],
+                    "status": run["status"],
+                    "comparative_eligible": score["comparative_eligible"],
+                    "safe_exact_selection": score["safe_exact_selection"],
+                    "exact": measurement["exact"],
+                    "value": measurement.get("value"),
+                    "minimum": measurement.get("minimum"),
+                    "maximum": measurement.get("maximum"),
+                    "source": measurement["source"],
+                }
+            )
+            value = measurement.get("value")
+            if (
+                score["comparative_eligible"]
+                and measurement["exact"] is True
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+            ):
+                client = run["client"]
+                cell = {
+                    "task_id": run["task_id"],
+                    "client_profile_id": client["profile_id"],
+                    "client_version": client.get("client_version"),
+                    "model_requested": client.get("model_requested"),
+                    "model_resolved": client.get("model_resolved"),
+                    "model_effort": client.get("model_effort"),
+                    "delivery_mode": run["delivery_mode"],
+                }
+                key = dumps_json(cell)
+                bucket = comparative_cells.setdefault(
+                    key,
+                    {"cell": cell, "arm_values": defaultdict(list)},
+                )
+                bucket["arm_values"][str(run["arm_id"])].append(float(value))
+
+        exact_count = sum(row["exact"] is True for row in measurements)
+        coverage[measure_id] = {
+            "known_run_count": len(measurements),
+            "exact_run_count": exact_count,
+            "qualified_run_count": len(measurements) - exact_count,
+            "unknown_or_missing_run_count": len(runs) - len(measurements),
+        }
+        cells: list[dict[str, Any]] = []
+        for key in sorted(comparative_cells):
+            bucket = comparative_cells[key]
+            arm_values = bucket["arm_values"]
+            present_arm_ids = set(arm_values)
+            cells.append(
+                {
+                    "cell": bucket["cell"],
+                    "present_arm_ids": sorted(present_arm_ids),
+                    "required_arm_ids": sorted(required_arm_ids),
+                    "complete_arm_set": present_arm_ids == required_arm_ids,
+                    "arms": {
+                        arm_id: _numeric_measure_summary(arm_values[arm_id])
+                        for arm_id in sorted(arm_values)
+                    },
+                }
+            )
+        measure_reports[measure_id] = {
+            "unit": specification["unit"],
+            "scope": specification["scope"],
+            "coverage": coverage[measure_id],
+            "measurements": measurements,
+            "comparative_cells": cells,
+            "complete_comparative_cell_count": sum(
+                cell["complete_arm_set"] for cell in cells
+            ),
+        }
+
+    return {
+        "policy": harness["study"]["efficiency_outcomes"],
+        "telemetry_coverage": coverage,
+        "measures": measure_reports,
+        "interpretation": (
+            "Per-run measurements retain their source and exactness. Comparative "
+            "summaries include only exact numeric measurements from runs already "
+            "eligible for comparison, grouped by task and host/model cell. A cell "
+            "is complete only when every preregistered access arm is present."
+        ),
+    }
+
+
 def build_report(
     runs: Sequence[Mapping[str, Any]],
     harness: Mapping[str, Any],
@@ -1359,12 +1826,26 @@ def build_report(
             )
             for value in values
         }
+    issue_by_failure_code: dict[str, set[str]] = {}
+    for issue in harness["issue_register"]["issues"]:
+        for code in issue["evaluation"]["failure_codes"]:
+            issue_by_failure_code.setdefault(str(code), set()).add(str(issue["id"]))
+    failure_counts = Counter(
+        str(failure["code"])
+        for run in runs
+        for failure in run["failures"]
+        if isinstance(failure, Mapping) and failure.get("code")
+    )
     return {
         "schema": REPORT_SCHEMA,
         "study_id": harness["study"]["study_id"],
         "study_digest_sha256": _digest(harness["study"]),
         "tasks_digest_sha256": _digest(harness["tasks"]),
         "expected_digest_sha256": _digest(harness["expected"]),
+        "personas_and_journeys_digest_sha256": _digest(
+            harness["personas_and_journeys"]
+        ),
+        "issue_register_digest_sha256": _digest(harness["issue_register"]),
         "runs_digest_sha256": _digest(sorted(runs, key=lambda row: str(row["run_id"]))),
         "aggregate": _aggregate(scores, eligibility_field="comparative_eligible"),
         "validation_aggregate": _aggregate(
@@ -1373,6 +1854,15 @@ def build_report(
         ),
         "descriptive_aggregate": _aggregate(scores, eligibility_field="eligible"),
         "groups": groups,
+        "failure_summary": [
+            {
+                "code": code,
+                "count": failure_counts[code],
+                "issue_ids": sorted(issue_by_failure_code.get(code, set())),
+            }
+            for code in sorted(failure_counts)
+        ],
+        "efficiency": _efficiency_report(runs, scores, harness),
         "scores": scores,
         "interpretation": {
             "blocked_is_not_zero": True,
@@ -1400,10 +1890,14 @@ def build_report(
 
 
 def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
-    """Verify research hashes and basic DOCX safety without changing either artifact."""
+    """Verify research hashes, observation links and public DOCX safety."""
 
-    research = Path(root) / "research"
+    repository = Path(root).resolve()
+    research = repository / "research"
     manifest = _load_object(research / "manifest.json")
+    if manifest.get("schema") != "okf-ons.research-evidence-register.v1":
+        raise AIEvaluationError("unsupported research evidence register schema")
+    trial_ids = _unique_ids(manifest.get("trials"), "research trials")
     verified: list[dict[str, Any]] = []
     for row in manifest.get("artifacts", []):
         if not isinstance(row, Mapping):
@@ -1411,41 +1905,159 @@ def validate_research_artifacts(root: str | Path) -> dict[str, Any]:
         relative = _require_string(row.get("path"), "research artifact path")
         if Path(relative).is_absolute() or ".." in Path(relative).parts:
             raise AIEvaluationError(f"unsafe research artifact path: {relative}")
+        if row.get("trial_id") not in trial_ids:
+            raise AIEvaluationError(f"research artifact has unknown trial: {relative}")
         path = research / relative
         digest = _file_digest(path)
         if digest != row.get("sha256"):
             raise AIEvaluationError(f"research artifact digest mismatch: {relative}")
-        verified.append({"path": relative, "sha256": digest})
+        verified.append(
+            {
+                "path": relative,
+                "sha256": digest,
+                "trial_id": row["trial_id"],
+                "role": row["role"],
+            }
+        )
 
-    markdown = (research / manifest["authority"]["authoritative_artifact"]).read_text(
-        encoding="utf-8"
+    authorities = manifest.get("authority", {}).get("trial_authorities", [])
+    if not isinstance(authorities, list):
+        raise AIEvaluationError("research trial authorities must be a list")
+    claude_authority = next(
+        (
+            row
+            for row in authorities
+            if isinstance(row, Mapping)
+            and row.get("trial_id") == "claude-desktop-cowork-fable-5-20260718"
+        ),
+        None,
     )
+    if not isinstance(claude_authority, Mapping):
+        raise AIEvaluationError("research register has no Claude authority record")
+    authoritative_artifact = _require_string(
+        claude_authority.get("authoritative_artifact"),
+        "Claude authoritative artifact",
+    )
+    markdown = (research / authoritative_artifact).read_text(encoding="utf-8")
     for finding in range(1, 10):
         if f"F{finding} " not in markdown and f"F{finding} —" not in markdown:
             raise AIEvaluationError(f"authoritative research record is missing F{finding}")
 
-    docx = research / manifest["authority"]["derivative_artifact"]
-    with zipfile.ZipFile(docx) as package:
-        names = set(package.namelist())
-        prohibited = [name for name in names if name.casefold().endswith("vbaproject.bin")]
-        if prohibited:
-            raise AIEvaluationError("DOCX contains a macro project")
-        headers = sorted(name for name in names if name.startswith("word/header"))
-        footers = sorted(name for name in names if name.startswith("word/footer"))
-        if not headers or not footers:
-            raise AIEvaluationError("DOCX is missing provenance headers or page footers")
-        footer_text = b"".join(package.read(name) for name in footers)
-        if b"PAGE" not in footer_text:
-            raise AIEvaluationError("DOCX footers do not contain a PAGE field")
+    docx_reports: list[dict[str, Any]] = []
+    for artifact in verified:
+        if not artifact["path"].endswith(".docx"):
+            continue
+        manifest_artifact = next(
+            row for row in manifest["artifacts"] if row["path"] == artifact["path"]
+        )
+        source_digest = _require_string(
+            manifest_artifact.get("sanitized_from_sha256"),
+            f"sanitized source digest for {artifact['path']}",
+        )
+        if not re.fullmatch(r"[0-9a-f]{64}", source_digest):
+            raise AIEvaluationError(
+                f"invalid sanitized source digest for {artifact['path']}"
+            )
+        redaction_log = manifest_artifact.get("redaction_log")
+        if not isinstance(redaction_log, Mapping):
+            raise AIEvaluationError(
+                f"missing DOCX redaction log for {artifact['path']}"
+            )
+        docx = research / artifact["path"]
+        with zipfile.ZipFile(docx) as package:
+            names = set(package.namelist())
+            prohibited = [
+                name for name in names if name.casefold().endswith("vbaproject.bin")
+            ]
+            if prohibited:
+                raise AIEvaluationError(f"DOCX contains a macro project: {artifact['path']}")
+            headers = sorted(name for name in names if name.startswith("word/header"))
+            footers = sorted(name for name in names if name.startswith("word/footer"))
+            if not headers or not footers:
+                raise AIEvaluationError(
+                    f"DOCX is missing provenance headers or page footers: {artifact['path']}"
+                )
+            footer_text = b"".join(package.read(name) for name in footers)
+            if b"PAGE" not in footer_text:
+                raise AIEvaluationError(
+                    f"DOCX footers do not contain a PAGE field: {artifact['path']}"
+                )
+            try:
+                public_inspection = inspect_public_docx(docx)
+            except DocxReleaseError as error:
+                raise AIEvaluationError(
+                    f"unsafe public DOCX derivative {artifact['path']}: {error}"
+                ) from error
+            docx_reports.append(
+                {
+                    "path": artifact["path"],
+                    "macros_present": False,
+                    "page_field_present": True,
+                    "embedded_media_present": any(
+                        name.startswith("word/media/") for name in names
+                    ),
+                    "sanitized_from_sha256": source_digest,
+                    "redaction_log": dict(redaction_log),
+                    "public_inspection": public_inspection,
+                }
+            )
+
+    public_release = manifest.get("public_release")
+    if not isinstance(public_release, Mapping):
+        raise AIEvaluationError("research register has no public-release review")
+    if public_release.get("review_status") != "technical-public-release-review":
+        raise AIEvaluationError("research public-release review status is not approved")
+    if public_release.get("formal_information_governance_clearance") is not False:
+        raise AIEvaluationError(
+            "research register must not imply formal information-governance clearance"
+        )
+    reviewed_hashes = public_release.get("reviewed_artifact_sha256")
+    if not isinstance(reviewed_hashes, Mapping):
+        raise AIEvaluationError("research public-release hashes are missing")
+    for report in docx_reports:
+        if reviewed_hashes.get(report["path"]) != report["public_inspection"]["sha256"]:
+            raise AIEvaluationError(
+                f"research public-release review digest mismatch: {report['path']}"
+            )
+
+    for trial in manifest["trials"]:
+        observation = _require_string(
+            trial.get("observation"),
+            f"research trial {trial['id']} observation",
+        )
+        observation_path = (research / observation).resolve()
+        try:
+            observation_path.relative_to(repository)
+        except ValueError as error:
+            raise AIEvaluationError(
+                f"research trial observation escapes repository: {observation}"
+            ) from error
+        normalized = _load_object(observation_path)
+        if normalized.get("observation_id") != trial["id"]:
+            raise AIEvaluationError(
+                f"research trial observation ID mismatch: {trial['id']}"
+            )
+        expected_digest = _require_string(
+            trial.get("observation_sha256"),
+            f"research trial {trial['id']} observation_sha256",
+        )
+        if _file_digest(observation_path) != expected_digest:
+            raise AIEvaluationError(
+                f"research trial observation digest mismatch: {trial['id']}"
+            )
 
     return {
         "schema": "okf-ons.research-validation.v1",
         "evidence_id": manifest["evidence_id"],
+        "trial_count": len(trial_ids),
         "artifacts": verified,
-        "authoritative_artifact": manifest["authority"]["authoritative_artifact"],
+        "authoritative_artifact": authoritative_artifact,
+        "docx_artifacts": docx_reports,
         "docx_structurally_valid": True,
         "docx_macros_present": False,
         "docx_page_field_present": True,
+        "docx_public_metadata_safe": True,
+        "public_release_review": dict(public_release),
     }
 
 
@@ -1508,6 +2120,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "arms": len(harness["_ids"]["arms"]),
             "delivery_modes": len(harness["_ids"]["modes"]),
             "tasks": len(harness["_ids"]["tasks"]),
+            "journeys": len(harness["_ids"]["journeys"]),
+            "issues": len(harness["_ids"]["issues"]),
             "client_profiles": len(harness["_ids"]["profiles"]),
             "live_network_used": False,
             "paid_calls_used": False,
