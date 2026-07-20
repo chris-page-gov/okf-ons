@@ -926,6 +926,7 @@ def _normalise_sdmx_components(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, dict):
         return []
     result: list[dict[str, Any]] = []
+    dimension_position = 0
     for component_kind in (
         "dimension",
         "timedimension",
@@ -952,14 +953,13 @@ def _normalise_sdmx_components(value: Any) -> list[dict[str, Any]]:
             ):
                 _set_if_text(component, public_key, raw.get(upstream_key))
             if len(component) > 1:
+                if component_kind in {"dimension", "timedimension"}:
+                    dimension_position += 1
+                    component["position"] = dimension_position
                 result.append(component)
-    return sorted(
-        result,
-        key=lambda item: (
-            str(item.get("kind", "")).casefold(),
-            str(item.get("concept", "")).casefold(),
-        ),
-    )
+    # Dimension order is part of SDMX DSD identity. Preserve the provider's
+    # sequence instead of alphabetically sorting components for convenience.
+    return result
 
 
 def _read_or_fetch_page(

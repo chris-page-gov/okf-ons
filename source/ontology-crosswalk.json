@@ -7,6 +7,30 @@
     "crosswalkReplacesSourceMeaning": false,
     "statement": "Mappings support discovery, comparison and exchange. They do not assert that an upstream product conforms to a vocabulary or that two records are statistically equivalent."
   },
+  "serializationBoundary": {
+    "bundleFormat": "JSON-LD",
+    "vocabularyStack": [
+      "w3c-dcat-3",
+      "w3c-skos",
+      "w3c-prov-o",
+      "w3c-rdf-data-cube"
+    ],
+    "serializedAsSdmx": false,
+    "sdmxNamespaceDeclared": false,
+    "statement": "SDMX is registered and crosswalked, but the OKF bundle is not serialized as an SDMX message."
+  },
+  "sdmxIdentityPolicy": {
+    "standardId": "sdmx-3-1",
+    "preserve": [
+      "agency",
+      "identifier",
+      "version",
+      "dimension order",
+      "DataStructureDefinition component role"
+    ],
+    "flattenStructure": false,
+    "statement": "SDMX mappings retain source-native identity, dimension sequence and DSD role rather than flattening components into unordered labels."
+  },
   "namespaces": {
     "adms": "http://www.w3.org/ns/adms#",
     "csvw": "http://www.w3.org/ns/csvw#",
@@ -349,7 +373,7 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX frequency concept",
+          "term": "frequency concept",
           "mappingKind": "conditional",
           "notes": "Preserve the source code and code-list identity."
         }
@@ -387,7 +411,7 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX Concept and ConceptScheme",
+          "term": "Concept / ConceptScheme",
           "mappingKind": "direct",
           "notes": "Retain agency, identifier and version."
         },
@@ -412,7 +436,7 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX measure concept",
+          "term": "measure concept",
           "mappingKind": "conditional",
           "notes": "Preserve source DSD role and concept identity."
         },
@@ -437,9 +461,9 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX unit and unit-multiplier concepts",
+          "term": "unit / unit-multiplier concepts",
           "mappingKind": "conditional",
-          "notes": "Keep both the source code and readable label."
+          "notes": "Keep agency, identifier and version with both the source code and readable label."
         }
       ]
     },
@@ -456,7 +480,7 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX Dimension and DataStructureDefinition",
+          "term": "Dimension / DataStructureDefinition",
           "mappingKind": "direct",
           "notes": "Dimension order and role are significant where the source specifies them."
         },
@@ -487,7 +511,7 @@
         },
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX Codelist and Code",
+          "term": "Codelist / Code",
           "mappingKind": "direct",
           "notes": "Retain agency, identifier and version."
         }
@@ -500,7 +524,7 @@
       "mappings": [
         {
           "standardId": "sdmx-3-1",
-          "term": "SDMX ContentConstraint",
+          "term": "ContentConstraint",
           "mappingKind": "direct",
           "notes": "Use source constraints to prune impossible combinations."
         },

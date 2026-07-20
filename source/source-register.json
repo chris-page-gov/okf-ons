@@ -233,7 +233,9 @@
         ]
       },
       "identityFields": [
-        "structure.keyfamilies.keyfamily.id"
+        "structure.keyfamilies.keyfamily.agencyid",
+        "structure.keyfamilies.keyfamily.id",
+        "structure.keyfamilies.keyfamily.version"
       ],
       "pagination": {
         "strategy": "single-definition-document",
@@ -243,6 +245,8 @@
       "crossReferences": [
         "components.dimension.conceptref",
         "components.dimension.codelist",
+        "components.dimension order",
+        "components role",
         "annotations.annotation"
       ]
     },

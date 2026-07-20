@@ -355,6 +355,88 @@ def _nomis_value(value: Any) -> str:
     return plain_text(value)
 
 
+def _nomis_sdmx_structure(
+    projected: Mapping[str, Any],
+    *,
+    dataset_id: str,
+    components: list[Any],
+) -> dict[str, Any]:
+    """Preserve source-native SDMX structure identity without claiming conformance."""
+
+    agency = plain_text(projected.get("agencyId"), 200)
+    version = plain_text(projected.get("definitionVersion"), 100)
+    definition_url = _projected_url(projected, "apiDefinition") or (
+        f"{NOMIS_ROOT}/dataset/{dataset_id}/def.sdmx.json"
+    )
+    normalised_components: list[dict[str, Any]] = []
+    dimensions: list[dict[str, Any]] = []
+    dimension_position = 0
+    role_names = {
+        "dimension": "Dimension",
+        "timedimension": "TimeDimension",
+        "attribute": "Attribute",
+        "primarymeasure": "PrimaryMeasure",
+    }
+    for raw_component in components:
+        if not isinstance(raw_component, Mapping):
+            continue
+        kind = plain_text(raw_component.get("kind"), 100).casefold()
+        role = role_names.get(kind)
+        if role is None:
+            continue
+        component = {
+            key: raw_component[key]
+            for key in (
+                "concept",
+                "codeList",
+                "attachmentLevel",
+                "assignmentStatus",
+            )
+            if raw_component.get(key) not in (None, "")
+        }
+        component["role"] = role
+        if kind in {"dimension", "timedimension"}:
+            dimension_position += 1
+            source_position = raw_component.get("position")
+            component["position"] = (
+                source_position
+                if isinstance(source_position, int) and not isinstance(source_position, bool)
+                else dimension_position
+            )
+            dimensions.append(component)
+        normalised_components.append(component)
+    return {
+        "schema": "okf-ons-sdmx-structure.v1",
+        "standardId": "sdmx-3-1",
+        "standardRole": "ontology-crosswalk-and-evidence-mapping",
+        "identity": {
+            "agency": agency,
+            "identifier": dataset_id,
+            "version": version,
+            "structureRole": "DataStructureDefinition",
+            "sourceStructureType": "keyfamily",
+        },
+        "definitionUrl": definition_url,
+        "serviceEndpoint": NOMIS_ROOT,
+        "components": normalised_components,
+        "dimensions": dimensions,
+        "selectionConstraints": {
+            "sdmxRole": "ContentConstraint",
+            "complete": False,
+            "status": "requires-live-inspection",
+            "reason": (
+                "Nomis dimensions and codelist values must be selected before querying."
+            ),
+        },
+        "upstreamSdmxVersion": "not-evidenced",
+        "observationsIncluded": False,
+        "assurance": (
+            "Preserved SDMX identity and structure metadata do not assert that the "
+            "upstream product conforms to SDMX 3.1."
+        ),
+    }
+
+
 def normalize_nomis_dataset(
     row: dict[str, Any],
     *,
@@ -398,12 +480,13 @@ def normalize_nomis_dataset(
             "state": "published",
             "selection": {
                 "schema": "okf-ons-selection-binding.v1",
-                "tool": "nomis.datasets",
-                "arguments": {"dataset": dataset_id},
-                "query_tool": "nomis.query",
+                "arguments": {"dataset": dataset_id, "format": "sdmx"},
+                "query_tool": "nomis_query",
+                "tool_provider": "mcp-geo",
                 "mcp_available": True,
                 "binding_status": "available",
                 "complete": False,
+                "direct_metadata_url": f"{NOMIS_ROOT}/dataset/{dataset_id}/def.sdmx.json",
                 "reason": "Nomis dimensions and codelist values must be selected before querying.",
             },
         }
@@ -678,11 +761,16 @@ def normalize_acquisition_record(
             if isinstance(component, Mapping)
             and component.get("kind") in {"dimension", "timedimension"}
         ]
+        sdmx = _nomis_sdmx_structure(
+            projected,
+            dataset_id=native_id,
+            components=components,
+        )
         record.update(
             {
                 "metadata_modified": plain_text(projected.get("lastUpdated"), 100),
                 "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 300),
-                "dimensions": dimensions,
+                "dimensions": sdmx["dimensions"],
                 "dimension_count": len(dimensions),
                 "definition_version": plain_text(projected.get("definitionVersion"), 100),
                 "agency_id": plain_text(projected.get("agencyId"), 200),
@@ -691,6 +779,7 @@ def normalize_acquisition_record(
                 "mnemonic": plain_text(projected.get("mnemonic"), 300),
                 "publisher_uri": plain_text(projected.get("publisherUri"), 1_000),
                 "annotations": projected.get("annotations", []),
+                "sdmx": sdmx,
             }
         )
     elif source_id == "ons-open-geography":

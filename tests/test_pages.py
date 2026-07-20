@@ -148,7 +148,9 @@ def test_javascript_uses_canonical_generated_entrypoints_and_safe_dom() -> None:
     assert "function portalBbox(extent)" in script
     assert 'pathNumber(state.evaluation, ["metrics", "recall_at_k", "5"])' in script
     assert '"MCP binding planned"' in script
-    assert "selection.tool || selection.query_tool || null" in script
+    assert "selection.inspection_tool || selection.tool || null" in script
+    assert "selection.query_tool || (structurallyComplete ? selection.tool : null)" in script
+    assert '"inspect-sdmx-structure-and-configure"' in script
     assert '"inspect-and-configure"' in script
     assert "portalBbox(record.raw.portal_extent)" in script
     assert "record.recordId" in script

@@ -1,0 +1,82 @@
+{
+  "schema": "okf-ons.architecture-research-register.v1",
+  "researchId": "okf-ons-governed-ai-architecture-2026-07-20",
+  "asOf": "2026-07-20",
+  "relationshipToTrialEvidence": {
+    "trialEvidenceRegister": "manifest.json",
+    "partOfAiClientTrials": false,
+    "statement": "These architecture-research artefacts are separate from the 18 July AI-client trial evidence and do not alter its authority or findings."
+  },
+  "assuranceBoundary": {
+    "technicalPublicReleaseReview": true,
+    "formalInformationGovernanceClearance": false,
+    "factuallyValidatedReport": false,
+    "statement": "The artefacts preserve research questions, generated presentations and a generated visual. Their claims require verification against primary sources and controlled evidence."
+  },
+  "artifacts": [
+    {
+      "path": "okf-governed-ai-deep-research-prompt.md",
+      "role": "deep-research-design",
+      "mediaType": "text/markdown",
+      "sha256": "8a1983a2de2f219c3f502224824e39451b6869d2c21c4034e1cb79cf2a06cdd5",
+      "authoritativeFor": "Research questions and requested method only",
+      "limitations": [
+        "This is a prompt, not a completed research report.",
+        "Starting hypotheses are propositions to test, not established conclusions."
+      ]
+    },
+    {
+      "path": "Governed_AI_Architecture_(2).pptx",
+      "role": "architecture-research-presentation",
+      "mediaType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "sha256": "8f1461ab87825eb2e0d2fa09d1077c5a95e3343f805fbfa5f66139a4c2de02db",
+      "slideCount": 15,
+      "contentMode": "image-based slides",
+      "limitations": [
+        "Presentation claims are research propositions unless independently sourced.",
+        "The package contains no editable slide text or speaker notes."
+      ]
+    },
+    {
+      "path": "Architecting_Governed_Enterprise_AI (1).pptx",
+      "role": "architecture-research-presentation",
+      "mediaType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "sha256": "d1a7aa4bf83f324295ca954eac020aa40cdc1a865732c03b06a64720941d928e",
+      "slideCount": 15,
+      "contentMode": "image-based slides",
+      "limitations": [
+        "Presentation claims are research propositions unless independently sourced.",
+        "The package contains no editable slide text or speaker notes."
+      ]
+    },
+    {
+      "path": "Reliable_Public_Statistics_Discovery_Bridge.png",
+      "role": "generated-non-authoritative-research-visual",
+      "mediaType": "image/png",
+      "sha256": "2c844f68ee124a6ed09d785a0562dbe4376ec9dafbaa40226c4ca9fd805950b0",
+      "pixelDimensions": {
+        "width": 2752,
+        "height": 1536
+      },
+      "limitations": [
+        "The visual contains visible typographical errors.",
+        "Its model-effect wording is stronger than the controlled evidence supports.",
+        "It must not be used as an authoritative statistical, architectural or evaluation finding."
+      ]
+    }
+  ],
+  "powerPointPackageReview": {
+    "reviewedAt": "2026-07-20",
+    "renderedSuccessfully": true,
+    "overflowDetected": false,
+    "macrosPresent": false,
+    "externalRelationshipsPresent": false,
+    "speakerNotesPresent": false,
+    "commentsPresent": false,
+    "embeddedFilesPresent": false,
+    "customXmlPresent": false,
+    "authorIdentityPresent": false,
+    "machinePathsDetected": false,
+    "credentialPatternsDetected": false
+  }
+}

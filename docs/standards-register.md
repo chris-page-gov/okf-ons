@@ -151,6 +151,27 @@ optional European federation/export profile. It is not the canonical UK model,
 and a DCAT-AP validation result must not be used as a statistical-quality
 claim.
 
+### SDMX implementation boundary
+
+SDMX is implemented in three deliberately separate places:
+
+1. `sdmx-3-1` is an international-standard register entry with one
+   executable-structure requirement.
+2. The ontology crosswalk maps exactly seven canonical fields: `concept`,
+   `dimensions`, `codeLists`, `selectionConstraints`, `frequency`, `measure`
+   and `unit`. SDMX agency, identifier, version, dimension order and DSD
+   component role remain explicit.
+3. The Nomis source lane preserves SDMX structure metadata for all frozen
+   Nomis records. Every binding remains `complete: false` until dimensions and
+   codelist values are selected; completed execution is delegated to
+   MCP-Geo's `nomis_query`.
+
+The generated `data/standards/sdmx.json` makes those claims and their
+denominators machine-readable. The bundle itself remains JSON-LD using DCAT 3,
+SKOS, PROV-O and RDF Data Cube terms. Its JSON-LD context intentionally has no
+SDMX namespace. Crosswalks support discovery and exchange; they do not certify
+upstream ONS or Nomis conformance.
+
 ## Geospatial metadata
 
 For spatial records, preserve geography level, GSS code family, reference
