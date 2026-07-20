@@ -400,6 +400,140 @@ def _quality_and_standards_summary(corpus: FrozenCorpus) -> dict[str, Any]:
     }
 
 
+def _sdmx_implementation(corpus: FrozenCorpus) -> dict[str, Any]:
+    standards = [
+        standard
+        for standard in corpus.standards_register.get("standards", [])
+        if isinstance(standard, Mapping) and standard.get("id") == "sdmx-3-1"
+    ]
+    if len(standards) != 1:
+        raise BuildError("Standards register must contain exactly one sdmx-3-1 entry")
+    standard = standards[0]
+    mappings = [
+        {
+            "field": field.get("field"),
+            "term": mapping.get("term"),
+            "mappingKind": mapping.get("mappingKind"),
+            "notes": mapping.get("notes"),
+        }
+        for field in corpus.ontology_crosswalk.get("canonicalFields", [])
+        if isinstance(field, Mapping)
+        for mapping in field.get("mappings", [])
+        if isinstance(mapping, Mapping) and mapping.get("standardId") == "sdmx-3-1"
+    ]
+    expected_fields = {
+        "concept",
+        "dimensions",
+        "codeLists",
+        "selectionConstraints",
+        "frequency",
+        "measure",
+        "unit",
+    }
+    mapped_fields = {str(mapping["field"]) for mapping in mappings}
+    if mapped_fields != expected_fields or len(mappings) != len(expected_fields):
+        raise BuildError("SDMX crosswalk must contain exactly the seven canonical mappings")
+
+    nomis_records = [
+        record for record in corpus.records if record.get("source_surface") == "nomis"
+    ]
+    sdmx_structures = [
+        record.get("sdmx")
+        for record in nomis_records
+        if isinstance(record.get("sdmx"), Mapping)
+    ]
+    dimensions = [
+        dimension
+        for structure in sdmx_structures
+        for dimension in structure.get("dimensions", [])
+        if isinstance(dimension, Mapping)
+    ]
+    components = [
+        component
+        for structure in sdmx_structures
+        for component in structure.get("components", [])
+        if isinstance(component, Mapping)
+    ]
+    query_tools = sorted(
+        {
+            str(record.get("selection", {}).get("query_tool"))
+            for record in nomis_records
+            if record.get("selection", {}).get("query_tool")
+        }
+    )
+    serialization = corpus.ontology_crosswalk.get("serializationBoundary", {})
+    return {
+        "schema": "okf-ons-sdmx-implementation.v1",
+        "snapshotId": corpus.snapshot["snapshotId"],
+        "registeredStandard": {
+            "standardId": standard.get("id"),
+            "title": standard.get("title"),
+            "category": standard.get("category"),
+            "canonicalUri": standard.get("canonicalUri"),
+            "normativeStatus": standard.get("normativeStatus"),
+            "requirementCount": len(standard.get("requirements", [])),
+            "claim": "Evidence mapping and profile alignment; not certification.",
+        },
+        "ontologyCrosswalk": {
+            "path": "data/standards/ontology-crosswalk.json",
+            "mappingCount": len(mappings),
+            "mappings": mappings,
+            "identityPolicy": corpus.ontology_crosswalk.get("sdmxIdentityPolicy", {}),
+        },
+        "upstreamNomis": {
+            "sourceSurface": "nomis",
+            "sourceAdapter": "nomis-sdmx",
+            "recordCount": len(nomis_records),
+            "dimensionMetadata": len(sdmx_structures),
+            "sdmxIdentity": {
+                "agency": sum(
+                    bool(structure.get("identity", {}).get("agency"))
+                    for structure in sdmx_structures
+                ),
+                "identifier": sum(
+                    bool(structure.get("identity", {}).get("identifier"))
+                    for structure in sdmx_structures
+                ),
+                "version": sum(
+                    bool(structure.get("identity", {}).get("version"))
+                    for structure in sdmx_structures
+                ),
+            },
+            "dimensionOrderPreserved": bool(dimensions)
+            and all(
+                isinstance(dimension.get("position"), int)
+                and not isinstance(dimension.get("position"), bool)
+                for dimension in dimensions
+            ),
+            "dsdRolesPreserved": bool(components)
+            and all(bool(component.get("role")) for component in components),
+            "selectionBindings": {
+                "complete": sum(
+                    record.get("selection", {}).get("complete") is True
+                    for record in nomis_records
+                ),
+                "incomplete": sum(
+                    record.get("selection", {}).get("complete") is not True
+                    for record in nomis_records
+                ),
+                "queryTools": query_tools,
+                "reason": (
+                    "Nomis dimensions and codelist values must be selected before querying."
+                ),
+            },
+        },
+        "serializationBoundary": {
+            **serialization,
+            "contextPath": "context/okf-ons.jsonld",
+            "sdmxNamespacePresent": "sdmx" in corpus.ontology_crosswalk.get("namespaces", {}),
+        },
+        "assuranceBoundary": (
+            "The SDMX mappings support discovery and exchange. They do not assert "
+            "that upstream ONS or Nomis products conform to SDMX 3.1."
+        ),
+    }
+
+
 def _resource_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
@@ -782,6 +916,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     rankings, evaluation_report = _baseline_evaluation(corpus, inputs.gold_suite)
     coverage = _coverage_ledger(corpus)
     standards_evaluation = _quality_and_standards_summary(corpus)
+    sdmx_implementation = _sdmx_implementation(corpus)
     generated_at = _generated_at(corpus)
     source_counts = _source_counts(corpus.records)
     record_type_counts = dict(
@@ -855,6 +990,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     writer.write_json("data/standards/evaluation.json", standards_evaluation)
     writer.write_json("data/standards/register.json", corpus.standards_register)
     writer.write_json("data/standards/ontology-crosswalk.json", corpus.ontology_crosswalk)
+    writer.write_json("data/standards/sdmx.json", sdmx_implementation)
     writer.write_json("data/reconciliation/report.json", reconciliation)
     writer.write_json("data/evaluation/alias-resolution.json", corpus.aliases)
     writer.write_json("data/evaluation/rankings.json", rankings)
@@ -926,6 +1062,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "search": "data/search/manifest.json",
             "coverage": "data/coverage/ledger.json",
             "reconciliation": "data/reconciliation/report.json",
+            "sdmx": "data/standards/sdmx.json",
         },
         "performance": {
             "startup_mode": "overview-first",
@@ -948,6 +1085,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "dct": "http://purl.org/dc/terms/",
             "dqv": "http://www.w3.org/ns/dqv#",
             "prov": "http://www.w3.org/ns/prov#",
+            "qb": "http://purl.org/linked-data/cube#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
             "Dataset": "dcat:Dataset",
             "title": "dct:title",
@@ -972,6 +1110,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "conformsTo": [
             "https://www.w3.org/TR/vocab-dcat-3/",
             "https://www.w3.org/TR/prov-o/",
+            "https://www.w3.org/TR/skos-reference/",
+            "https://www.w3.org/TR/vocab-data-cube/",
         ],
         "alignmentClaim": (
             "These terms describe the generated catalogue mapping. They do not assert "
@@ -1036,6 +1176,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "coverage": "data/coverage/ledger.json",
             "reconciliation": "data/reconciliation/report.json",
             "standards": "data/standards/evaluation.json",
+            "sdmx": "data/standards/sdmx.json",
             "evaluation": "data/evaluation/report.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
@@ -1056,6 +1197,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "okf-ons-standards-evidence.v1": {
                 "entrypoint": "standards",
                 "claim": "Evidence mapping and profile alignment; not certification.",
+            },
+            "okf-ons-sdmx.v1": {
+                "entrypoint": "sdmx",
+                "serialized_as_sdmx": False,
+                "upstream_source_surface": "nomis",
+                "query_tool": "nomis_query",
             },
             "okf-ons-geography.v1": {
                 "entrypoint": "spatial_index",

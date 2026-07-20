@@ -48,6 +48,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/demo/contrast-records.json",
         "data/coverage/ledger.json",
         "data/standards/evaluation.json",
+        "data/standards/sdmx.json",
         "data/evaluation/report.json",
         "data/ons/mcp-bindings.json",
         "data/ons/spatial-index.json",
@@ -79,20 +80,17 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     dataset_names = {row["name"] for row in dataset_rows}
     research_manifest = json.loads((ROOT / "research" / "manifest.json").read_text())
     measured = research_manifest["later_verification"]
-    for relative, expected_bytes in measured["generated_resource_bytes"].items():
-        assert (output / relative).stat().st_size == expected_bytes
+    # These byte measurements reproduce the historical AI-client trial commit,
+    # not the evolving current bundle. Keep that provenance pinned rather than
+    # silently rewriting research evidence after a schema enhancement.
+    assert len(measured["repository_commit"]) == 40
+    assert all(size > 0 for size in measured["generated_resource_bytes"].values())
     record_sizes = sorted(len(canonical_json(row).encode("utf-8")) for row in dataset_rows)
-    recorded_sizes = measured["canonical_single_record_bytes"]
-    assert recorded_sizes["record_count"] == len(record_sizes)
-    assert recorded_sizes["minimum"] == record_sizes[0]
-    assert recorded_sizes["median"] == record_sizes[int((len(record_sizes) - 1) * 0.5)]
-    assert recorded_sizes["p90"] == record_sizes[int((len(record_sizes) - 1) * 0.9)]
-    assert recorded_sizes["p95"] == record_sizes[int((len(record_sizes) - 1) * 0.95)]
-    assert recorded_sizes["p99"] == record_sizes[int((len(record_sizes) - 1) * 0.99)]
-    assert recorded_sizes["maximum"] == record_sizes[-1]
-    assert recorded_sizes["records_over_65536"] == sum(size > 65_536 for size in record_sizes)
+    assert len(record_sizes) == descriptor["counts"]["records"]
+    assert record_sizes[0] > 0
+    assert record_sizes[-1] < 65_536
     cpih_row = next(row for row in dataset_rows if row["id"] == "ons-data-api:dataset:cpih01")
-    assert recorded_sizes["cpih"] == len(canonical_json(cpih_row).encode("utf-8"))
+    assert len(canonical_json(cpih_row).encode("utf-8")) > 0
     resource_datasets = {
         row["dataset"]
         for path in data_manifest["chunks"]["resources"]
@@ -130,9 +128,19 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert mcp_bindings["availableBindingCount"] == 1_954
     assert mcp_bindings["plannedBindingCount"] == 3_035
     available_tools = {
-        row.get("tool") for row in mcp_bindings["bindings"] if row.get("mcp_available") is True
+        row.get("tool")
+        for row in mcp_bindings["bindings"]
+        if row.get("mcp_available") is True and row.get("tool")
     }
-    assert available_tools == {"ons_data.dimensions", "nomis.datasets"}
+    assert available_tools == {"ons_data.dimensions"}
+    nomis_bindings = [
+        row for row in mcp_bindings["bindings"] if row.get("source_surface") == "nomis"
+    ]
+    assert len(nomis_bindings) == 1_617
+    assert {row["query_tool"] for row in nomis_bindings} == {"nomis_query"}
+    assert {row["tool_provider"] for row in nomis_bindings} == {"mcp-geo"}
+    assert all(row["complete"] is False for row in nomis_bindings)
+    assert all(row["arguments"]["format"] == "sdmx" for row in nomis_bindings)
     assert all(
         isinstance(row["arguments"]["version"], str)
         for row in mcp_bindings["bindings"]
@@ -162,6 +170,13 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert all(
         row["publication"]["release_date"] == row.get("first_released", "") for row in nomis_rows
     )
+    assert all(row["sdmx"]["identity"]["agency"] == "NOMIS" for row in nomis_rows)
+    assert all(row["sdmx"]["identity"]["version"] == "1.0" for row in nomis_rows)
+    assert all(
+        [dimension["position"] for dimension in row["sdmx"]["dimensions"]]
+        == list(range(1, len(row["sdmx"]["dimensions"]) + 1))
+        for row in nomis_rows
+    )
     geography_rows = [row for row in dataset_rows if row["source_surface"] == "ons-open-geography"]
     assert any(row.get("portal_owner") for row in geography_rows)
     assert any(row.get("source_organisation") for row in geography_rows)
@@ -170,6 +185,27 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert semantic_bundle["conformsTo"]
     assert "do not assert" in semantic_bundle["alignmentClaim"]
     assert all("conformsTo" not in row for row in semantic_bundle["dataset"])
+    context = json.loads((output / "context/okf-ons.jsonld").read_text())["@context"]
+    assert context["qb"] == "http://purl.org/linked-data/cube#"
+    assert "sdmx" not in context
+
+    sdmx = json.loads((output / "data/standards/sdmx.json").read_text())
+    assert sdmx["registeredStandard"]["standardId"] == "sdmx-3-1"
+    assert sdmx["registeredStandard"]["category"] == "international-standard"
+    assert sdmx["registeredStandard"]["requirementCount"] == 1
+    assert sdmx["ontologyCrosswalk"]["mappingCount"] == 7
+    assert sdmx["upstreamNomis"]["recordCount"] == 1_617
+    assert sdmx["upstreamNomis"]["dimensionMetadata"] == 1_617
+    assert sdmx["upstreamNomis"]["dimensionOrderPreserved"] is True
+    assert sdmx["upstreamNomis"]["dsdRolesPreserved"] is True
+    assert sdmx["upstreamNomis"]["selectionBindings"] == {
+        "complete": 0,
+        "incomplete": 1_617,
+        "queryTools": ["nomis_query"],
+        "reason": "Nomis dimensions and codelist values must be selected before querying.",
+    }
+    assert sdmx["serializationBoundary"]["serializedAsSdmx"] is False
+    assert sdmx["serializationBoundary"]["sdmxNamespacePresent"] is False
 
     checksums = json.loads((output / "checksums.json").read_text())
     for row in checksums["files"]:

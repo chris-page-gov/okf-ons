@@ -21,6 +21,19 @@ The local broker is not the downstream live-data server: it makes no network
 calls and returns no observation values. No observations, API keys, or private
 data are stored in the bundle.
 
+## SDMX support
+
+The bundle registers SDMX 3.1 (ISO 17369), maps seven canonical OKF fields to
+SDMX concepts, and preserves the Nomis lane's SDMX agency, identifier, version,
+dimension order, component roles and code-list references. Nomis selections
+remain incomplete until their dimensions and codelist values have been chosen;
+completed live execution uses MCP-Geo's `nomis_query`.
+
+The bundle is not itself an SDMX message. It is serialized as JSON-LD using
+DCAT 3, SKOS, PROV-O and RDF Data Cube terms, with no SDMX namespace in its
+context. The generated `data/standards/sdmx.json` reports the exact mapping and
+Nomis evidence counts without asserting upstream conformance or certification.
+
 ## Monday demonstrator
 
 The pre-hackathon demonstrator is frozen so the Monday presentation can use a

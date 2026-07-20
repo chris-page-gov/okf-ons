@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 import sys
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -210,6 +211,51 @@ def test_research_sources_are_hash_pinned_and_docx_is_safe() -> None:
             "okf-hosting-research-public-sanitized.docx"
         ),
     }
+
+
+def test_architecture_research_artifacts_are_pinned_and_public_package_safe() -> None:
+    research = ROOT / "research"
+    manifest = json.loads((research / "architecture-manifest.json").read_text())
+
+    assert manifest["schema"] == "okf-ons.architecture-research-register.v1"
+    assert manifest["relationshipToTrialEvidence"]["partOfAiClientTrials"] is False
+    assert manifest["assuranceBoundary"]["formalInformationGovernanceClearance"] is False
+    assert manifest["assuranceBoundary"]["factuallyValidatedReport"] is False
+
+    trial_manifest = json.loads((research / "manifest.json").read_text())
+    trial_paths = {row["path"] for row in trial_manifest["artifacts"]}
+    architecture_paths = {row["path"] for row in manifest["artifacts"]}
+    assert trial_paths.isdisjoint(architecture_paths)
+
+    for artifact in manifest["artifacts"]:
+        relative = Path(artifact["path"])
+        assert not relative.is_absolute()
+        assert ".." not in relative.parts
+        path = research / relative
+        assert path.is_file()
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == artifact["sha256"]
+
+        if path.suffix != ".pptx":
+            continue
+        with zipfile.ZipFile(path) as package:
+            names = set(package.namelist())
+            assert not any(name.casefold().endswith("vbaproject.bin") for name in names)
+            assert not any(name.startswith("ppt/notesSlides/") for name in names)
+            assert not any("comment" in name.casefold() for name in names)
+            assert not any(name.startswith("ppt/embeddings/") for name in names)
+            assert not any(name.startswith("customXml/") for name in names)
+            relationships = b"".join(
+                package.read(name)
+                for name in names
+                if name.casefold().endswith(".rels")
+            )
+            assert b'TargetMode="External"' not in relationships
+            slides = {
+                name
+                for name in names
+                if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+            }
+            assert len(slides) == artifact["slideCount"]
 
 
 def test_run_template_is_deterministic_and_unstarted(harness: dict) -> None:

@@ -1235,7 +1235,7 @@
       "applicability": {
         "scope": "SDMX dataflows, structures, concepts, code lists, constraints and services",
         "conditions": "Preserve native identities and actual content constraints.",
-        "exclusions": "Do not invent valid dimension combinations when constraints are unavailable."
+        "exclusions": "Do not invent valid dimension combinations when constraints are unavailable, serialize the OKF bundle itself as SDMX, or imply certification."
       },
       "requirements": [
         {

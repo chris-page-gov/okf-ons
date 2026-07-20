@@ -187,6 +187,22 @@ def test_ontology_crosswalk_preserves_identity_and_confusable_alternatives() -> 
     assert crosswalk["namespaces"]["dcat"] == "http://www.w3.org/ns/dcat#"
     assert crosswalk["namespaces"]["prov"] == "http://www.w3.org/ns/prov#"
     assert crosswalk["namespaces"]["skos"] == "http://www.w3.org/2004/02/skos/core#"
+    assert "sdmx" not in crosswalk["namespaces"]
+    assert crosswalk["serializationBoundary"] == {
+        "bundleFormat": "JSON-LD",
+        "vocabularyStack": [
+            "w3c-dcat-3",
+            "w3c-skos",
+            "w3c-prov-o",
+            "w3c-rdf-data-cube",
+        ],
+        "serializedAsSdmx": False,
+        "sdmxNamespaceDeclared": False,
+        "statement": (
+            "SDMX is registered and crosswalked, but the OKF bundle is not "
+            "serialized as an SDMX message."
+        ),
+    }
 
     fields = {field["field"]: field for field in crosswalk["canonicalFields"]}
     assert len(fields) == len(crosswalk["canonicalFields"])
@@ -234,6 +250,33 @@ def test_ontology_crosswalk_preserves_identity_and_confusable_alternatives() -> 
             assert mapping["mappingKind"] in crosswalk["mappingKinds"]
             assert mapping["term"].strip()
             assert mapping["notes"].strip()
+
+    sdmx_mappings = {
+        field_name: mapping
+        for field_name, field in fields.items()
+        for mapping in field["mappings"]
+        if mapping["standardId"] == "sdmx-3-1"
+    }
+    assert {
+        field: (mapping["term"], mapping["mappingKind"])
+        for field, mapping in sdmx_mappings.items()
+    } == {
+        "concept": ("Concept / ConceptScheme", "direct"),
+        "dimensions": ("Dimension / DataStructureDefinition", "direct"),
+        "codeLists": ("Codelist / Code", "direct"),
+        "selectionConstraints": ("ContentConstraint", "direct"),
+        "frequency": ("frequency concept", "conditional"),
+        "measure": ("measure concept", "conditional"),
+        "unit": ("unit / unit-multiplier concepts", "conditional"),
+    }
+    assert crosswalk["sdmxIdentityPolicy"]["preserve"] == [
+        "agency",
+        "identifier",
+        "version",
+        "dimension order",
+        "DataStructureDefinition component role",
+    ]
+    assert crosswalk["sdmxIdentityPolicy"]["flattenStructure"] is False
 
     policy = crosswalk["relationshipPolicy"]
     rules_text = " ".join(policy["rules"])

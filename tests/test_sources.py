@@ -343,12 +343,12 @@ def test_nomis_projection_preserves_sdmx_cross_references_not_values(
                         "components": {
                             "dimension": [
                                 {
-                                    "conceptref": "GEOGRAPHY",
-                                    "codelist": "CL_1_1_GEOGRAPHY",
-                                },
-                                {
                                     "conceptref": "SEX",
                                     "codelist": "CL_1_1_SEX",
+                                },
+                                {
+                                    "conceptref": "GEOGRAPHY",
+                                    "codelist": "CL_1_1_GEOGRAPHY",
                                 },
                             ],
                             "primarymeasure": {"conceptref": "OBS_VALUE"},
@@ -386,6 +386,11 @@ def test_nomis_projection_preserves_sdmx_cross_references_not_values(
         "CL_1_1_SEX",
         None,
     }
+    dimensions = [
+        item for item in record["components"] if item["kind"] in {"dimension", "timedimension"}
+    ]
+    assert [item["concept"] for item in dimensions] == ["SEX", "GEOGRAPHY"]
+    assert [item["position"] for item in dimensions] == [1, 2]
     public_json = json.dumps(result.as_public_dict())
     assert '"value": [100, 200]' not in public_json
     assert "OBS_VALUE" in public_json

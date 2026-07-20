@@ -36,7 +36,9 @@ trusted MCP-Geo server can validate and run.
 - No live call is made from GitHub Pages.
 - Tool names and argument types must validate against the current MCP-Geo tool
   schemas. The bundle currently has inspection/query bindings for ONS Data API
-  and Nomis records. A general Open Geography catalogue-item MCP binding is
-  explicitly `planned`, not invented.
+  records. Nomis structure inspection uses the record's direct
+  `def.sdmx.json` metadata URL; only a completed selection is executed through
+  MCP-Geo's `nomis_query`. A general Open Geography catalogue-item MCP binding
+  is explicitly `planned`, not invented.
 - A plan with unknown dimensions, invalid options or an ambiguous geography is
   not executable.

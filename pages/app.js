@@ -1488,21 +1488,32 @@
       ...(record.raw.selection || {}),
     };
     const structurallyComplete = Boolean(selection.complete);
+    const inspectionTool = selection.inspection_tool || selection.tool || null;
+    const queryTool = selection.query_tool || (structurallyComplete ? selection.tool : null);
     const tool = structurallyComplete
-      ? selection.query_tool || selection.tool || null
-      : selection.tool || selection.query_tool || null;
-    const available = selection.mcp_available !== false && Boolean(tool);
+      ? queryTool
+      : inspectionTool;
+    const directMetadataUrl = safeLink(selection.direct_metadata_url);
+    const available =
+      selection.mcp_available !== false &&
+      Boolean(queryTool || inspectionTool || directMetadataUrl);
     const complete = structurallyComplete && available;
     return {
       schema: "okf-ons-selection-plan.v1",
       source: record.source,
       record_id: record.id,
       tool,
-      inspection_tool: selection.tool || null,
-      query_tool: selection.query_tool || null,
-      next_step: complete ? "query" : available ? "inspect-and-configure" : "binding-planned",
+      inspection_tool: inspectionTool,
+      query_tool: queryTool,
+      next_step: complete
+        ? "query"
+        : directMetadataUrl
+          ? "inspect-sdmx-structure-and-configure"
+          : available
+            ? "inspect-and-configure"
+            : "binding-planned",
       arguments: selection.arguments || { dataset: record.nativeId },
-      direct_metadata_url: safeLink(selection.direct_metadata_url),
+      direct_metadata_url: directMetadataUrl,
       mcp_available: available,
       binding_status: selection.binding_status || (available ? "available" : "planned"),
       validation: {

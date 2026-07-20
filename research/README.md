@@ -75,3 +75,30 @@ M365 access briefing has header/body collisions, the hosting report has a
 cramped page-spanning table, and the Claude derivative has clipping in
 LibreOffice. These are recorded in `manifest.json`; the Claude Markdown remains
 the content authority.
+
+## Governed-AI architecture research
+
+The following 20 July architecture-research artefacts are separate from the
+18 July AI-client trials and are registered in
+[`architecture-manifest.json`](architecture-manifest.json):
+
+- [`okf-governed-ai-deep-research-prompt.md`](okf-governed-ai-deep-research-prompt.md)
+  is a research design and question set, not a completed report.
+- [`Governed_AI_Architecture_(2).pptx`](Governed_AI_Architecture_(2).pptx) and
+  [`Architecting_Governed_Enterprise_AI (1).pptx`](Architecting_Governed_Enterprise_AI%20(1).pptx)
+  are 15-slide, image-based architecture-research presentations.
+- [`Reliable_Public_Statistics_Discovery_Bridge.png`](Reliable_Public_Statistics_Discovery_Bridge.png)
+  is a generated explanatory visual.
+
+The PowerPoint packages were rendered successfully and checked for macros,
+external relationships, notes, comments, embedded files, custom XML, author
+identity, machine paths and credential patterns. None were found. This is a
+technical public-release review, not formal information-governance clearance
+or factual validation.
+
+The standalone generated visual is non-authoritative: it contains visible
+typographical errors and model-effect wording that is stronger than the
+controlled evidence supports. The presentations and visual preserve research
+ideas and design exploration; their architectural and empirical claims must be
+checked against primary sources and the repository's evidence register before
+reuse.
