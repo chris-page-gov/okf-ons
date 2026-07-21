@@ -1205,6 +1205,31 @@ def normalize_acquisition_record(
     keywords = _string_list(projected.get("keywords"))
 
     if source_id == "ons-data-api":
+        based_on = (
+            dict(projected["isBasedOn"])
+            if isinstance(projected.get("isBasedOn"), Mapping)
+            else {}
+        )
+        contacts = projected.get("contacts")
+        contacts = contacts if isinstance(contacts, list) else []
+        canonical_topic = plain_text(projected.get("canonicalTopic"), 200)
+        subtopics = _string_list(projected.get("subtopics"))
+        derivation_fields: dict[str, Any] = {}
+        if contacts:
+            derivation_fields["contacts"] = {
+                "mode": "source-declared",
+                "sourceField": "contacts",
+            }
+        if based_on.get("id"):
+            derivation_fields["population_type"] = {
+                "mode": "source-declared",
+                "sourceField": "is_based_on",
+            }
+        if canonical_topic or subtopics:
+            derivation_fields["taxonomy"] = {
+                "mode": "source-declared",
+                "sourceFields": ["canonical_topic", "subtopics"],
+            }
         raw = {
             "id": native_id,
             "title": title,
@@ -1214,6 +1239,9 @@ def normalize_acquisition_record(
             "release_frequency": projected.get("releaseFrequency"),
             "keywords": keywords,
             "links": projected.get("links"),
+            "contacts": contacts,
+            "is_based_on": based_on,
+            "canonical_topic": canonical_topic,
             "methodology_links": _reference_links(projected.get("methodologies")),
             "quality_links": _reference_links(projected.get("qualityMethodologyInformation")),
         }
@@ -1231,7 +1259,31 @@ def normalize_acquisition_record(
                 "next_release": plain_text(projected.get("nextRelease"), 100),
                 "national_statistic": projected.get("nationalStatistic"),
                 "related_datasets": projected.get("relatedDatasets", []),
+                "related_content": projected.get("relatedContent", []),
+                "publications": projected.get("publications", []),
                 "themes": projected.get("themes", []),
+                "canonical_topic": canonical_topic,
+                "subtopic": subtopics,
+                "type": plain_text(projected.get("datasetType"), 200),
+                "dataset_type": plain_text(projected.get("datasetType"), 200),
+                "survey": plain_text(projected.get("survey"), 200),
+                "source_licence": plain_text(projected.get("licence"), 500),
+                "population_type_metadata": based_on,
+                "taxonomy_metadata": {
+                    "canonicalTopicId": canonical_topic,
+                    "subtopicIds": subtopics,
+                }
+                if canonical_topic or subtopics
+                else {},
+                "metadata_derivation": (
+                    {
+                        "schema": "okf-ons-field-derivation.v1",
+                        "modes": ["source-declared"],
+                        "fields": derivation_fields,
+                    }
+                    if derivation_fields
+                    else {}
+                ),
             }
         )
     elif source_id == "nomis-dataset-definitions":

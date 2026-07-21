@@ -1,0 +1,4 @@
+# Collapse generated, machine-reviewable evidence in GitHub diffs while keeping
+# every frozen snapshot and metric profile versioned and downloadable.
+source/*/*.json linguist-generated=true
+evaluation/metadata-completeness/*.json linguist-generated=true

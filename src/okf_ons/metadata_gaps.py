@@ -442,7 +442,37 @@ def compare_profiles(
         if isinstance(baseline_metric, Mapping) and isinstance(current_metric, Mapping):
             explorer_deltas[key] = _metric_delta(baseline_metric, current_metric)
 
-    return {
+    applicability_delta = None
+    baseline_applicability = baseline.get("applicabilityAwareEvidenceMetric")
+    current_applicability = current.get("applicabilityAwareEvidenceMetric")
+    if isinstance(baseline_applicability, Mapping) and isinstance(
+        current_applicability, Mapping
+    ):
+        applicability_delta = _metric_delta(
+            {
+                "present": baseline_applicability.get("present"),
+                "possible": baseline_applicability.get("applicablePossible"),
+            },
+            {
+                "present": current_applicability.get("present"),
+                "possible": current_applicability.get("applicablePossible"),
+            },
+        )
+        baseline_states = baseline_applicability.get("states")
+        current_states = current_applicability.get("states")
+        if isinstance(baseline_states, Mapping) and isinstance(current_states, Mapping):
+            applicability_delta["stateChanges"] = {
+                state: int(current_states.get(state) or 0)
+                - int(baseline_states.get(state) or 0)
+                for state in (
+                    "present",
+                    "not-applicable",
+                    "not-evidenced",
+                    "conflicted",
+                )
+            }
+
+    result = {
         "schema": "okf-ons-metadata-gap-comparison.v1",
         "recordCount": current_records,
         "baselineBundle": baseline.get("bundle", {}),
@@ -450,6 +480,9 @@ def compare_profiles(
         "evidenceSlotDelta": evidence_delta,
         "explorerMetricDeltas": explorer_deltas,
     }
+    if applicability_delta is not None:
+        result["applicabilityAwareDelta"] = applicability_delta
+    return result
 
 
 def profile_records(

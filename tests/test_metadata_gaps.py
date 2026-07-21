@@ -162,6 +162,13 @@ def test_compare_profiles_reports_fixed_denominator_yield():
         "addedPresent": 1,
         "remainingMissing": 0,
     }
+    assert comparison["applicabilityAwareDelta"]["addedPresent"] == 2
+    assert comparison["applicabilityAwareDelta"]["stateChanges"] == {
+        "present": 2,
+        "not-applicable": 0,
+        "not-evidenced": -2,
+        "conflicted": 0,
+    }
 
 
 def test_compare_profiles_rejects_denominator_changes():

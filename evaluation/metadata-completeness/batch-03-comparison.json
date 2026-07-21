@@ -1,16 +1,16 @@
 {
   "applicabilityAwareDelta": {
-    "addedPresent": 835,
-    "baselinePresent": 36710,
-    "currentPresent": 37545,
-    "percentagePointChange": 1.222136,
+    "addedPresent": 624,
+    "baselinePresent": 37545,
+    "currentPresent": 38169,
+    "percentagePointChange": 0.913309,
     "possible": 68323,
-    "remainingMissing": 30778,
+    "remainingMissing": 30154,
     "stateChanges": {
       "conflicted": 0,
       "not-applicable": 0,
-      "not-evidenced": -835,
-      "present": 835
+      "not-evidenced": -624,
+      "present": 624
     }
   },
   "baselineBundle": {
@@ -20,13 +20,13 @@
   },
   "currentBundle": {
     "recordCount": 5097,
-    "snapshot": "monday-2026-07-17-r2",
+    "snapshot": "metadata-enrichment-2026-07-21-r3",
     "version": "0.2.0"
   },
   "evidenceSlotDelta": {
-    "addedPresent": 835,
-    "baselineMissingClosed": 0.0241,
-    "baselinePresent": 36710,
+    "addedPresent": 624,
+    "baselineMissingClosed": 0.018454,
+    "baselinePresent": 37545,
     "byField": [
       {
         "addedPresent": 0,
@@ -34,7 +34,7 @@
         "remainingMissing": 0
       },
       {
-        "addedPresent": 1,
+        "addedPresent": 0,
         "field": "description",
         "remainingMissing": 13
       },
@@ -49,9 +49,9 @@
         "remainingMissing": 108
       },
       {
-        "addedPresent": 0,
+        "addedPresent": 337,
         "field": "contact",
-        "remainingMissing": 5097
+        "remainingMissing": 4760
       },
       {
         "addedPresent": 0,
@@ -59,17 +59,17 @@
         "remainingMissing": 311
       },
       {
-        "addedPresent": 310,
+        "addedPresent": 0,
         "field": "frequency",
         "remainingMissing": 4631
       },
       {
-        "addedPresent": 0,
+        "addedPresent": 287,
         "field": "population",
-        "remainingMissing": 3637
+        "remainingMissing": 3350
       },
       {
-        "addedPresent": 524,
+        "addedPresent": 0,
         "field": "geography",
         "remainingMissing": 569
       },
@@ -106,8 +106,8 @@
         "source": "nomis"
       },
       {
-        "addedPresent": 0,
-        "remainingMissing": 2590,
+        "addedPresent": 624,
+        "remainingMissing": 1966,
         "source": "ons-data-api"
       },
       {
@@ -116,26 +116,26 @@
         "source": "ons-explore-local-statistics"
       },
       {
-        "addedPresent": 835,
+        "addedPresent": 0,
         "remainingMissing": 20937,
         "source": "ons-open-geography"
       }
     ],
-    "currentPresent": 37545,
-    "elapsedSeconds": 471.0,
-    "percentagePointChange": 1.170156,
+    "currentPresent": 38169,
+    "elapsedSeconds": 570.0,
+    "percentagePointChange": 0.874464,
     "possible": 71358,
-    "remainingMissing": 33813,
-    "slotsPerHour": 6382.166
+    "remainingMissing": 33189,
+    "slotsPerHour": 3941.053
   },
   "explorerMetricDeltas": {
     "explorerDatasetDisplayMetric": {
-      "addedPresent": 17902,
-      "baselinePresent": 86122,
-      "currentPresent": 104024,
-      "percentagePointChange": 10.035035,
+      "addedPresent": 298,
+      "baselinePresent": 104024,
+      "currentPresent": 104322,
+      "percentagePointChange": 0.167045,
       "possible": 178395,
-      "remainingMissing": 74371
+      "remainingMissing": 74073
     },
     "explorerDatasetDynamicProvenanceMetric": {
       "addedPresent": 0,
@@ -170,18 +170,18 @@
       "remainingMissing": 108
     },
     "explorerSearchFacetMetric": {
-      "addedPresent": 6069,
-      "baselinePresent": 57781,
-      "currentPresent": 63850,
-      "percentagePointChange": 7.00412,
+      "addedPresent": 910,
+      "baselinePresent": 63850,
+      "currentPresent": 64760,
+      "percentagePointChange": 1.050214,
       "possible": 86649,
-      "remainingMissing": 22799
+      "remainingMissing": 21889
     },
     "explorerSearchResultDisplayMetric": {
-      "addedPresent": 3035,
-      "baselinePresent": 50551,
+      "addedPresent": 0,
+      "baselinePresent": 53586,
       "currentPresent": 53586,
-      "percentagePointChange": 3.969655,
+      "percentagePointChange": 0.0,
       "possible": 76455,
       "remainingMissing": 22869
     }

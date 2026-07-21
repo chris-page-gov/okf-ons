@@ -730,9 +730,22 @@ def _normalise_ons_data_api(
         _set_if_text(record, "nextRelease", raw.get("next_release"))
         _set_if_text(record, "releaseFrequency", raw.get("release_frequency"))
         _set_if_text(record, "unitOfMeasure", raw.get("unit_of_measure"))
+        _set_if_text(record, "canonicalTopic", raw.get("canonical_topic"))
+        _set_if_text(record, "datasetType", raw.get("type"))
+        _set_if_text(record, "survey", raw.get("survey"))
+        _set_if_text(record, "licence", raw.get("license"))
         national_statistic = raw.get("national_statistic")
         if isinstance(national_statistic, bool):
             record["nationalStatistic"] = national_statistic
+        contacts = _normalise_contacts(raw.get("contacts"))
+        if contacts:
+            record["contacts"] = contacts
+        based_on = _normalise_linked_identity(raw.get("is_based_on"))
+        if based_on:
+            record["isBasedOn"] = based_on
+        subtopics = _normalise_keywords(raw.get("subtopics"))
+        if subtopics:
+            record["subtopics"] = subtopics
         keywords = _normalise_keywords(raw.get("keywords"))
         if keywords:
             record["keywords"] = keywords
@@ -751,6 +764,12 @@ def _normalise_ons_data_api(
         related_datasets = _normalise_references(raw.get("related_datasets"))
         if related_datasets:
             record["relatedDatasets"] = related_datasets
+        publications = _normalise_references(raw.get("publications"))
+        if publications:
+            record["publications"] = publications
+        related_content = _normalise_references(raw.get("related_content"))
+        if related_content:
+            record["relatedContent"] = related_content
         records.append(record)
     return records, _first_non_negative_int(
         payload.get("total"),
@@ -1253,6 +1272,40 @@ def _normalise_references(value: Any) -> list[dict[str, str]]:
             item.get("id", ""),
         ),
     )
+
+
+def _normalise_contacts(value: Any) -> list[dict[str, str]]:
+    """Project only the public ONS contact fields used by the bundle."""
+
+    if not isinstance(value, list):
+        return []
+    contacts: list[dict[str, str]] = []
+    for raw in value:
+        if not isinstance(raw, Mapping):
+            continue
+        contact: dict[str, str] = {}
+        for key in ("name", "email", "telephone"):
+            text = _extract_text(raw.get(key))
+            if text:
+                contact[key] = text[:1_000]
+        if contact:
+            contacts.append(contact)
+    return contacts
+
+
+def _normalise_linked_identity(value: Any) -> dict[str, str]:
+    """Normalise ONS linked identity objects without copying arbitrary keys."""
+
+    if not isinstance(value, Mapping):
+        return {}
+    identifier = _extract_text(value.get("id") or value.get("@id"))
+    identity_type = _extract_text(value.get("type") or value.get("@type"))
+    result: dict[str, str] = {}
+    if identifier:
+        result["id"] = identifier[:1_000]
+    if identity_type:
+        result["type"] = identity_type[:300]
+    return result
 
 
 def _json_metadata(value: Any) -> Any:

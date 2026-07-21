@@ -202,10 +202,49 @@ python scripts/build_bundle.py \
   --check
 ```
 
+The metadata-enrichment campaign also includes the immutable successor
+snapshot `metadata-enrichment-2026-07-21-r3`. It refreshes only the bounded ONS
+Data API catalogue; its other three source envelopes are byte-identical to the
+v0.2.0 snapshot. Rebuild and profile that successor without network access:
+
+```bash
+python scripts/build_bundle.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r3 \
+  --output bundle
+python scripts/build_bundle.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r3 \
+  --output bundle \
+  --check
+python scripts/profile_metadata_gaps.py \
+  --bundle bundle \
+  --output evaluation/metadata-completeness/current.json
+```
+
+The measured batch history, metric definitions, timings and machine-readable
+profiles are linked from the
+[metadata-enrichment campaign](docs/metadata-enrichment-campaign.md).
+
 For an existing clone, run `git submodule update --init --recursive` before the
 projector. To acquire a future snapshot, keep the raw cache outside the
 repository, use `--mode refresh`, and choose a new immutable identity—never
-overwrite `monday-2026-07-17-r2`:
+overwrite an existing snapshot. To refresh only the ONS catalogue while
+carrying the other validated source envelopes forward:
+
+```bash
+python scripts/acquire_snapshot.py \
+  --cache-dir /path/to/raw-cache \
+  --output-dir source \
+  --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r3 \
+  --source ons-data-api \
+  --mode refresh \
+  --page-size 1000 \
+  --maximum-pages 1 \
+  --require-complete
+```
+
+For a full registered-source refresh, first produce the pinned local ELS
+projection, then acquire all HTTP lanes and include it:
 
 ```bash
 python scripts/project_els_snapshot.py \
@@ -216,7 +255,8 @@ python scripts/acquire_snapshot.py \
   --output-dir /path/to/public-snapshots \
   --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
   --mode refresh \
-  --projected-acquisition /path/to/els-projection.json
+  --projected-acquisition /path/to/els-projection.json \
+  --require-complete
 ```
 
 Acquisition is resumable and external. `bundle/` is deterministic from a

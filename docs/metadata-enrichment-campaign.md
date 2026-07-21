@@ -46,8 +46,8 @@ The applicability-aware companion measure uses four states: `present`,
 `not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
 narrow rule excludes only statistical population/universe for the 3,035 Open
 Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 02 this measure is
-37,545 of 68,323 applicable slots (54.9522%); 3,035 are not applicable, 30,778
+methodology or contact evidence is inapplicable. After Batch 03 this measure is
+38,169 of 68,323 applicable slots (55.8655%); 3,035 are not applicable, 30,154
 are not evidenced, and none are recorded as conflicted.
 
 ## Stopping rule
@@ -72,6 +72,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | Baseline | Reproducible inventory established | 14 min | — | 46.3718% | — |
 | 01 | Frozen Nomis annotations normalised | 5 min 13 sec | 3,620 | 51.4448% | 41,636 slots/hour |
 | 02 | Frozen Open Geography metadata normalised | 7 min 51 sec | 835 | 52.6150% | 6,382 slots/hour |
+| 03 | Live ONS catalogue, then frozen | 9 min 30 sec | 624 | 53.4894% | 3,941 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -96,6 +97,21 @@ gap cells. Cumulative raw evidence progress is 4,455 slots: 11.6416% of the
 original gaps and 23.2832% of the halfway milestone. Marginal yield remains
 well above the stopping threshold.
 
+Batch 03 made one metadata-only request to the official ONS Data API. The
+request completed in 5.9 seconds and returned the same 337 record identities as
+the r2 snapshot. It supplied a public contact for all 337 records and an
+explicit `is_based_on` population-type link for 287. The acquisition was frozen
+as immutable snapshot `metadata-enrichment-2026-07-21-r3`; the other three
+source envelopes are byte-identical to r2 and the new manifest records the r2
+manifest digest without a filesystem path. No observations, geometry,
+credentials or cache paths are present in the projected snapshot.
+
+Batch 03 added 298 dataset-detail type cells and 910 search-facet cells in
+addition to its 624 evidence slots. Cumulative raw progress is 5,079 cells:
+13.2722% of the original gaps and 26.5444% of the halfway milestone. Yield is
+declining across batches but remains more than eleven times the continuation
+threshold.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -105,6 +121,10 @@ Batch 02 likewise has a
 [`profile`](../evaluation/metadata-completeness/batch-02-frozen-open-geography.json)
 and
 [`comparison`](../evaluation/metadata-completeness/batch-02-comparison.json).
+Batch 03 has a
+[`profile`](../evaluation/metadata-completeness/batch-03-live-ons-catalogue.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-03-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash
