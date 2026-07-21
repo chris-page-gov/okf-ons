@@ -87,7 +87,8 @@ an immutable copy is required.
 - Metadata and assurance:
   [metadata model](docs/metadata-model.md),
   [scope and denominator](docs/scope-and-denominator.md), and
-  [standards register](docs/standards-register.md)
+  [standards register](docs/standards-register.md), plus the
+  [timed metadata-enrichment campaign](docs/metadata-enrichment-campaign.md)
 - MCP and AI access:
   [MCP selection contract](docs/mcp-selection-contract.md),
   [MCP client rollout](docs/mcp-client-rollout.md), and
