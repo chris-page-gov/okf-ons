@@ -46,8 +46,8 @@ The applicability-aware companion measure uses four states: `present`,
 `not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
 narrow rule excludes only statistical population/universe for the 3,035 Open
 Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 04 this measure is
-38,304 of 68,323 applicable slots (56.0631%); 3,035 are not applicable, 30,019
+methodology or contact evidence is inapplicable. After Batch 05 this measure is
+38,629 of 68,323 applicable slots (56.5388%); 3,035 are not applicable, 29,694
 are not evidenced, and none are recorded as conflicted.
 
 ## Stopping rule
@@ -74,6 +74,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | 02 | Frozen Open Geography metadata normalised | 7 min 51 sec | 835 | 52.6150% | 6,382 slots/hour |
 | 03 | Live ONS catalogue, then frozen | 9 min 30 sec | 624 | 53.4894% | 3,941 slots/hour |
 | 04 | Frozen Explore Local Statistics caveats normalised | 14 min 18 sec | 135 | 53.6786% | 566 slots/hour |
+| 05 | Frozen Open Geography utility evidence surfaced | 40 min 37 sec | 325 | 54.1341% | 480 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -129,6 +130,25 @@ validation of the next bounded Nomis acquisition, so it is conservative as an
 ELS-only productivity measure. Cumulative raw progress is now 5,214 cells:
 13.6250% of the original gaps and 27.2499% of the halfway milestone.
 
+Batch 05 re-examined the already frozen Open Geography descriptions and links.
+It accepted only explicit methodology language (+168), explicit quality or
+limitations text (+139), and an exact `every 12 weeks` cadence (+18). It also
+surfaced useful fields that are deliberately outside the fixed evidence KPI:
+informative category facets, exact endpoint and documentation hosts, source
+version labels, revision-history notes and 2,462 geography reference dates.
+The latter are reference or effective dates for geography products, not
+statistical time coverage; a title such as `(V2)` is likewise not evidence of
+revision status.
+
+This removed 5,328 dataset-detail gaps, 17,704 resource-detail gaps, 6,070
+search-result gaps and 2,356 search-facet gaps. The 40 minute 37 second elapsed
+time is conservative shared wall time from the Batch 04 checkpoint through
+integration: the hardened Nomis acquisition capability was developed in
+parallel, while only Open Geography's 325 evidence cells are counted in this
+batch's numerator. Even on that basis the 480-slot/hour yield remains above the
+continuation threshold. Cumulative raw progress is 5,539 cells: 14.4742% of
+the original gaps and 28.9485% of the fixed halfway milestone.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -145,6 +165,10 @@ and
 Batch 04 has a
 [`profile`](../evaluation/metadata-completeness/batch-04-frozen-els.json) and
 [`comparison`](../evaluation/metadata-completeness/batch-04-comparison.json).
+Batch 05 has a
+[`profile`](../evaluation/metadata-completeness/batch-05-frozen-ogp-utility.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-05-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash
