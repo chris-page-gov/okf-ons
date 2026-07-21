@@ -30,6 +30,42 @@ does not replace native identity.
 
 Observation combinations are never materialised.
 
+## Evidence states and semantic boundaries
+
+Metadata completeness measures the availability of evidence, not statistical
+accuracy. The applicability-aware companion distinguishes `present`,
+`not-applicable`, `not-evidenced` and `conflicted`; uncertainty stays
+`not-evidenced` unless the record class makes a concept inapplicable.
+
+Narrow source concepts remain narrow. Geography reference/effective dates are
+not statistical time coverage. Version labels, revision-history notes and
+`lastRevised` dates are not revision status. A time dimension does not state a
+covered period, and a unit dimension does not identify the unit values present
+in a dataset.
+
+## Bounded ONS version dimensions
+
+The ONS catalogue record supplies the exact latest-version URL. A bounded
+enrichment may follow that URL once per frozen record and project only
+`versionDimensions`: dimension `id`, `name`, `label`, explicit `isAreaType`,
+and explicit `qualityStatementUrl` or `qualityStatementText`. Dimension options,
+codelists, observations, downloads and unknown response fields are excluded.
+
+Geography evidence requires `isAreaType: true` or an exact dimension name or
+label of `geography`; subject dimensions such as “Country of birth” do not
+qualify. Dimension quality statements remain associated with their dimension
+and supply quality evidence only. They do not imply methodology, time coverage
+or revision status.
+
+## Bounded Nomis overviews and notes
+
+Nomis compact overviews contribute only public contact, declared coverage and
+date metadata to the frozen dataset-definition cohort. The date fields are
+preserved without manufacturing revision status. Frozen `MetadataText` and
+`MetadataTextN` annotations contribute quality notes only when the note itself
+has an explicit quality, uncertainty, limitations or disclosure-control signal,
+or when its paired `MetadataTitle` explicitly supplies that context.
+
 ## Required provenance
 
 Every harvested record carries source URL, native identifier, retrieval time,

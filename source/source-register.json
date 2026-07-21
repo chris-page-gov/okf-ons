@@ -184,12 +184,13 @@
       "scope": {
         "includes": [
           "Dataset identities, titles, descriptions, keywords and lifecycle state",
-          "Official links to editions, latest versions, taxonomy and dataset records"
+          "Official links to editions, latest versions, taxonomy and dataset records",
+          "Bounded latest-version dimension identities, explicit area-type declarations and dimension quality statements"
         ],
         "excludes": [
           "Observations",
-          "Dimension option values in the catalogue pass",
-          "CSV and other dataset payloads"
+          "Dimension option values and codelist payloads",
+          "CSV and other dataset payloads or download descriptors"
         ]
       },
       "identityFields": [
@@ -204,7 +205,8 @@
         "links.editions",
         "links.latest_version",
         "links.self",
-        "links.taxonomy"
+        "links.taxonomy",
+        "versionDimensions.qualityStatementUrl"
       ]
     },
     {

@@ -59,16 +59,16 @@ def test_ons_version_dimensions_add_only_explicit_geography_and_quality() -> Non
                 "label": "Lower tier local authorities",
                 "description": "ONS lower tier local authority geography.",
                 "href": "https://api.beta.ons.gov.uk/v1/code-lists/ltla",
-                "is_area_type": True,
+                "isAreaType": True,
                 "number_of_options": 331,
             },
             {
                 "id": "accommodation_type_2a",
                 "name": "accommodation_type_2a",
                 "label": "Accommodation type",
-                "is_area_type": False,
-                "quality_statement_text": "Take care when comparing with 2011.",
-                "quality_statement_url": quality_url,
+                "isAreaType": False,
+                "qualityStatementText": "Take care when comparing with 2011.",
+                "qualityStatementUrl": quality_url,
             },
         ]
     )
@@ -96,9 +96,9 @@ def test_ons_non_census_exact_geography_name_is_accepted() -> None:
         [
             {
                 "id": "administrative-geography",
-                "name": "geography",
+                "name": "administrative-geography",
                 "label": "Geography",
-                "is_area_type": False,
+                "isAreaType": False,
             },
             {
                 "id": "country-of-birth",
@@ -123,8 +123,8 @@ def test_ons_version_dimensions_drop_unsafe_urls_and_malformed_values() -> None:
                 "name": "subject",
                 "label": "Subject",
                 "href": "https://user:password@example.test/codes",
-                "quality_statement_url": "https://example.test/quality?token=secret",
-                "is_area_type": "true",
+                "qualityStatementUrl": "https://example.test/quality?token=secret",
+                "isAreaType": "true",
                 "number_of_options": True,
             },
             {"quality_statement_text": "Missing dimension identity."},

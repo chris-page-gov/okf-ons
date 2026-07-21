@@ -314,15 +314,25 @@ def _ons_version_dimensions(value: Any) -> list[dict[str, Any]]:
             ("label", 500),
             ("description", 5_000),
             ("variable", 300),
-            ("quality_statement_text", 5_000),
         ):
             if text := plain_text(item.get(key), limit):
                 dimension[key] = text
-        for key in ("href", "quality_statement_url"):
-            if url := _public_url(item.get(key)):
-                dimension[key] = url
-        if isinstance(item.get("is_area_type"), bool):
-            dimension["is_area_type"] = item["is_area_type"]
+        quality_text = plain_text(
+            item.get("qualityStatementText", item.get("quality_statement_text")),
+            5_000,
+        )
+        if quality_text:
+            dimension["quality_statement_text"] = quality_text
+        if url := _public_url(item.get("href")):
+            dimension["href"] = url
+        quality_url = _public_url(
+            item.get("qualityStatementUrl", item.get("quality_statement_url"))
+        )
+        if quality_url:
+            dimension["quality_statement_url"] = quality_url
+        is_area_type = item.get("isAreaType", item.get("is_area_type"))
+        if isinstance(is_area_type, bool):
+            dimension["is_area_type"] = is_area_type
         option_count = item.get("number_of_options")
         if (
             isinstance(option_count, int)
@@ -352,6 +362,7 @@ def _ons_geography_dimensions(
         for dimension in dimensions
         if dimension.get("is_area_type") is True
         or plain_text(dimension.get("name"), 300).casefold() == "geography"
+        or plain_text(dimension.get("label"), 500).casefold() == "geography"
     ]
 
 

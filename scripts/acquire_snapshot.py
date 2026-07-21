@@ -41,6 +41,31 @@ _BOUNDED_REPLACEMENT_SCHEMA = "okf-ons.bounded-source-replacement.v1"
 _NOMIS_ENRICHMENT_SCHEMA = "okf-ons.nomis-overview-enrichment.v1"
 _NOMIS_SOURCE_ID = "nomis-dataset-definitions"
 _NOMIS_OVERVIEW_SELECT = "DatasetInfo,Coverage,DateMetadata,Contact"
+_ONS_VERSION_ENRICHMENT_SCHEMA = "okf-ons.ons-version-metadata-enrichment.v1"
+_ONS_SOURCE_ID = "ons-data-api"
+_ONS_EXPECTED_COHORT_COUNT = 337
+_ONS_VERSION_DIMENSION_FIELDS = {
+    "id",
+    "isAreaType",
+    "label",
+    "name",
+    "qualityStatementText",
+    "qualityStatementUrl",
+}
+_ONS_VERSION_DIMENSION_REQUIRED_FIELDS = {"id", "isAreaType", "label", "name"}
+_ONS_SOURCE_KEYS = {
+    "acquisitionMethod",
+    "adapter",
+    "crossReferences",
+    "endpoint",
+    "id",
+    "identityFields",
+    "publisher",
+    "responseFormat",
+    "scope",
+    "standards",
+    "title",
+}
 _SAFE_REPLACEMENT_FIELDS = {
     "contacts",
     "firstReleased",
@@ -97,12 +122,36 @@ _ENRICHMENT_RUN_KEYS = {
     "selectionOrder",
     "unselectedCount",
 }
+_ONS_VERSION_RUN_KEYS = {
+    "cohortCount",
+    "cohortRecordSetSha256",
+    "coverageComplete",
+    "requestedLimit",
+    "schema",
+    "selectedCount",
+    "selectedRecordSetSha256",
+    "selectionOrder",
+    "unselectedCount",
+}
 _REPLACEMENT_ASSURANCE = {
     "cacheLocationPublished": False,
     "codelistsFetched": False,
     "credentialsRequired": False,
     "metadataOnly": True,
     "observationsFetched": False,
+    "rawResponsesPublished": False,
+}
+_ONS_BASE_ASSURANCE = {
+    "cacheLocationPublished": False,
+    "credentialsRequired": False,
+    "metadataOnly": True,
+    "observationsFetched": False,
+}
+_ONS_REPLACEMENT_ASSURANCE = {
+    **_ONS_BASE_ASSURANCE,
+    "dimensionMetadataFetched": True,
+    "dimensionOptionsFetched": False,
+    "downloadsFetched": False,
     "rawResponsesPublished": False,
 }
 _PAGE_KEYS = {
@@ -139,6 +188,8 @@ _MANIFEST_SOURCE_KEYS = {
 }
 _HEX_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _NOMIS_ID_RE = re.compile(r"^NM_[0-9]+_[0-9]+$")
+_ONS_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*$")
+_ONS_EDITION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._~-]*$")
 _NOMIS_DATE_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"
 )
@@ -581,6 +632,586 @@ def _validate_nomis_enrichment_pages(
     return selected_ids
 
 
+def _ons_latest_version_identity(value: Any, source_id: str) -> tuple[str, str, int]:
+    if not isinstance(value, str):
+        raise SnapshotCompositionError(
+            f"bounded replacement latest-version URL is malformed: {source_id}"
+        )
+    parsed = urlsplit(value)
+    match = re.fullmatch(
+        r"/v1/datasets/([^/]+)/editions/([^/]+)/versions/([0-9]+)", parsed.path
+    )
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "api.beta.ons.gov.uk"
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or match is None
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement escaped the ONS latest-version endpoint: {source_id}"
+        )
+    record_id, edition, raw_version = match.groups()
+    if (
+        _ONS_ID_RE.fullmatch(record_id) is None
+        or _ONS_EDITION_RE.fullmatch(edition) is None
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement latest-version identity is malformed: {source_id}"
+        )
+    return record_id, edition, int(raw_version)
+
+
+def _ons_record_latest_version_href(
+    record: Mapping[str, Any], source_id: str
+) -> str:
+    record_id = record.get("sourceRecordId")
+    links = record.get("links")
+    latest = links.get("latest_version") if isinstance(links, Mapping) else None
+    href = latest.get("href") if isinstance(latest, Mapping) else None
+    href_record_id, _, version = _ons_latest_version_identity(href, source_id)
+    if (
+        not isinstance(record_id, str)
+        or record_id != href_record_id
+        or not isinstance(latest, Mapping)
+        or set(latest) != {"href", "id"}
+        or latest.get("id") != str(version)
+    ):
+        raise SnapshotCompositionError(
+            f"base ONS latest-version identity is invalid: {source_id}"
+        )
+    return href
+
+
+def _validate_ons_source_provenance(value: Mapping[str, Any], source_id: str) -> None:
+    _validate_exact_keys(value, _ONS_SOURCE_KEYS, "base ONS source provenance")
+    publisher = value.get("publisher")
+    scope = value.get("scope")
+    if (
+        value.get("id") != source_id
+        or value.get("adapter") != "ons-data-api"
+        or value.get("acquisitionMethod") != "http-json"
+        or value.get("endpoint") != "https://api.beta.ons.gov.uk/v1/datasets"
+        or value.get("identityFields") != ["id"]
+        or not isinstance(value.get("crossReferences"), list)
+        or not isinstance(value.get("standards"), list)
+        or not isinstance(value.get("title"), str)
+        or not value["title"].strip()
+        or not isinstance(value.get("responseFormat"), str)
+        or not value["responseFormat"].strip()
+        or not isinstance(publisher, Mapping)
+        or set(publisher) != {"name", "url"}
+        or not isinstance(publisher.get("name"), str)
+        or not publisher["name"].strip()
+        or not isinstance(scope, Mapping)
+        or set(scope) != {"excludes", "includes"}
+        or not all(
+            isinstance(scope.get(key), list)
+            and all(isinstance(item, str) and item.strip() for item in scope[key])
+            for key in ("excludes", "includes")
+        )
+    ):
+        raise SnapshotCompositionError(
+            f"base ONS source provenance is invalid: {source_id}"
+        )
+    _validate_ons_public_url(publisher["url"], source_id)
+
+
+def _validate_ons_catalogue_page_url(value: Any, source_id: str) -> None:
+    if not isinstance(value, str):
+        raise SnapshotCompositionError(
+            f"base ONS catalogue page URL is malformed: {source_id}"
+        )
+    parsed = urlsplit(value)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "api.beta.ons.gov.uk"
+        or parsed.username
+        or parsed.password
+        or parsed.path != "/v1/datasets"
+        or parsed.fragment
+        or parse_qsl(parsed.query, keep_blank_values=True)
+        != [("limit", "1000"), ("offset", "0")]
+    ):
+        raise SnapshotCompositionError(
+            f"base ONS catalogue page URL is invalid: {source_id}"
+        )
+
+
+def _validate_ons_public_url(value: Any, source_id: str) -> None:
+    if not isinstance(value, str) or not value.strip() or len(value) > 2_000:
+        raise SnapshotCompositionError(
+            f"bounded replacement public URL is malformed: {source_id}"
+        )
+    parsed = urlsplit(value)
+    query_keys = {key.casefold() for key, _ in parse_qsl(parsed.query)}
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or query_keys.intersection(_SECRET_QUERY_KEYS)
+        or _LOCAL_PATH_RE.search(value)
+        or any(pattern.search(value) for pattern in _SECRET_VALUE_PATTERNS)
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement public URL is unsafe: {source_id}"
+        )
+
+
+def _validate_ons_version_dimensions(value: Any, source_id: str) -> list[Any]:
+    if not isinstance(value, list) or not value or len(value) > 1_000:
+        raise SnapshotCompositionError(
+            f"bounded replacement version dimensions are malformed: {source_id}"
+        )
+    dimension_ids: set[str] = set()
+    for dimension in value:
+        if not isinstance(dimension, Mapping):
+            raise SnapshotCompositionError(
+                f"bounded replacement version dimension is malformed: {source_id}"
+            )
+        keys = set(dimension)
+        if (
+            not _ONS_VERSION_DIMENSION_REQUIRED_FIELDS.issubset(keys)
+            or not keys.issubset(_ONS_VERSION_DIMENSION_FIELDS)
+        ):
+            raise SnapshotCompositionError(
+                f"bounded replacement version dimension has unreviewed or missing "
+                f"fields: {source_id}"
+            )
+        for field in ("id", "name", "label"):
+            item = dimension[field]
+            if not isinstance(item, str) or not item.strip() or len(item) > 500:
+                raise SnapshotCompositionError(
+                    f"bounded replacement version dimension is malformed: {source_id}"
+                )
+        if not isinstance(dimension["isAreaType"], bool):
+            raise SnapshotCompositionError(
+                f"bounded replacement version dimension is malformed: {source_id}"
+            )
+        dimension_id = dimension["id"]
+        if dimension_id in dimension_ids:
+            raise SnapshotCompositionError(
+                f"bounded replacement version dimension ids are duplicated: {source_id}"
+            )
+        dimension_ids.add(dimension_id)
+        if "qualityStatementUrl" in dimension:
+            _validate_ons_public_url(dimension["qualityStatementUrl"], source_id)
+        if "qualityStatementText" in dimension:
+            quality_text = dimension["qualityStatementText"]
+            if (
+                not isinstance(quality_text, str)
+                or not quality_text.strip()
+                or len(quality_text) > 20_000
+            ):
+                raise SnapshotCompositionError(
+                    f"bounded replacement quality statement is malformed: {source_id}"
+                )
+    return value
+
+
+def _validate_ons_page_receipt(
+    page: Any,
+    source_id: str,
+    *,
+    label: str,
+    expected_url: str | None = None,
+    require_single_record: bool,
+) -> None:
+    if not isinstance(page, Mapping):
+        raise SnapshotCompositionError(f"{label} is malformed: {source_id}")
+    _validate_exact_keys(page, _PAGE_KEYS, label)
+    request_url = page.get("requestUrl")
+    response_url = page.get("responseUrl")
+    if (
+        not isinstance(request_url, str)
+        or not isinstance(response_url, str)
+        or response_url != request_url
+        or (expected_url is not None and request_url != expected_url)
+    ):
+        raise SnapshotCompositionError(f"{label} has invalid response identity: {source_id}")
+    _validated_sha256(page.get("contentSha256"), f"{label} content hash")
+    _validate_utc_timestamp(page.get("retrievedAt"), f"{label} retrieval time")
+    headers = page.get("responseHeaders")
+    allowed_header_keys = _SAFE_RESPONSE_HEADER_KEYS | {"retry-after"}
+    if not isinstance(headers, Mapping) or set(headers) - allowed_header_keys:
+        raise SnapshotCompositionError(f"{label} headers are unsafe: {source_id}")
+    for key, item in headers.items():
+        if (
+            key != key.casefold()
+            or not isinstance(item, str)
+            or not item.strip()
+            or len(item) > 2_000
+            or _LOCAL_PATH_RE.search(item)
+            or any(pattern.search(item) for pattern in _SECRET_VALUE_PATTERNS)
+        ):
+            raise SnapshotCompositionError(f"{label} headers are unsafe: {source_id}")
+    content_type = headers.get("content-type")
+    if content_type is not None and not content_type.casefold().startswith(
+        "application/json"
+    ):
+        raise SnapshotCompositionError(f"{label} content type is unsafe: {source_id}")
+    upstream_count = page.get("upstreamRecordCount")
+    normalised_count = page.get("normalisedRecordCount")
+    if (
+        not isinstance(page.get("cacheHit"), bool)
+        or isinstance(upstream_count, bool)
+        or not isinstance(upstream_count, int)
+        or upstream_count < 0
+        or isinstance(normalised_count, bool)
+        or not isinstance(normalised_count, int)
+        or normalised_count < 0
+        or (require_single_record and (upstream_count != 1 or normalised_count != 1))
+    ):
+        raise SnapshotCompositionError(f"{label} counts are invalid: {source_id}")
+
+
+def _validate_ons_bounded_replacement(
+    replacement: Mapping[str, Any],
+    base: Mapping[str, Any],
+    source_id: str,
+    *,
+    base_snapshot_id: str,
+) -> dict[str, int]:
+    """Validate a frozen-URL ONS version-metadata replacement."""
+
+    _validate_exact_keys(
+        replacement, _ACQUISITION_KEYS, "bounded replacement acquisition"
+    )
+    _validate_exact_keys(base, _ACQUISITION_KEYS, "base ONS acquisition")
+    if (
+        replacement.get("schemaVersion") != "okf-ons.source-acquisition.v1"
+        or base.get("schemaVersion") != "okf-ons.source-acquisition.v1"
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement acquisition schema is unsupported: {source_id}"
+        )
+    provenance = replacement.get("provenance")
+    base_provenance = base.get("provenance")
+    if not isinstance(provenance, Mapping) or not isinstance(base_provenance, Mapping):
+        raise SnapshotCompositionError(
+            f"bounded replacement provenance is malformed: {source_id}"
+        )
+    _validate_exact_keys(
+        base_provenance,
+        _BASE_NOMIS_PROVENANCE_KEYS,
+        "base ONS acquisition provenance",
+    )
+    _validate_exact_keys(
+        provenance,
+        _BASE_NOMIS_PROVENANCE_KEYS | {"replacement", "versionMetadataRun"},
+        "bounded replacement provenance",
+    )
+    base_source = base_provenance.get("source")
+    if (
+        not isinstance(base_source, Mapping)
+        or base_source.get("id") != source_id
+        or provenance.get("source") != base_source
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement source provenance is invalid: {source_id}"
+        )
+    _validate_ons_source_provenance(base_source, source_id)
+    if base_provenance.get("assurance") != _ONS_BASE_ASSURANCE:
+        raise SnapshotCompositionError(
+            f"base ONS acquisition assurance is invalid: {source_id}"
+        )
+    assurance = provenance.get("assurance")
+    if (
+        not isinstance(assurance, Mapping)
+        or set(assurance) != set(_ONS_REPLACEMENT_ASSURANCE)
+        or any(
+            assurance[key] is not expected
+            for key, expected in _ONS_REPLACEMENT_ASSURANCE.items()
+        )
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement lacks ONS metadata-only assurance: {source_id}"
+        )
+
+    declaration = provenance.get("replacement")
+    if not isinstance(declaration, Mapping):
+        raise SnapshotCompositionError(
+            f"bounded replacement declaration is malformed: {source_id}"
+        )
+    _validate_exact_keys(
+        declaration,
+        _REPLACEMENT_DECLARATION_KEYS,
+        "bounded replacement declaration",
+    )
+    if (
+        declaration.get("schema") != _BOUNDED_REPLACEMENT_SCHEMA
+        or declaration.get("baseSnapshotId") != base_snapshot_id
+        or declaration.get("baseRecordSetSha256")
+        != base_provenance.get("recordSetSha256")
+        or declaration.get("baseSnapshotSetSha256")
+        != base_provenance.get("snapshotSetSha256")
+        or declaration.get("allowedRecordFields") != ["versionDimensions"]
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement is not bound to its base acquisition: {source_id}"
+        )
+
+    base_records = _replacement_records_by_id(
+        base.get("records"), source_id, label="base acquisition"
+    )
+    replacement_records = _replacement_records_by_id(
+        replacement.get("records"), source_id, label="replacement acquisition"
+    )
+    base_record_ids = list(base_records)
+    if (
+        len(base_records) != _ONS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("recordCount") != _ONS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("reportedTotal") != _ONS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("normalisedRecordsSeen")
+        != _ONS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("upstreamRecordsSeen")
+        != _ONS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("complete") is not True
+        or base_provenance.get("coverageComplete") is not True
+        or base_provenance.get("normalisationDroppedCount") != 0
+        or base_provenance.get("unrepresentedCount") != 0
+        or base_provenance.get("stopReason") != "sourceExhausted"
+        or set(base_records) != set(replacement_records)
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement changed the exact ONS source-record cohort: {source_id}"
+        )
+    if list(replacement_records) != base_record_ids:
+        raise SnapshotCompositionError(
+            f"bounded replacement reordered the ONS source-record cohort: {source_id}"
+        )
+    if any(_ONS_ID_RE.fullmatch(record_id) is None for record_id in base_record_ids):
+        raise SnapshotCompositionError(f"base ONS cohort identity is invalid: {source_id}")
+    if base_provenance.get("recordSetSha256") != sha256_json(base.get("records")):
+        raise SnapshotCompositionError(
+            f"base ONS acquisition record-set hash is invalid: {source_id}"
+        )
+
+    cohort_pairs: list[dict[str, str]] = []
+    latest_hrefs: set[str] = set()
+    for record_id, base_record in base_records.items():
+        href = _ons_record_latest_version_href(base_record, source_id)
+        if href in latest_hrefs:
+            raise SnapshotCompositionError(
+                f"base ONS latest-version URLs are not unique: {source_id}"
+            )
+        latest_hrefs.add(href)
+        cohort_pairs.append(
+            {"sourceRecordId": record_id, "latestVersionHref": href}
+        )
+
+    base_pages = base_provenance.get("pages")
+    replacement_pages = provenance.get("pages")
+    if (
+        not isinstance(base_pages, list)
+        or not isinstance(replacement_pages, list)
+        or len(base_pages) != 1
+        or base_provenance.get("pageCount") != len(base_pages)
+        or replacement_pages[: len(base_pages)] != base_pages
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement changed base page lineage: {source_id}"
+        )
+    for index, page in enumerate(base_pages):
+        _validate_ons_page_receipt(
+            page,
+            source_id,
+            label=f"base ONS acquisition page {index}",
+            require_single_record=False,
+        )
+        _validate_ons_catalogue_page_url(page["requestUrl"], source_id)
+        if (
+            page["upstreamRecordCount"] != _ONS_EXPECTED_COHORT_COUNT
+            or page["normalisedRecordCount"] != _ONS_EXPECTED_COHORT_COUNT
+        ):
+            raise SnapshotCompositionError(
+                f"base ONS acquisition page counts are invalid: {source_id}"
+            )
+    base_snapshot_receipts = [
+        {"requestUrl": page["requestUrl"], "contentSha256": page["contentSha256"]}
+        for page in base_pages
+    ]
+    if base_provenance.get("snapshotSetSha256") != sha256_json(
+        base_snapshot_receipts
+    ):
+        raise SnapshotCompositionError(
+            f"base ONS acquisition snapshot-set hash is invalid: {source_id}"
+        )
+
+    run = provenance.get("versionMetadataRun")
+    if not isinstance(run, Mapping):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS version run is missing: {source_id}"
+        )
+    _validate_exact_keys(run, _ONS_VERSION_RUN_KEYS, "bounded replacement ONS version run")
+    requested_limit = run.get("requestedLimit")
+    if (
+        isinstance(requested_limit, bool)
+        or not isinstance(requested_limit, int)
+        or requested_limit < 1
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS requested limit is invalid: {source_id}"
+        )
+    ranked_pairs = sorted(
+        cohort_pairs,
+        key=lambda row: (
+            hashlib.sha256(row["sourceRecordId"].encode("utf-8")).hexdigest(),
+            row["sourceRecordId"].casefold(),
+            row["sourceRecordId"],
+        ),
+    )
+    expected_pairs = ranked_pairs[
+        : min(requested_limit, _ONS_EXPECTED_COHORT_COUNT)
+    ]
+    expected_selected_count = len(expected_pairs)
+    for field in ("cohortCount", "selectedCount", "unselectedCount"):
+        count = run.get(field)
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise SnapshotCompositionError(
+                f"bounded replacement ONS enrichment denominator is invalid: {source_id}"
+            )
+    if (
+        run.get("schema") != _ONS_VERSION_ENRICHMENT_SCHEMA
+        or run.get("cohortCount") != _ONS_EXPECTED_COHORT_COUNT
+        or run.get("selectedCount") != expected_selected_count
+        or run.get("unselectedCount")
+        != _ONS_EXPECTED_COHORT_COUNT - expected_selected_count
+        or not isinstance(run.get("coverageComplete"), bool)
+        or run.get("coverageComplete")
+        is not (expected_selected_count == _ONS_EXPECTED_COHORT_COUNT)
+        or run.get("selectionOrder") != "sha256(sourceRecordId)-ascending"
+        or run.get("cohortRecordSetSha256") != sha256_json(cohort_pairs)
+        or run.get("selectedRecordSetSha256") != sha256_json(expected_pairs)
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS enrichment denominator is invalid: {source_id}"
+        )
+
+    enrichment_pages = replacement_pages[len(base_pages) :]
+    if len(enrichment_pages) != expected_selected_count:
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS request receipts are incomplete: {source_id}"
+        )
+    selected_ids = {row["sourceRecordId"] for row in expected_pairs}
+    changed_record_ids: set[str] = set()
+    changed_fields = 0
+    for record_id, base_record in base_records.items():
+        replacement_record = replacement_records[record_id]
+        differences = {
+            key
+            for key in set(base_record) | set(replacement_record)
+            if (
+                key not in base_record
+                or key not in replacement_record
+                or base_record[key] != replacement_record[key]
+            )
+        }
+        if differences - {"versionDimensions"}:
+            raise SnapshotCompositionError(
+                f"bounded replacement changed protected fields for {source_id}:{record_id}"
+            )
+        if differences:
+            if "versionDimensions" not in replacement_record:
+                raise SnapshotCompositionError(
+                    f"bounded replacement removed metadata for {source_id}:{record_id}"
+                )
+            _validate_ons_version_dimensions(
+                replacement_record["versionDimensions"], source_id
+            )
+            changed_record_ids.add(record_id)
+            changed_fields += 1
+    if not changed_record_ids.issubset(selected_ids):
+        raise SnapshotCompositionError(
+            f"bounded replacement changed records outside its ONS selection: {source_id}"
+        )
+
+    for index, (page, pair) in enumerate(zip(enrichment_pages, expected_pairs, strict=True)):
+        expected_url = pair["latestVersionHref"]
+        _validate_ons_page_receipt(
+            page,
+            source_id,
+            label=f"bounded replacement ONS version page {index}",
+            expected_url=expected_url,
+            require_single_record=True,
+        )
+        _ons_latest_version_identity(expected_url, source_id)
+        record = replacement_records[pair["sourceRecordId"]]
+        dimensions = record.get("versionDimensions")
+        if dimensions is None:
+            raise SnapshotCompositionError(
+                f"bounded replacement ONS response is not represented: {source_id}"
+            )
+        _validate_ons_version_dimensions(dimensions, source_id)
+        if page.get("contentSha256") != sha256_json({"dimensions": dimensions}):
+            raise SnapshotCompositionError(
+                f"bounded replacement ONS response hash is invalid: {source_id}"
+            )
+
+    mutable_provenance = {
+        "assurance",
+        "pageCount",
+        "pages",
+        "recordSetSha256",
+        "retrievalMode",
+        "snapshotSetSha256",
+        "stopReason",
+    }
+    for key in _BASE_NOMIS_PROVENANCE_KEYS - mutable_provenance:
+        if provenance[key] != base_provenance[key]:
+            raise SnapshotCompositionError(
+                f"bounded replacement changed unrelated base provenance {key!r}: {source_id}"
+            )
+    if provenance.get("pageCount") != len(replacement_pages):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS page count is invalid: {source_id}"
+        )
+    expected_complete = expected_selected_count == _ONS_EXPECTED_COHORT_COUNT
+    retrieval_mode = provenance.get("retrievalMode")
+    if (
+        provenance.get("stopReason")
+        != ("sourceExhausted" if expected_complete else "recordLimit")
+        or retrieval_mode
+        not in {
+            "version-metadata-enrichment:frozen",
+            "version-metadata-enrichment:prefer-cache",
+            "version-metadata-enrichment:refresh",
+        }
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS run state is invalid: {source_id}"
+        )
+    if (
+        retrieval_mode == "version-metadata-enrichment:frozen"
+        and any(page["cacheHit"] is not True for page in enrichment_pages)
+    ) or (
+        retrieval_mode == "version-metadata-enrichment:refresh"
+        and any(page["cacheHit"] is not False for page in enrichment_pages)
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS cache receipts contradict retrieval mode: {source_id}"
+        )
+    if provenance.get("recordSetSha256") != sha256_json(replacement.get("records")):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS record-set hash is invalid: {source_id}"
+        )
+    replacement_snapshot_receipts = [
+        {"requestUrl": page["requestUrl"], "contentSha256": page["contentSha256"]}
+        for page in replacement_pages
+    ]
+    if provenance.get("snapshotSetSha256") != sha256_json(
+        replacement_snapshot_receipts
+    ):
+        raise SnapshotCompositionError(
+            f"bounded replacement ONS snapshot-set hash is invalid: {source_id}"
+        )
+    _assert_public_safe(replacement, source_id)
+    return {"changedRecords": len(changed_record_ids), "changedFields": changed_fields}
+
+
 def _validate_bounded_replacement(
     replacement: Mapping[str, Any],
     base: Mapping[str, Any],
@@ -590,6 +1221,13 @@ def _validate_bounded_replacement(
 ) -> dict[str, int]:
     """Validate a full-cohort replacement with narrowly allowlisted changes."""
 
+    if source_id == _ONS_SOURCE_ID:
+        return _validate_ons_bounded_replacement(
+            replacement,
+            base,
+            source_id,
+            base_snapshot_id=base_snapshot_id,
+        )
     if source_id != _NOMIS_SOURCE_ID:
         raise SnapshotCompositionError(
             f"bounded replacement source is unsupported: {source_id}"
