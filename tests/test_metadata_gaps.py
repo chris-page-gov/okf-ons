@@ -1,4 +1,6 @@
-from okf_ons.metadata_gaps import is_metadata_gap, profile_records
+import pytest
+
+from okf_ons.metadata_gaps import compare_profiles, is_metadata_gap, profile_records
 
 
 def _record(record_id: str, source: str, evidence: dict[str, bool], **values):
@@ -75,3 +77,56 @@ def test_profile_records_counts_evidence_display_and_facet_gaps():
     facets = profile["explorerSearchFacetMetric"]
     population = next(row for row in facets["byField"] if row["field"] == "population_type")
     assert population["missing"] == 2
+
+
+def test_compare_profiles_reports_fixed_denominator_yield():
+    fields = {
+        field: field in {"identity", "description", "publisher", "provenance"}
+        for field in (
+            "identity",
+            "description",
+            "publisher",
+            "licence",
+            "contact",
+            "release_or_modified",
+            "frequency",
+            "population",
+            "geography",
+            "time_coverage",
+            "methodology",
+            "quality_documentation",
+            "revision_status",
+            "provenance",
+        )
+    }
+    baseline = profile_records([_record("one", "alpha", fields)])
+    current = profile_records(
+        [_record("one", "alpha", {**fields, "geography": True, "population": True})]
+    )
+
+    comparison = compare_profiles(baseline, current, elapsed_seconds=1800)
+    evidence = comparison["evidenceSlotDelta"]
+    assert evidence["addedPresent"] == 2
+    assert evidence["remainingMissing"] == 8
+    assert evidence["percentagePointChange"] == pytest.approx(14.285714)
+    assert evidence["slotsPerHour"] == 4
+    assert next(row for row in evidence["byField"] if row["field"] == "geography") == {
+        "field": "geography",
+        "addedPresent": 1,
+        "remainingMissing": 0,
+    }
+
+
+def test_compare_profiles_rejects_denominator_changes():
+    fields = {field: False for field in (
+        "identity", "description", "publisher", "licence", "contact",
+        "release_or_modified", "frequency", "population", "geography",
+        "time_coverage", "methodology", "quality_documentation",
+        "revision_status", "provenance",
+    )}
+    baseline = profile_records([_record("one", "alpha", fields)])
+    current = profile_records(
+        [_record("one", "alpha", fields), _record("two", "alpha", fields)]
+    )
+    with pytest.raises(ValueError, match="different record counts"):
+        compare_profiles(baseline, current)

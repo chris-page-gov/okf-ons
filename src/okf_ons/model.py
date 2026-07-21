@@ -47,6 +47,25 @@ _TITLE_TABLE_CODE_RE = re.compile(
     r"^\s*([A-Z]{2}\d{3}[A-Z]*)\s*(?:[-:–—]|$)",
     re.IGNORECASE,
 )
+_HTTP_URL_RE = re.compile(r"https?://[^\s<>\"'\[\]()]+", re.IGNORECASE)
+_NOMIS_QUALITY_CONTEXT_RE = re.compile(
+    r"(?:"
+    r"\bquality(?:\s+(?:information|consideration|work|report|guidance))?\b|"
+    r"\buncertaint(?:y|ies)\b|"
+    r"\bstatistical\s+disclosure\s+control\b|"
+    r"\bprotect(?:ing|ion)?\b.{0,40}\bpersonal\s+(?:data|information)\b|"
+    r"\bprotect\b.{0,40}\bagainst\s+disclosure\b"
+    r")",
+    re.IGNORECASE,
+)
+_NOMIS_POPULATION_CONTEXT_RE = re.compile(
+    r"\b(?:"
+    r"people|persons?|residents?|population|households?|famil(?:y|ies)|"
+    r"dwellings?|children|child|adults?|students?|schoolchildren|parents?|"
+    r"males?|females?|establishments?|armed\s+forces"
+    r")\b",
+    re.IGNORECASE,
+)
 
 
 def plain_text(value: Any, limit: int = 10_000) -> str:
@@ -133,6 +152,86 @@ def _version_identity(link: str) -> tuple[str, str, str]:
     return match.groups() if match else ("", "", "")
 
 
+def _nomis_annotation_map(value: Any) -> dict[str, str]:
+    """Return text-bearing projected Nomis annotations by their native title."""
+
+    if not isinstance(value, list):
+        return {}
+    annotations: dict[str, str] = {}
+    for item in value:
+        if not isinstance(item, Mapping):
+            continue
+        title = plain_text(item.get("title"), 300)
+        text = plain_text(item.get("text"))
+        if title and text:
+            annotations.setdefault(title, text)
+    return annotations
+
+
+def _nomis_geography_levels(annotation_map: Mapping[str, str]) -> list[str]:
+    """Normalise only the source-declared Nomis geography-level annotation."""
+
+    value = annotation_map.get("contenttype/geoglevel", "")
+    return sorted(
+        {
+            level
+            for item in re.split(r"[,;|]", value)
+            if (level := plain_text(item, 300))
+        },
+        key=str.casefold,
+    )
+
+
+def _nomis_population_universe(annotation_map: Mapping[str, str]) -> str:
+    """Return a source-declared universe, rejecting codes and gap sentinels.
+
+    Most ``SubDescription`` values are natural-language statistical universes,
+    but the frozen Nomis source also uses the field for legacy mnemonics such
+    as ``vat`` and the sentinel ``previously unavailable``. Requiring an
+    explicit population-unit noun retains only values that evidence a universe.
+    """
+
+    value = plain_text(annotation_map.get("SubDescription"))
+    return value if _NOMIS_POPULATION_CONTEXT_RE.search(value) else ""
+
+
+def _nomis_quality_documentation_links(
+    annotation_map: Mapping[str, str],
+) -> list[str]:
+    """Extract public quality-documentation URLs from Nomis metadata notes.
+
+    Nomis ``MetadataTextN`` annotations also contain general explanatory and
+    classification links. A URL is therefore retained only when the matching
+    ``MetadataTitleN``, the note text, or the URL itself contains an explicit
+    quality, uncertainty, privacy-protection, or disclosure-control signal.
+    """
+
+    links: set[str] = set()
+    for title, note in annotation_map.items():
+        match = re.fullmatch(r"MetadataText(\d+)", title)
+        if not match:
+            continue
+        companion_title = annotation_map.get(f"MetadataTitle{match.group(1)}", "")
+        for url_match in _HTTP_URL_RE.finditer(note):
+            url = url_match.group().rstrip(".,;:!?")
+            parsed = urlparse(url)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.hostname
+                or parsed.username
+                or parsed.password
+            ):
+                continue
+            context_start = max(0, url_match.start() - 180)
+            context_end = min(len(note), url_match.end() + 180)
+            quality_context = " ".join(
+                (companion_title, note[context_start:context_end], url)
+            )
+            if _NOMIS_QUALITY_CONTEXT_RE.search(quality_context):
+                links.add(url)
+    return sorted(links)
+
+
 def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
     evidence = {
         "identity": bool(record.get("native_id") and record.get("source_surface")),
@@ -141,7 +240,9 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
         "licence": bool(record.get("license_id"))
         and record.get("license_id") != "not-evaluated",
         "contact": bool(record.get("contacts")),
-        "release_or_modified": bool(record.get("metadata_modified")),
+        "release_or_modified": bool(
+            record.get("metadata_modified") or record.get("first_released")
+        ),
         "frequency": bool(record.get("frequency")),
         "population": bool(record.get("population_type")),
         "geography": bool(record.get("geography")),
@@ -1019,6 +1120,28 @@ def normalize_acquisition_record(
             }
         )
     elif source_id == "nomis-dataset-definitions":
+        annotations = projected.get("annotations")
+        annotation_map = _nomis_annotation_map(annotations)
+        geography_levels = _nomis_geography_levels(annotation_map)
+        population_type = _nomis_population_universe(annotation_map)
+        quality_links = _nomis_quality_documentation_links(annotation_map)
+        derivation_fields: dict[str, Any] = {}
+        if geography_levels:
+            derivation_fields["geography"] = {
+                "mode": "source-declared",
+                "sourceAnnotation": "contenttype/geoglevel",
+            }
+        if population_type:
+            derivation_fields["population_type"] = {
+                "mode": "source-declared",
+                "sourceAnnotation": "SubDescription",
+            }
+        if quality_links:
+            derivation_fields["quality_links"] = {
+                "mode": "deterministic-extraction",
+                "sourceAnnotationPattern": "MetadataTextN",
+                "classifier": "nomis-quality-context-v1",
+            }
         raw = {
             "id": native_id,
             "name": title,
@@ -1051,6 +1174,17 @@ def normalize_acquisition_record(
         record.update(
             {
                 "metadata_modified": plain_text(projected.get("lastUpdated"), 100),
+                "population_type": population_type,
+                "geography": geography_levels,
+                "geography_metadata": (
+                    {
+                        "levels": geography_levels,
+                        "derivationMode": "source-declared",
+                    }
+                    if geography_levels
+                    else {}
+                ),
+                "quality_links": quality_links,
                 "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 300),
                 "dimensions": sdmx["dimensions"],
                 "dimension_count": len(dimensions),
@@ -1060,7 +1194,18 @@ def normalize_acquisition_record(
                 "first_released": plain_text(projected.get("firstReleased"), 100),
                 "mnemonic": plain_text(projected.get("mnemonic"), 300),
                 "publisher_uri": plain_text(projected.get("publisherUri"), 1_000),
-                "annotations": projected.get("annotations", []),
+                "annotations": annotations if isinstance(annotations, list) else [],
+                "metadata_derivation": (
+                    {
+                        "schema": "okf-ons-field-derivation.v1",
+                        "modes": sorted(
+                            {field["mode"] for field in derivation_fields.values()}
+                        ),
+                        "fields": derivation_fields,
+                    }
+                    if derivation_fields
+                    else {}
+                ),
                 "sdmx": sdmx,
             }
         )

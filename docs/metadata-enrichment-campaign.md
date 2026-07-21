@@ -62,13 +62,35 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | Batch | Result | Elapsed | Slots added | Completeness | Yield |
 | --- | --- | ---: | ---: | ---: | ---: |
 | Baseline | Reproducible inventory established | 14 min | — | 46.3718% | — |
+| 01 | Frozen Nomis annotations normalised | 5 min 13 sec | 3,620 | 51.4448% | 41,636 slots/hour |
+
+Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
+of the 19,134-slot halfway milestone. The evidence gains were population or
+universe (+1,460), source-declared geography (+1,385), and conservatively
+classified quality-documentation links (+775). A semantic guard rejected 109
+Nomis `SubDescription` values that were gap sentinels or legacy codes rather
+than population descriptions. No network acquisition was required.
+
+The OKF-ONS static-search facet metric gained 4,306 populated cells, from
+61.7145% to 66.6840%. The additional facet gain includes the explicit
+field-derivation mode attached to source-normalised records. Fixed Explorer
+dataset and search-result display rows did not move because those views do not
+render the newly populated statistical fields; the facets and dataset decision
+signature do.
 
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
-Regenerate it with:
+Batch 01 has a
+[`profile`](../evaluation/metadata-completeness/batch-01-frozen-nomis.json) and
+[`comparison`](../evaluation/metadata-completeness/batch-01-comparison.json).
+Regenerate and compare profiles with:
 
 ```bash
 python scripts/profile_metadata_gaps.py \
   --bundle bundle \
   --output evaluation/metadata-completeness/baseline.json
+python scripts/compare_metadata_gaps.py \
+  evaluation/metadata-completeness/baseline.json \
+  evaluation/metadata-completeness/batch-01-frozen-nomis.json \
+  --elapsed-seconds 313
 ```

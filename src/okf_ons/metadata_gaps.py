@@ -105,6 +105,16 @@ SEARCH_DISPLAY_FIELDS: dict[str, tuple[tuple[str, ...], ...]] = {
 
 PUBLISHER_DISPLAY_FIELDS = ("concept_id", "id", "type", "approval_status")
 
+EXPLORER_METRIC_KEYS = (
+    "explorerDatasetDisplayMetric",
+    "explorerDatasetDynamicProvenanceMetric",
+    "explorerResourceDisplayMetric",
+    "explorerResourceDynamicProvenanceMetric",
+    "explorerSearchResultDisplayMetric",
+    "explorerPublisherDisplayMetric",
+    "explorerSearchFacetMetric",
+)
+
 
 def is_metadata_gap(value: Any) -> bool:
     """Return whether Explorer renders ``value`` as a metadata gap."""
@@ -251,6 +261,120 @@ def _dynamic_provenance_metric(records: Sequence[Mapping[str, Any]]) -> dict[str
         "possible": len(values),
         "missing": missing,
         "completeness": _rate(len(values) - missing, len(values)),
+    }
+
+
+def _index_rows(rows: Any, key: str) -> dict[str, Mapping[str, Any]]:
+    if not isinstance(rows, list):
+        return {}
+    return {
+        str(row[key]): row
+        for row in rows
+        if isinstance(row, Mapping) and row.get(key) is not None
+    }
+
+
+def _metric_delta(
+    baseline: Mapping[str, Any], current: Mapping[str, Any]
+) -> dict[str, Any]:
+    baseline_possible = int(baseline.get("possible") or 0)
+    current_possible = int(current.get("possible") or 0)
+    if baseline_possible != current_possible:
+        raise ValueError(
+            "Cannot compare metadata metrics with different denominators: "
+            f"{baseline_possible} != {current_possible}"
+        )
+    baseline_present = int(baseline.get("present") or 0)
+    current_present = int(current.get("present") or 0)
+    added = current_present - baseline_present
+    return {
+        "baselinePresent": baseline_present,
+        "currentPresent": current_present,
+        "possible": current_possible,
+        "addedPresent": added,
+        "remainingMissing": current_possible - current_present,
+        "percentagePointChange": round(100 * added / current_possible, 6)
+        if current_possible
+        else 0.0,
+    }
+
+
+def compare_profiles(
+    baseline: Mapping[str, Any],
+    current: Mapping[str, Any],
+    *,
+    elapsed_seconds: float | None = None,
+) -> dict[str, Any]:
+    """Compare two fixed-denominator profiles and report enrichment yield."""
+
+    baseline_records = int(baseline.get("recordCount") or 0)
+    current_records = int(current.get("recordCount") or 0)
+    if baseline_records != current_records:
+        raise ValueError(
+            "Cannot compare profiles with different record counts: "
+            f"{baseline_records} != {current_records}"
+        )
+
+    baseline_evidence = baseline.get("evidenceSlotMetric")
+    current_evidence = current.get("evidenceSlotMetric")
+    if not isinstance(baseline_evidence, Mapping) or not isinstance(
+        current_evidence, Mapping
+    ):
+        raise ValueError("Both profiles must contain evidenceSlotMetric")
+    evidence_delta = _metric_delta(baseline_evidence, current_evidence)
+    baseline_missing = int(baseline_evidence.get("missing") or 0)
+    evidence_delta["baselineMissingClosed"] = (
+        round(evidence_delta["addedPresent"] / baseline_missing, 6)
+        if baseline_missing
+        else 0.0
+    )
+    if elapsed_seconds is not None:
+        if elapsed_seconds <= 0:
+            raise ValueError("elapsed_seconds must be greater than zero")
+        evidence_delta["elapsedSeconds"] = round(elapsed_seconds, 3)
+        evidence_delta["slotsPerHour"] = round(
+            evidence_delta["addedPresent"] * 3600 / elapsed_seconds, 3
+        )
+
+    field_baseline = _index_rows(baseline_evidence.get("byField"), "field")
+    field_current = _index_rows(current_evidence.get("byField"), "field")
+    evidence_delta["byField"] = [
+        {
+            "field": field,
+            "addedPresent": int(field_current[field].get("present") or 0)
+            - int(field_baseline[field].get("present") or 0),
+            "remainingMissing": int(field_current[field].get("missing") or 0),
+        }
+        for field in EVIDENCE_FIELD_ORDER
+        if field in field_baseline and field in field_current
+    ]
+
+    source_baseline = _index_rows(baseline_evidence.get("bySource"), "source")
+    source_current = _index_rows(current_evidence.get("bySource"), "source")
+    evidence_delta["bySource"] = [
+        {
+            "source": source,
+            "addedPresent": int(source_current[source].get("present") or 0)
+            - int(source_baseline[source].get("present") or 0),
+            "remainingMissing": int(source_current[source].get("missing") or 0),
+        }
+        for source in sorted(source_baseline.keys() & source_current.keys())
+    ]
+
+    explorer_deltas = {}
+    for key in EXPLORER_METRIC_KEYS:
+        baseline_metric = baseline.get(key)
+        current_metric = current.get(key)
+        if isinstance(baseline_metric, Mapping) and isinstance(current_metric, Mapping):
+            explorer_deltas[key] = _metric_delta(baseline_metric, current_metric)
+
+    return {
+        "schema": "okf-ons-metadata-gap-comparison.v1",
+        "recordCount": current_records,
+        "baselineBundle": baseline.get("bundle", {}),
+        "currentBundle": current.get("bundle", {}),
+        "evidenceSlotDelta": evidence_delta,
+        "explorerMetricDeltas": explorer_deltas,
     }
 
 
