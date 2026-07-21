@@ -42,6 +42,14 @@ documentation (5,048), time coverage (4,989) and frequency (4,941). These
 counts identify evidence availability; they do not imply that every field
 applies to every source record.
 
+The applicability-aware companion measure uses four states: `present`,
+`not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
+narrow rule excludes only statistical population/universe for the 3,035 Open
+Geography reference assets. It does not assume that missing cadence, vintage,
+methodology or contact evidence is inapplicable. After Batch 02 this measure is
+37,545 of 68,323 applicable slots (54.9522%); 3,035 are not applicable, 30,778
+are not evidenced, and none are recorded as conflicted.
+
 ## Stopping rule
 
 Work proceeds in timed, source-specific batches. Each batch records elapsed
@@ -63,6 +71,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | --- | --- | ---: | ---: | ---: | ---: |
 | Baseline | Reproducible inventory established | 14 min | — | 46.3718% | — |
 | 01 | Frozen Nomis annotations normalised | 5 min 13 sec | 3,620 | 51.4448% | 41,636 slots/hour |
+| 02 | Frozen Open Geography metadata normalised | 7 min 51 sec | 835 | 52.6150% | 6,382 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -78,11 +87,24 @@ dataset and search-result display rows did not move because those views do not
 render the newly populated statistical fields; the facets and dataset decision
 signature do.
 
+Batch 02 added geography evidence (+524), explicit product cadence (+310), and
+one source snippet used as a description fallback. It also mapped declared
+public access, source creation date, product type, controlled area keywords and
+single-year title vintages with field-level derivation. This removed 17,902
+dataset-detail gap cells, 6,069 search-facet gap cells and 3,035 search-result
+gap cells. Cumulative raw evidence progress is 4,455 slots: 11.6416% of the
+original gaps and 23.2832% of the halfway milestone. Marginal yield remains
+well above the stopping threshold.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
 [`profile`](../evaluation/metadata-completeness/batch-01-frozen-nomis.json) and
 [`comparison`](../evaluation/metadata-completeness/batch-01-comparison.json).
+Batch 02 likewise has a
+[`profile`](../evaluation/metadata-completeness/batch-02-frozen-open-geography.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-02-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash

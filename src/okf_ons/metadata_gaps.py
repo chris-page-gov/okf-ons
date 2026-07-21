@@ -115,6 +115,21 @@ EXPLORER_METRIC_KEYS = (
     "explorerSearchFacetMetric",
 )
 
+# These exclusions are deliberately narrow. A field is removed from the
+# applicable denominator only when the record class makes the concept itself
+# inapplicable; uncertainty remains ``not-evidenced``.
+EVIDENCE_NOT_APPLICABLE_RULES = (
+    {
+        "ruleId": "geospatial-reference-has-no-statistical-universe",
+        "sourceSurface": "ons-open-geography",
+        "field": "population",
+        "rationale": (
+            "An Open Geography boundary, code or lookup asset is a geospatial "
+            "reference product, not a statistical population or universe."
+        ),
+    },
+)
+
 
 def is_metadata_gap(value: Any) -> bool:
     """Return whether Explorer renders ``value`` as a metadata gap."""
@@ -220,6 +235,65 @@ def _evidence_present(record: Mapping[str, Any], field: str) -> bool:
     quality = record.get("quality_evidence")
     evidence = quality.get("evidence") if isinstance(quality, Mapping) else None
     return isinstance(evidence, Mapping) and evidence.get(field) is True
+
+
+def _evidence_state(record: Mapping[str, Any], field: str) -> str:
+    if _evidence_present(record, field):
+        return "present"
+    for rule in EVIDENCE_NOT_APPLICABLE_RULES:
+        if (
+            record.get("source_surface") == rule["sourceSurface"]
+            and field == rule["field"]
+        ):
+            return "not-applicable"
+    conflicts = record.get("metadata_conflicts")
+    if isinstance(conflicts, Mapping) and conflicts.get(field):
+        return "conflicted"
+    return "not-evidenced"
+
+
+def _applicability_metric(
+    records: Sequence[Mapping[str, Any]], fields: Sequence[str]
+) -> dict[str, Any]:
+    state_names = ("present", "not-applicable", "not-evidenced", "conflicted")
+    by_field = []
+    by_source_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    total: Counter[str] = Counter()
+    for field in fields:
+        counts: Counter[str] = Counter()
+        for record in records:
+            state = _evidence_state(record, field)
+            counts[state] += 1
+            by_source_counts[_source(record)][state] += 1
+        total.update(counts)
+        by_field.append(
+            {
+                "field": field,
+                **{state: counts[state] for state in state_names},
+                "applicablePossible": len(records) - counts["not-applicable"],
+            }
+        )
+    applicable_possible = len(records) * len(fields) - total["not-applicable"]
+    return {
+        "definition": (
+            "The same evidence inventory with only explicit record-class exclusions removed "
+            "from the denominator. Uncertain applicability remains not-evidenced."
+        ),
+        "present": total["present"],
+        "applicablePossible": applicable_possible,
+        "completeness": _rate(total["present"], applicable_possible),
+        "states": {state: total[state] for state in state_names},
+        "rules": list(EVIDENCE_NOT_APPLICABLE_RULES),
+        "byField": by_field,
+        "bySource": [
+            {
+                "source": source,
+                **{state: counts[state] for state in state_names},
+                "applicablePossible": sum(counts.values()) - counts["not-applicable"],
+            }
+            for source, counts in sorted(by_source_counts.items())
+        ],
+    }
 
 
 def _dataset_display_present(record: Mapping[str, Any], field: str) -> bool:
@@ -446,6 +520,9 @@ def profile_records(
                 sorted(score_distribution.items(), key=lambda item: item[0])
             ),
         },
+        "applicabilityAwareEvidenceMetric": _applicability_metric(
+            materialised, evidence_fields
+        ),
         "explorerDatasetDisplayMetric": _metric(
             materialised,
             dataset_fields,

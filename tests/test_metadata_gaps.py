@@ -79,6 +79,53 @@ def test_profile_records_counts_evidence_display_and_facet_gaps():
     assert population["missing"] == 2
 
 
+def test_applicability_metric_excludes_only_explicit_record_class_rules():
+    fields = {
+        field: field in {"identity", "description", "publisher", "provenance"}
+        for field in (
+            "identity",
+            "description",
+            "publisher",
+            "licence",
+            "contact",
+            "release_or_modified",
+            "frequency",
+            "population",
+            "geography",
+            "time_coverage",
+            "methodology",
+            "quality_documentation",
+            "revision_status",
+            "provenance",
+        )
+    }
+    profile = profile_records(
+        [
+            _record("geography", "ons-open-geography", fields),
+            _record("statistics", "nomis", fields),
+        ]
+    )
+    metric = profile["applicabilityAwareEvidenceMetric"]
+
+    assert metric["states"] == {
+        "present": 8,
+        "not-applicable": 1,
+        "not-evidenced": 19,
+        "conflicted": 0,
+    }
+    assert metric["applicablePossible"] == 27
+    assert metric["completeness"] == pytest.approx(8 / 27)
+    population = next(row for row in metric["byField"] if row["field"] == "population")
+    assert population == {
+        "field": "population",
+        "present": 0,
+        "not-applicable": 1,
+        "not-evidenced": 1,
+        "conflicted": 0,
+        "applicablePossible": 1,
+    }
+
+
 def test_compare_profiles_reports_fixed_denominator_yield():
     fields = {
         field: field in {"identity", "description", "publisher", "provenance"}

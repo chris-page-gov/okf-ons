@@ -66,6 +66,28 @@ _NOMIS_POPULATION_CONTEXT_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+_OGP_TITLE_YEAR_RE = re.compile(r"(?<!\d)(?:18|19|20)\d{2}(?!\d)")
+_OGP_AREA_KEYWORD_CROSSWALK = {
+    "united kingdom": "United Kingdom",
+    "uk": "United Kingdom",
+    "great britain": "Great Britain",
+    "gb": "Great Britain",
+    "england": "England",
+    "en": "England",
+    "england and wales": "England and Wales",
+    "ew": "England and Wales",
+    "wales": "Wales",
+    "wa": "Wales",
+    "scotland": "Scotland",
+    "sc": "Scotland",
+    "northern ireland": "Northern Ireland",
+    "ni": "Northern Ireland",
+}
+_OGP_FREQUENCY_RULES = (
+    (re.compile(r"\bquarterly\b", re.IGNORECASE), "quarterly"),
+    (re.compile(r"\bevery 6 weeks\b", re.IGNORECASE), "every 6 weeks"),
+    (re.compile(r"\bannually\b", re.IGNORECASE), "annually"),
+)
 
 
 def plain_text(value: Any, limit: int = 10_000) -> str:
@@ -232,6 +254,73 @@ def _nomis_quality_documentation_links(
     return sorted(links)
 
 
+def _ogp_area_served(keywords: Any) -> list[str]:
+    """Crosswalk exact source keywords to a small controlled country list."""
+
+    return sorted(
+        {
+            area
+            for keyword in _string_list(keywords)
+            if (area := _OGP_AREA_KEYWORD_CROSSWALK.get(keyword.casefold()))
+        },
+        key=str.casefold,
+    )
+
+
+def _ogp_geography_vintage(title: Any) -> int | str:
+    """Return a title year only when the source title has one distinct year."""
+
+    years = {int(value) for value in _OGP_TITLE_YEAR_RE.findall(plain_text(title, 1_000))}
+    return years.pop() if len(years) == 1 else ""
+
+
+def _ogp_frequency(description: Any) -> str:
+    """Return cadence only for an explicit, bounded source-description phrase."""
+
+    text = plain_text(description)
+    for pattern, frequency in _OGP_FREQUENCY_RULES:
+        if pattern.search(text):
+            return frequency
+    return ""
+
+
+def _merge_field_derivation(
+    existing: Any,
+    additions: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Merge per-field derivations without discarding existing evidence."""
+
+    merged = dict(existing) if isinstance(existing, Mapping) else {}
+    existing_fields = merged.get("fields")
+    fields = {
+        str(field): dict(details)
+        for field, details in existing_fields.items()
+        if isinstance(details, Mapping)
+    } if isinstance(existing_fields, Mapping) else {}
+    for field, details in additions.items():
+        prior = fields.get(field, {})
+        fields[field] = {**dict(details), **prior}
+
+    modes = {
+        plain_text(mode, 300)
+        for mode in merged.get("modes", [])
+        if plain_text(mode, 300)
+    } if isinstance(merged.get("modes"), list) else set()
+    modes.update(
+        plain_text(details.get("mode"), 300)
+        for details in fields.values()
+        if plain_text(details.get("mode"), 300)
+    )
+    merged.update(
+        {
+            "schema": "okf-ons-field-derivation.v1",
+            "modes": sorted(modes),
+            "fields": dict(sorted(fields.items())),
+        }
+    )
+    return merged
+
+
 def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
     evidence = {
         "identity": bool(record.get("native_id") and record.get("source_surface")),
@@ -245,7 +334,12 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
         ),
         "frequency": bool(record.get("frequency")),
         "population": bool(record.get("population_type")),
-        "geography": bool(record.get("geography")),
+        "geography": bool(
+            record.get("geography")
+            or record.get("portal_extent")
+            or record.get("geography_vintage")
+            or record.get("area_served")
+        ),
         "time_coverage": bool(record.get("time_coverage")),
         "methodology": bool(record.get("methodology_links")),
         "quality_documentation": bool(record.get("quality_links")),
@@ -628,8 +722,9 @@ def normalize_ogp_dataset(
     if not item_id:
         return None
     title = plain_text(properties.get("title") or properties.get("name"), 1_000) or item_id
-    description = plain_text(
-        properties.get("description") or properties.get("snippet") or properties.get("summary")
+    source_description = plain_text(properties.get("description"))
+    description = source_description or plain_text(
+        properties.get("snippet") or properties.get("summary")
     )
     url = plain_text(
         properties.get("url")
@@ -663,17 +758,29 @@ def normalize_ogp_dataset(
         or ""
     )
     keywords = properties.get("keywords") or properties.get("tags") or []
+    access = plain_text(properties.get("access"), 100)
+    record_kind = plain_text(
+        properties.get("record_kind") or properties.get("recordKind"), 200
+    )
+    area_served = _ogp_area_served(keywords)
+    geography_vintage = _ogp_geography_vintage(title)
+    frequency = _ogp_frequency(source_description)
     record.update(
         {
             "topics": _string_list(keywords) or ["Geography"],
             "tags": _string_list(keywords) + ["open-geography"],
+            "metadata_created": plain_text(properties.get("created"), 100),
             "metadata_modified": plain_text(modified, 100),
+            "type": record_kind,
             "state": plain_text(properties.get("status"), 100) or "published",
+            "frequency": frequency,
             "geography": _string_list(
                 properties.get("geography")
                 or properties.get("spatial")
                 or properties.get("coverage")
             ),
+            "geography_vintage": geography_vintage,
+            "area_served": area_served,
             "spatial": {"bbox": bbox, "crs": "EPSG:4326"} if bbox else {},
             "formats": _string_list(properties.get("formats")) or ["Download/Service"],
             "selection": {
@@ -691,6 +798,14 @@ def normalize_ogp_dataset(
             },
         }
     )
+    if access.casefold() == "public":
+        record.update(
+            {
+                "access_model": "public",
+                "visibility": "public",
+                "private": False,
+            }
+        )
     record["quality_evidence"] = _quality_evidence(record)
     record["quality"] = {
         "overall": record["quality_evidence"]["score"],
@@ -1217,9 +1332,12 @@ def normalize_acquisition_record(
             "properties": {
                 "title": title,
                 "description": description,
+                "snippet": projected.get("snippet"),
                 "url": item_url,
                 "modified": projected.get("modified"),
                 "created": projected.get("created"),
+                "record_kind": projected.get("recordKind"),
+                "access": projected.get("access"),
                 "keywords": keywords,
                 "status": projected.get("lifecycleState"),
                 "formats": [projected.get("itemType")] if projected.get("itemType") else [],
@@ -1234,6 +1352,7 @@ def normalize_acquisition_record(
         )
         if record is None:
             return None
+        portal_extent = projected.get("portalExtent", {})
         record.update(
             {
                 "access": plain_text(projected.get("access"), 500),
@@ -1242,9 +1361,58 @@ def normalize_acquisition_record(
                 "portal_owner": plain_text(projected.get("owner"), 500),
                 "source_organisation": plain_text(projected.get("source"), 500),
                 "spatial_reference": projected.get("spatialReference", {}),
-                "portal_extent": projected.get("portalExtent", {}),
+                "portal_extent": portal_extent,
                 "temporal_extent": projected.get("temporalExtent", {}),
             }
+        )
+        derivation_fields: dict[str, Mapping[str, Any]] = {}
+        if record.get("metadata_created"):
+            derivation_fields["metadata_created"] = {
+                "mode": "source-declared",
+                "sourceField": "created",
+            }
+        if record.get("type"):
+            derivation_fields["type"] = {
+                "mode": "source-declared",
+                "sourceField": "recordKind",
+            }
+        if record.get("access_model") == "public":
+            for field in ("access_model", "visibility", "private"):
+                derivation_fields[field] = {
+                    "mode": "deterministic-normalisation",
+                    "sourceField": "access",
+                    "rule": "public-access-v1",
+                }
+        if record.get("area_served"):
+            derivation_fields["area_served"] = {
+                "mode": "controlled-vocabulary-crosswalk",
+                "sourceField": "keywords",
+                "crosswalk": "ogp-country-area-keyword-v1",
+            }
+        if record.get("geography_vintage"):
+            derivation_fields["geography_vintage"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "title",
+                "rule": "exactly-one-distinct-title-year-v1",
+            }
+        if record.get("frequency"):
+            derivation_fields["frequency"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "rule": "explicit-cadence-phrase-v1",
+            }
+        if not description and record.get("description") and projected.get("snippet"):
+            derivation_fields["description"] = {
+                "mode": "source-declared-fallback",
+                "sourceField": "snippet",
+            }
+        if portal_extent:
+            derivation_fields["portal_extent"] = {
+                "mode": "source-declared",
+                "sourceField": "portalExtent",
+            }
+        record["metadata_derivation"] = _merge_field_derivation(
+            record.get("metadata_derivation"), derivation_fields
         )
     elif source_id == "ons-explore-local-statistics":
         record = _normalize_els_indicator(

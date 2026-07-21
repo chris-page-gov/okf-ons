@@ -189,6 +189,7 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "context_note": record.get("context_note", "")[:1_000],
         "topics": record.get("topics", []),
         "state": record.get("state", ""),
+        "access_model": record.get("access_model", ""),
         "frequency": record.get("frequency", ""),
         "population_type": record.get("population_type", ""),
         "agency_id": record.get("agency_id", ""),
