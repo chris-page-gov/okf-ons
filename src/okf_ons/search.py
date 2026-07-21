@@ -137,7 +137,11 @@ def filter_values(record: dict[str, Any], key: str) -> list[str]:
     elif key == "has_methodology":
         values = ["yes" if record.get("methodology_links") else "no"]
     elif key == "has_quality_documentation":
-        values = ["yes" if record.get("quality_links") else "no"]
+        values = [
+            "yes"
+            if record.get("quality_links") or record.get("quality_notes")
+            else "no"
+        ]
     elif key == "has_alternatives":
         values = ["yes" if record.get("alternatives") else "no"]
     elif key == "source_publisher":
@@ -199,6 +203,8 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "publisher_uri": record.get("publisher_uri", ""),
         "portal_owner": record.get("portal_owner", ""),
         "source_organisation": record.get("source_organisation", ""),
+        "endpoint_host": record.get("endpoint_host", ""),
+        "documentation_host": record.get("documentation_host", ""),
         "source_publishers": record.get("source_publishers", []),
         "surface_operator": record.get("surface_operator", {}),
         "authority": record.get("authority", {}),

@@ -46,8 +46,8 @@ The applicability-aware companion measure uses four states: `present`,
 `not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
 narrow rule excludes only statistical population/universe for the 3,035 Open
 Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 03 this measure is
-38,169 of 68,323 applicable slots (55.8655%); 3,035 are not applicable, 30,154
+methodology or contact evidence is inapplicable. After Batch 04 this measure is
+38,304 of 68,323 applicable slots (56.0631%); 3,035 are not applicable, 30,019
 are not evidenced, and none are recorded as conflicted.
 
 ## Stopping rule
@@ -73,6 +73,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | 01 | Frozen Nomis annotations normalised | 5 min 13 sec | 3,620 | 51.4448% | 41,636 slots/hour |
 | 02 | Frozen Open Geography metadata normalised | 7 min 51 sec | 835 | 52.6150% | 6,382 slots/hour |
 | 03 | Live ONS catalogue, then frozen | 9 min 30 sec | 624 | 53.4894% | 3,941 slots/hour |
+| 04 | Frozen Explore Local Statistics caveats normalised | 14 min 18 sec | 135 | 53.6786% | 566 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -112,6 +113,22 @@ addition to its 624 evidence slots. Cumulative raw progress is 5,079 cells:
 declining across batches but remains more than eleven times the continuation
 threshold.
 
+Batch 04 used only the already frozen Explore Local Statistics projection. It
+treated 102 source-declared caveat collections as quality or limitation
+documentation and extracted explicitly labelled methodology links for 33
+records. It did not infer licence, contact, population or revision evidence.
+The same explicit projection supplied 108 record types, 108 country-code
+crosswalks and 108 public resource hosts to dataset details, plus 108 endpoint
+hosts and 108 documentation hosts to search results. This removed 324 dataset
+display gaps and 216 search-result gaps without synthesising resources.
+
+Its 566-slot/hour marginal yield is still above the 357-slot/hour stopping
+threshold, but only by 1.59 times; this is the first batch close to the return
+knee. The 14 minute 18 second wall time includes the concurrent design and
+validation of the next bounded Nomis acquisition, so it is conservative as an
+ELS-only productivity measure. Cumulative raw progress is now 5,214 cells:
+13.6250% of the original gaps and 27.2499% of the halfway milestone.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -125,6 +142,9 @@ Batch 03 has a
 [`profile`](../evaluation/metadata-completeness/batch-03-live-ons-catalogue.json)
 and
 [`comparison`](../evaluation/metadata-completeness/batch-03-comparison.json).
+Batch 04 has a
+[`profile`](../evaluation/metadata-completeness/batch-04-frozen-els.json) and
+[`comparison`](../evaluation/metadata-completeness/batch-04-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash

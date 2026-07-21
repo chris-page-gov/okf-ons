@@ -88,6 +88,31 @@ _OGP_FREQUENCY_RULES = (
     (re.compile(r"\bevery 6 weeks\b", re.IGNORECASE), "every 6 weeks"),
     (re.compile(r"\bannually\b", re.IGNORECASE), "annually"),
 )
+_ELS_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", re.IGNORECASE)
+_ELS_METHOD_LINK_CONTEXT_RE = re.compile(
+    r"(?:"
+    r"\bmethodolog(?:y|ies|ical)\b|"
+    r"\bmethods?\b|"
+    r"\buser[ -]?guide\b|"
+    r"\bfrascati[ -]?manual\b|"
+    r"\btechnical[ -]?report\b|"
+    r"\bmodel-params\b|"
+    r"\bnotes-and-definitions\b|"
+    r"\bindicator[ -]?definitions\b|"
+    r"\bsupporting[ -]?information\b"
+    r")",
+    re.IGNORECASE,
+)
+_ELS_QUALITY_LINK_CONTEXT_RE = re.compile(
+    r"(?:\bquality\b|\bqmi\b|\buncertaint(?:y|ies)\b|\brobustness\b)",
+    re.IGNORECASE,
+)
+_ELS_COUNTRY_CODE_CROSSWALK = {
+    "E": "England",
+    "N": "Northern Ireland",
+    "S": "Scotland",
+    "W": "Wales",
+}
 
 
 def plain_text(value: Any, limit: int = 10_000) -> str:
@@ -321,6 +346,61 @@ def _merge_field_derivation(
     return merged
 
 
+def _els_documentation_links(caveats: Iterable[str]) -> tuple[list[str], list[str]]:
+    """Extract only explicitly labelled method and quality links from ELS caveats."""
+
+    methodology_links: set[str] = set()
+    quality_links: set[str] = set()
+    for caveat in caveats:
+        for match in _ELS_MARKDOWN_LINK_RE.finditer(caveat):
+            label = plain_text(match.group(1), 1_000)
+            url = match.group(2).rstrip(".,;:!?")
+            parsed = urlparse(url)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.hostname
+                or parsed.username
+                or parsed.password
+            ):
+                continue
+            context = f"{label} {url}"
+            if _ELS_METHOD_LINK_CONTEXT_RE.search(context):
+                methodology_links.add(url)
+            if _ELS_QUALITY_LINK_CONTEXT_RE.search(context):
+                quality_links.add(url)
+    return sorted(methodology_links), sorted(quality_links)
+
+
+def _els_area_served(geography: Mapping[str, Any]) -> list[str]:
+    """Crosswalk projected ELS country codes without inferring wider coverage."""
+
+    countries = geography.get("countries")
+    if not isinstance(countries, list):
+        return []
+    return sorted(
+        {
+            area
+            for code in countries
+            if (area := _ELS_COUNTRY_CODE_CROSSWALK.get(plain_text(code, 10).upper()))
+        },
+        key=str.casefold,
+    )
+
+
+def _public_host(value: Any) -> str:
+    """Return the host of an explicit public HTTP(S) URL without credentials."""
+
+    parsed = urlparse(plain_text(value, 2_000))
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+    ):
+        return ""
+    return parsed.hostname.casefold()
+
+
 def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
     evidence = {
         "identity": bool(record.get("native_id") and record.get("source_surface")),
@@ -342,7 +422,9 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
         ),
         "time_coverage": bool(record.get("time_coverage")),
         "methodology": bool(record.get("methodology_links")),
-        "quality_documentation": bool(record.get("quality_links")),
+        "quality_documentation": bool(
+            record.get("quality_links") or record.get("quality_notes")
+        ),
         "revision_status": bool(record.get("revision_status")),
         "provenance": bool(record.get("provenance")),
     }
@@ -365,7 +447,7 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
 
 def _standards_evidence(record: dict[str, Any]) -> dict[str, Any]:
     has_method = bool(record.get("methodology_links"))
-    has_quality = bool(record.get("quality_links"))
+    has_quality = bool(record.get("quality_links") or record.get("quality_notes"))
     has_release = bool(record.get("metadata_modified"))
     has_provenance = bool(record.get("provenance"))
     has_dimensions = bool(record.get("dimensions") or record.get("dimension_count"))
@@ -1006,7 +1088,8 @@ def _finalise_projected_record(
         "frequency": record.get("frequency") or "",
         "dimensions": record.get("dimensions") or [],
         "revision_status": record.get("revision_status") or "",
-        "quality_notes": sorted(
+        "quality_notes": record.get("quality_notes")
+        or sorted(
             {
                 *record.get("methodology_links", []),
                 *record.get("quality_links", []),
@@ -1054,6 +1137,18 @@ def _normalize_els_indicator(
     subtopic = plain_text(taxonomy.get("subTopic"), 300)
     title = plain_text(projected.get("title"), 1_000) or slug
     description = plain_text(projected.get("description"))
+    caveats = [
+        plain_text(value)
+        for value in projected.get("caveats", [])
+        if plain_text(value)
+    ] if isinstance(projected.get("caveats"), list) else []
+    methodology_links, quality_links = _els_documentation_links(caveats)
+    area_served = _els_area_served(geography)
+    endpoint_host = _public_host(metadata_url)
+    documentation_host = _public_host(self_url)
+    resource_hosts = sorted(
+        {host for host in (endpoint_host, documentation_host) if host}
+    )
     record = _base_record(
         record_id=f"ons-explore-local-statistics:indicator:{slug}",
         native_id=slug,
@@ -1089,6 +1184,7 @@ def _normalize_els_indicator(
             "publisher_title": publisher_title,
             "publisher_uri": publisher_uri,
             "source_publishers": source_publishers,
+            "type": plain_text(projected.get("recordKind"), 200),
             "formats": ["JSON-stat metadata", "REST/HTTP"],
             "protocol": ["REST/HTTP"],
             "topics": _string_list([topic, subtopic]),
@@ -1115,6 +1211,10 @@ def _normalize_els_indicator(
             "geography": _string_list(geography.get("levels")),
             "geography_metadata": geography,
             "geography_vintage": geography.get("vintage") or "",
+            "area_served": area_served,
+            "endpoint_host": endpoint_host,
+            "documentation_host": documentation_host,
+            "resource_hosts": resource_hosts,
             "time_coverage": (
                 dict(projected["timeCoverage"])
                 if isinstance(projected.get("timeCoverage"), Mapping)
@@ -1130,13 +1230,10 @@ def _normalize_els_indicator(
             ]
             if isinstance(projected.get("dimensionOrder"), list)
             else [],
-            "caveats": [
-                plain_text(value)
-                for value in projected.get("caveats", [])
-                if plain_text(value)
-            ]
-            if isinstance(projected.get("caveats"), list)
-            else [],
+            "caveats": caveats,
+            "quality_notes": caveats,
+            "methodology_links": methodology_links,
+            "quality_links": quality_links,
             "statistical_flags": classification,
             "metadata_derivation": {
                 **derivation,
@@ -1182,6 +1279,53 @@ def _normalize_els_indicator(
                 ),
             },
         }
+    )
+    derivation_fields: dict[str, Mapping[str, Any]] = {}
+    if record.get("type"):
+        derivation_fields["type"] = {
+            "mode": "source-declared",
+            "sourceField": "recordKind",
+        }
+    if caveats:
+        derivation_fields["quality_notes"] = {
+            "mode": "source-declared",
+            "sourceField": "caveats",
+        }
+    if methodology_links:
+        derivation_fields["methodology_links"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "caveats",
+            "classifier": "els-explicit-method-link-v1",
+        }
+    if quality_links:
+        derivation_fields["quality_links"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "caveats",
+            "classifier": "els-explicit-quality-link-v1",
+        }
+    if area_served:
+        derivation_fields["area_served"] = {
+            "mode": "controlled-vocabulary-crosswalk",
+            "sourceField": "geography.countries",
+            "crosswalk": "els-country-code-v1",
+        }
+    if endpoint_host:
+        derivation_fields["endpoint_host"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "links.metadata",
+        }
+    if documentation_host:
+        derivation_fields["documentation_host"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "links.self",
+        }
+    if resource_hosts:
+        derivation_fields["resource_hosts"] = {
+            "mode": "deterministic-extraction",
+            "sourceFields": ["links.metadata", "links.self"],
+        }
+    record["metadata_derivation"] = _merge_field_derivation(
+        record.get("metadata_derivation"), derivation_fields
     )
     return record
 
