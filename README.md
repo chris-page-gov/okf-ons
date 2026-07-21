@@ -1,10 +1,11 @@
 # ONS Open Knowledge Format
 
-`okf-ons` is a metadata-only discovery layer for public Office for National
-Statistics data. It is designed to help a person or an agent find the exact
-dataset, see easily confused alternatives, understand the statistical-quality
-evidence that is available, and hand a validated selection to a downstream MCP
-server for live retrieval.
+`okf-ons` is a metadata-only discovery layer for public statistics exposed
+through Office for National Statistics services. It is designed to help a
+person or an agent find the exact dataset, see easily confused alternatives,
+understand the statistical-quality evidence that is available, and prepare a
+non-executing candidate plan that a downstream service must live-validate and
+authorise before retrieval.
 
 The project deliberately separates four jobs:
 
@@ -20,6 +21,111 @@ The project deliberately separates four jobs:
 The local broker is not the downstream live-data server: it makes no network
 calls and returns no observation values. No observations, API keys, or private
 data are stored in the bundle.
+
+## Access and documentation
+
+These are the canonical entry points for release `v0.2.0`. The Pages site
+tracks the most recently deployed `main`; use the tagged release downloads when
+an immutable copy is required.
+
+### Live and machine-readable access
+
+| Resource | URL |
+| --- | --- |
+| Human discovery UI | <https://chris-page-gov.github.io/okf-ons/> |
+| Open this bundle directly in OKF Explorer | <https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json> |
+| OKF Explorer without a preloaded bundle | <https://chris-page-gov.github.io/okf-explorer/> |
+| OKF bundle descriptor | <https://chris-page-gov.github.io/okf-ons/okf-explorer.json> |
+| Semantic JSON-LD bundle | <https://chris-page-gov.github.io/okf-ons/okf-bundle.jsonld> |
+| Semantic YAML-LD bundle | <https://chris-page-gov.github.io/okf-ons/okf-bundle.yamlld> |
+| Pinned local JSON-LD context | <https://chris-page-gov.github.io/okf-ons/context/okf-ons.jsonld> |
+| Data and shard manifest | <https://chris-page-gov.github.io/okf-ons/data/manifest.json> |
+| Overview index | <https://chris-page-gov.github.io/okf-ons/data/overview.json> |
+| Analysis overview | <https://chris-page-gov.github.io/okf-ons/data/analysis/overview.json> |
+| Coverage ledger | <https://chris-page-gov.github.io/okf-ons/data/coverage/ledger.json> |
+| Cross-source reconciliation | <https://chris-page-gov.github.io/okf-ons/data/reconciliation/report.json> |
+| Governed release metadata | <https://chris-page-gov.github.io/okf-ons/data/governance/release.json> |
+| Digest-bound context set | <https://chris-page-gov.github.io/okf-ons/data/governance/context-set.json> |
+| Checksums | <https://chris-page-gov.github.io/okf-ons/checksums.json> |
+| Search manifest | <https://chris-page-gov.github.io/okf-ons/data/search/manifest.json> |
+| Standards evaluation | <https://chris-page-gov.github.io/okf-ons/data/standards/evaluation.json> |
+| SDMX evidence | <https://chris-page-gov.github.io/okf-ons/data/standards/sdmx.json> |
+| Evaluation report | <https://chris-page-gov.github.io/okf-ons/data/evaluation/report.json> |
+| MCP binding index | <https://chris-page-gov.github.io/okf-ons/data/ons/mcp-bindings.json> |
+| Spatial index | <https://chris-page-gov.github.io/okf-ons/data/ons/spatial-index.json> |
+| Live demo guide | <https://chris-page-gov.github.io/okf-ons/demo-guide.html> |
+| Accessibility statement | <https://chris-page-gov.github.io/okf-ons/accessibility.html> |
+
+### Repositories, release and provenance
+
+- [OKF-ONS repository](https://github.com/chris-page-gov/okf-ons),
+  [all GitHub Releases](https://github.com/chris-page-gov/okf-ons/releases), and
+  [release v0.2.0](https://github.com/chris-page-gov/okf-ons/releases/tag/v0.2.0)
+- Immutable v0.2.0 downloads:
+  [bundle ZIP](https://github.com/chris-page-gov/okf-ons/releases/download/v0.2.0/okf-ons-v0.2.0-bundle.zip) and
+  [SHA-256 digest](https://github.com/chris-page-gov/okf-ons/releases/download/v0.2.0/okf-ons-v0.2.0-bundle.zip.sha256)
+- [OKF Explorer repository](https://github.com/chris-page-gov/okf-explorer)
+- [Pinned ONSdigital Explore Local Statistics commit](https://github.com/ONSdigital/explore-local-statistics-app/commit/795eaf204f47986f6be248a63f857a42afe4fdf2)
+- [Source register](source/source-register.json),
+  [frozen snapshot manifest](source/demo-snapshot/snapshot.json), and
+  [release changelog](CHANGELOG.md)
+
+### Documentation map
+
+- Product and demonstration:
+  [demo guide](docs/demo-guide.md),
+  [product contract](docs/product-contract.md),
+  [ONS hackathon brief](docs/ONS-HACKATHON-BRIEF.md), and
+  [accessibility statement](accessibility.md)
+- Repository operation:
+  [repository guide](AGENTS.md),
+  [security policy](SECURITY.md),
+  [release changelog](CHANGELOG.md), and
+  [CI publication workflow](.github/workflows/pages.yml); the
+  [AI-client change fragment](changelog.d/20260718-ai-client-harness.md) is
+  retained as pre-release history
+- Metadata and assurance:
+  [metadata model](docs/metadata-model.md),
+  [scope and denominator](docs/scope-and-denominator.md), and
+  [standards register](docs/standards-register.md)
+- MCP and AI access:
+  [MCP selection contract](docs/mcp-selection-contract.md),
+  [MCP client rollout](docs/mcp-client-rollout.md), and
+  [agent-access and evaluation proposal](docs/agent-access-and-evaluation-proposal.md)
+- Evaluation:
+  [evaluation method](docs/evaluation.md),
+  [cross-client trial analysis](docs/ai-client-trial-analysis.md), and the
+  machine-readable
+  [study](evaluation/ai-client/study.json),
+  [client registry](evaluation/ai-client/client-profiles.json),
+  [tasks](evaluation/ai-client/tasks.json),
+  [expected results](evaluation/ai-client/expected.json),
+  [personas and journeys](evaluation/ai-client/personas-and-journeys.json),
+  [issue register](evaluation/ai-client/issue-register.json), and
+  [gold queries](evaluation/gold-queries.json)
+- Research and communications:
+  [research register](research/README.md),
+  [research evidence manifest](research/manifest.json),
+  [architecture manifest](research/architecture-manifest.json),
+  [governed-AI research prompt](research/okf-governed-ai-deep-research-prompt.md),
+  [governed-AI architecture report](research/OKF_Governed_AI_Architecture_Deep_Research_Report_2026-07-20.md), and
+  [publication draft](docs/LINKEDIN-POST.md)
+- Dated AI-client research records:
+  [Claude Desktop access trace](research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace.md),
+  [Antigravity briefing](research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-briefing.md), and
+  [Antigravity postmortem](research/2026-07-18-antigravity-cli-gemini-3-1-pro-okf-ons-postmortem.md)
+- Portable research outputs:
+  [Claude trace DOCX](research/2026-07-18-claude-desktop-cowork-fable-5-okf-ons-access-trace-public-sanitized.docx),
+  [M365 access briefing DOCX](research/2026-07-18-m365-copilot-researcher-okf-ons-access-briefing-public-sanitized.docx),
+  [M365 hosting research DOCX](research/2026-07-18-m365-copilot-researcher-okf-hosting-research-public-sanitized.docx),
+  [governed-AI presentation](research/Governed_AI_Architecture_%282%29.pptx),
+  [enterprise-AI presentation](research/Architecting_Governed_Enterprise_AI%20%281%29.pptx), and the
+  [discovery-bridge visual](research/Reliable_Public_Statistics_Discovery_Bridge.png)
+
+OKF Explorer can load the bundle today through the direct link above. A
+separate Explorer registry and presentation update is recommended so the bundle
+is suggested without pasting its URL and the new authority, rights and
+governance fields are shown as first-class UI rather than only in raw JSON.
 
 ## SDMX support
 
@@ -41,8 +147,10 @@ reproducible, reviewable snapshot rather than changing live acquisitions. It
 publishes:
 
 - a source and coverage ledger that makes incompleteness explicit;
-- a frozen 4,989-record metadata snapshot from ONS Data API (337), Nomis
-  (1,617), and ONS Open Geography (3,035);
+- a frozen 5,097-record metadata snapshot from ONS Data API (337), Nomis
+  (1,617), ONS Open Geography (3,035), and ONS Explore Local Statistics (108);
+- qualified source-producer, service-operator, bundle-publisher and semantic
+  authority roles, with explicit non-endorsement;
 - deterministic search and first-class filter postings;
 - evidence-backed alternative/contrast relationships;
 - exact Census table-code reconciliation across ONS Data API and Nomis;
@@ -50,33 +158,40 @@ publishes:
 - an MCP selection-plan contract; and
 - a reproducible retrieval and metadata-quality evaluation report.
 
-The immutable snapshot ID `monday-2026-07-17` records the Friday 17 July freeze
-for the Monday 20 July 2026 hackathon; it is not a claim that 17 July was a
-Monday.
+The immutable snapshot ID `monday-2026-07-17-r2` extends the Friday 17 July
+freeze with the pinned ELS metadata projection. The `r2` suffix prevents the
+expanded corpus from reusing the original v0.1 snapshot identity; “monday” is
+the demonstrator name, not a claim that 17 July was a Monday.
 
-The public descriptor is designed to be:
+The Explore Local Statistics lane is a deterministic, allowlisted projection
+of the pinned application submodule. It carries 108 ONS-curated indicators from
+24 attributed producers, explains 12 unpublished manifest entries, preserves
+46 valid historical aliases, and removes observation values, status arrays,
+value domains, binaries and geometry. It is a development fixture rather than
+a claim that the internal ELS API is a stable public execution contract. Its
+verified Git `commitAsOf` is kept separate from acquisition time; the frozen
+fixture does not invent a retrieval timestamp that was not recorded.
 
-```text
-https://chris-page-gov.github.io/okf-ons/okf-explorer.json
-```
-
-and to open in OKF Explorer using:
-
-```text
-https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json
-```
+This experimental bundle is independently published by the OKF ONS project.
+Source attribution does not imply endorsement by ONS or another producer.
 
 ## Build
 
-Python 3.11 or later is required. To refresh a snapshot, keep the raw
-acquisition cache outside the repository; the checked-in Monday build is
-generated from `source/demo-snapshot`.
+Python 3.11 or later is required. A recursive clone is required because normal
+GitHub source archives do not contain the pinned ELS submodule. The release
+bundle ZIP linked above is the self-contained publication artifact.
+
+To reproduce `v0.2.0` from its checked-in frozen snapshot:
 
 ```bash
-python scripts/acquire_snapshot.py \
-  --cache-dir /path/to/raw-cache \
-  --output-dir /path/to/public-snapshots \
-  --snapshot-id monday-2026-07-17
+git clone --recurse-submodules --branch v0.2.0 \
+  https://github.com/chris-page-gov/okf-ons.git
+cd okf-ons
+python scripts/project_els_snapshot.py \
+  --submodule-dir vendor/explore-local-statistics-app \
+  --output output/ons-explore-local-statistics.json
+cmp output/ons-explore-local-statistics.json \
+  source/demo-snapshot/ons-explore-local-statistics.json
 python scripts/build_bundle.py \
   --snapshot-dir source/demo-snapshot \
   --output bundle
@@ -86,8 +201,25 @@ python scripts/build_bundle.py \
   --check
 ```
 
+For an existing clone, run `git submodule update --init --recursive` before the
+projector. To acquire a future snapshot, keep the raw cache outside the
+repository, use `--mode refresh`, and choose a new immutable identity—never
+overwrite `monday-2026-07-17-r2`:
+
+```bash
+python scripts/project_els_snapshot.py \
+  --submodule-dir vendor/explore-local-statistics-app \
+  --output /path/to/els-projection.json
+python scripts/acquire_snapshot.py \
+  --cache-dir /path/to/raw-cache \
+  --output-dir /path/to/public-snapshots \
+  --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
+  --mode refresh \
+  --projected-acquisition /path/to/els-projection.json
+```
+
 Acquisition is resumable and external. `bundle/` is deterministic from a
-frozen snapshot.
+validated frozen snapshot.
 
 The sendable [ONS hackathon brief](docs/ONS-HACKATHON-BRIEF.md) explains the
 work package, demo route and questions for ONS. See also the
@@ -183,5 +315,6 @@ intentionally out of scope. See
 ## Licensing
 
 Code is MIT licensed. Source metadata remains subject to its stated upstream
-licence, normally the Open Government Licence v3.0. Generated records preserve
-source and licence evidence.
+licence, often the Open Government Licence v3.0. The bundle makes no blanket
+licence claim: ELS record rights remain `not-evaluated` pending source-by-source
+review, and generated records preserve the available source and rights evidence.

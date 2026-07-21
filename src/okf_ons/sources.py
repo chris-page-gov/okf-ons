@@ -33,7 +33,13 @@ CacheMode = Literal["prefer-cache", "refresh", "frozen"]
 
 _CACHE_SCHEMA = "okf-ons.source-page.v1"
 _PUBLIC_RESULT_SCHEMA = "okf-ons.source-acquisition.v1"
-_SUPPORTED_ADAPTERS = {"ons-data-api", "nomis-sdmx", "open-geography-search"}
+_SUPPORTED_ADAPTERS = {
+    "els-metadata-projection",
+    "nomis-sdmx",
+    "ons-data-api",
+    "open-geography-search",
+}
+_SUPPORTED_ACQUISITION_METHODS = {"http-json", "local-projection"}
 _SAFE_RESPONSE_HEADERS = ("content-type", "etag", "last-modified")
 _SECRET_QUERY_KEYS = {
     "access_token",
@@ -70,6 +76,7 @@ class SourceDefinition:
     source_id: str
     title: str
     adapter: str
+    acquisition_method: str
     endpoint: str
     publisher_name: str
     publisher_url: str
@@ -91,6 +98,7 @@ class SourceDefinition:
             source_id=_require_text(value, "id"),
             title=_require_text(value, "title"),
             adapter=_require_text(value, "adapter"),
+            acquisition_method=str(value.get("acquisitionMethod") or "http-json").strip(),
             endpoint=_require_text(value, "endpoint"),
             publisher_name=_require_text(publisher, "name"),
             publisher_url=_require_text(publisher, "url"),
@@ -119,6 +127,18 @@ class SourceDefinition:
         if self.adapter not in _SUPPORTED_ADAPTERS:
             raise SourceConfigurationError(
                 f"Source {self.source_id!r} uses unsupported adapter {self.adapter!r}"
+            )
+        if self.acquisition_method not in _SUPPORTED_ACQUISITION_METHODS:
+            raise SourceConfigurationError(
+                f"Source {self.source_id!r} uses unsupported acquisition method "
+                f"{self.acquisition_method!r}"
+            )
+        if (
+            self.adapter == "els-metadata-projection"
+            and self.acquisition_method != "local-projection"
+        ):
+            raise SourceConfigurationError(
+                "The ELS metadata adapter must use the local-projection acquisition method"
             )
         if self.default_page_size > self.maximum_page_size:
             raise SourceConfigurationError(
@@ -157,6 +177,8 @@ class SourceDefinition:
         return {
             "id": self.source_id,
             "title": self.title,
+            "adapter": self.adapter,
+            "acquisitionMethod": self.acquisition_method,
             "publisher": {
                 "name": self.publisher_name,
                 "url": self.publisher_url,
@@ -381,6 +403,12 @@ def acquire_source(
     ``prefer-cache`` resumes a partial acquisition.  ``refresh`` replaces every
     page encountered in this run.
     """
+
+    if source.acquisition_method != "http-json":
+        raise SourceAcquisitionError(
+            f"Source {source.source_id!r} is acquired by a deterministic local projector, "
+            "not the HTTP acquisition engine"
+        )
 
     if mode not in {"prefer-cache", "refresh", "frozen"}:
         raise ValueError(f"Unsupported cache mode {mode!r}")

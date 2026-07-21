@@ -59,6 +59,7 @@ def test_source_register_is_official_metadata_only_and_secret_free() -> None:
 
     assert set(sources) == {
         "ons-data-api",
+        "ons-explore-local-statistics",
         "nomis-dataset-definitions",
         "ons-open-geography",
     }
@@ -83,6 +84,15 @@ def test_register_rejects_credential_query_parameters(tmp_path: Path) -> None:
 
     with pytest.raises(SourceConfigurationError, match="credential query"):
         load_source_register(unsafe)
+
+
+def test_els_lane_requires_the_deterministic_local_projector(tmp_path: Path) -> None:
+    source = load_source_register(REGISTER)["ons-explore-local-statistics"]
+
+    assert source.adapter == "els-metadata-projection"
+    assert source.acquisition_method == "local-projection"
+    with pytest.raises(SourceAcquisitionError, match="deterministic local projector"):
+        acquire_source(source, cache_directory=tmp_path, transport=NoNetworkTransport())
 
 
 def test_ons_pages_resume_and_replay_deterministically(

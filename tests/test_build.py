@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from okf_ons import __version__  # noqa: E402
 from okf_ons.build import canonical_json, check_bundle, compile_bundle, default_inputs  # noqa: E402
 
 
@@ -25,10 +26,22 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     evaluation = result["evaluation"]
 
     assert descriptor["schema"] == "okf-explorer-large-corpus.v1"
-    assert descriptor["counts"]["records"] == 4_989
+    assert descriptor["version"] == __version__
+    assert descriptor["counts"]["records"] == 5_097
+    assert descriptor["counts"]["sources"] == 4
+    assert descriptor["counts"]["publishers"] == 24
     assert descriptor["scope"]["complete_ons_corpus"] is False
-    assert coverage["implementedScope"]["represented"] == 4_989
+    assert "license" not in descriptor
+    assert descriptor["rights"]["status"] == "mixed-record-level"
+    assert descriptor["rights"]["recordLevel"] is True
+    assert descriptor["rights"]["notEvaluatedRecordCount"] == 108
+    assert descriptor["rights"]["codeLicense"].endswith(
+        f"/blob/v{__version__}/LICENSE"
+    )
+    assert "No single licence" in descriptor["rights"]["statement"]
+    assert coverage["implementedScope"]["represented"] == 5_097
     assert coverage["implementedScope"]["implementedLaneUnexplainedOmissions"] == 0
+    assert coverage["implementedScope"]["explainedExclusionCount"] == 12
     assert coverage["unexplained_omissions"] is None
     assert coverage["releaseGate"]["passed"] is False
     assert reconciliation["anchor_codes_detected"] == 284
@@ -47,6 +60,8 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/search/manifest.json",
         "data/demo/contrast-records.json",
         "data/coverage/ledger.json",
+        "data/governance/context-set.json",
+        "data/governance/release.json",
         "data/standards/evaluation.json",
         "data/standards/sdmx.json",
         "data/evaluation/report.json",
@@ -102,7 +117,13 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         for path in data_manifest["chunks"]["publishers"]
         for row in json.loads((output / path).read_text())
     ]
-    assert publisher_rows[0]["resource_count"] == len(resource_datasets)
+    assert len(publisher_rows) == 24
+    assert sum(row["resource_count"] for row in publisher_rows) == 5_103
+    ons_publisher = next(
+        row for row in publisher_rows if row["id"] == "office-for-national-statistics"
+    )
+    assert ons_publisher["resource_count"] == 5_044
+    assert all("does not imply endorsement" in row["description"] for row in publisher_rows)
 
     for key in (
         "metadata_evidence_band",
@@ -126,7 +147,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     record_ids = {row["id"] for row in dataset_rows}
     assert all(row["record_id"] in record_ids for row in mcp_bindings["bindings"])
     assert mcp_bindings["availableBindingCount"] == 1_954
-    assert mcp_bindings["plannedBindingCount"] == 3_035
+    assert mcp_bindings["plannedBindingCount"] == 3_143
     available_tools = {
         row.get("tool")
         for row in mcp_bindings["bindings"]
@@ -150,6 +171,18 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         row.get("tool") is None and row.get("binding_status") == "planned"
         for row in mcp_bindings["bindings"]
         if row.get("source_surface") == "ons-open-geography"
+    )
+    els_bindings = [
+        row
+        for row in mcp_bindings["bindings"]
+        if row.get("source_surface") == "ons-explore-local-statistics"
+    ]
+    assert len(els_bindings) == 108
+    assert all(
+        row.get("mcp_available") is False
+        and row.get("binding_status") == "planned"
+        and row.get("complete") is False
+        for row in els_bindings
     )
     assert all(row["record_id"] in record_ids for row in spatial_index["records"])
     assert spatial_index["recordsWithBbox"] == 2_687
@@ -181,13 +214,93 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert any(row.get("portal_owner") for row in geography_rows)
     assert any(row.get("source_organisation") for row in geography_rows)
 
+    els_rows = [
+        row
+        for row in dataset_rows
+        if row["source_surface"] == "ons-explore-local-statistics"
+    ]
+    assert len(els_rows) == 108
+    population = next(row for row in els_rows if row["native_id"] == "population-count")
+    assert population["id"] == (
+        "ons-explore-local-statistics:indicator:population-count"
+    )
+    assert population["dataset_family"] == "population-indicators"
+    assert population["geography_vintage"] == 2025
+    assert population["metadata_derivation"]["modes"]
+    assert population["surface_operator"]["name"] == "Office for National Statistics"
+    assert population["authority"]["notEndorsedBySource"] is True
+    canonical_bundle_publisher_id = "https://github.com/chris-page-gov/okf-ons"
+    assert population["authority"]["bundlePublisher"]["id"] == (
+        canonical_bundle_publisher_id
+    )
+    assert population["authority"]["semanticAuthority"]["id"] == (
+        canonical_bundle_publisher_id
+    )
+    assert {
+        row["authority"]["bundlePublisher"]["id"] for row in dataset_rows
+    } == {canonical_bundle_publisher_id}
+    assert {
+        row["authority"]["semanticAuthority"]["id"] for row in dataset_rows
+    } == {canonical_bundle_publisher_id}
+    assert population["license_id"] == "not-evaluated"
+    assert population["rights_status"] == "not-evaluated"
+    assert all(row["rights_status"] == "not-evaluated" for row in els_rows)
+    assert descriptor["rights"]["notEvaluatedRecordCount"] == sum(
+        row.get("rights_status") == "not-evaluated"
+        or row.get("license_id") == "not-evaluated"
+        for row in dataset_rows
+    )
+    assert population["source_publishers"]
+    multi_producer = next(row for row in els_rows if len(row["source_publishers"]) > 1)
+    assert multi_producer["publisher"] == "multiple-source-producers"
+    assert multi_producer["publisher_title"].endswith("attributed source producers")
+
     semantic_bundle = json.loads((output / "okf-bundle.jsonld").read_text())
+    assert semantic_bundle["publisher"] == canonical_bundle_publisher_id
+    assert semantic_bundle["bundlePublisher"] == canonical_bundle_publisher_id
+    assert semantic_bundle["semanticAuthority"] == canonical_bundle_publisher_id
+    assert {
+        row["bundlePublisher"] for row in semantic_bundle["dataset"]
+    } == {canonical_bundle_publisher_id}
+    assert {
+        row["semanticAuthority"] for row in semantic_bundle["dataset"]
+    } == {canonical_bundle_publisher_id}
+    assert semantic_bundle["notEndorsedBySource"] is True
     assert semantic_bundle["conformsTo"]
     assert "do not assert" in semantic_bundle["alignmentClaim"]
     assert all("conformsTo" not in row for row in semantic_bundle["dataset"])
     context = json.loads((output / "context/okf-ons.jsonld").read_text())["@context"]
     assert context["qb"] == "http://purl.org/linked-data/cube#"
     assert "sdmx" not in context
+    assert context["dataset"] == {"@id": "dcat:dataset", "@type": "@id"}
+    assert context["contextSet"] == {"@id": "okf:contextSet", "@type": "@id"}
+    context_set = json.loads((output / "data/governance/context-set.json").read_text())
+    context_bytes = (output / "context/okf-ons.jsonld").read_bytes()
+    assert context_set["networkRetrievalAllowed"] is False
+    assert context_set["contexts"][0]["sha256"] == hashlib.sha256(context_bytes).hexdigest()
+    governance = json.loads((output / "data/governance/release.json").read_text())
+    assert governance["integrity"]["authenticatedSignature"] is False
+    assert governance["releaseVersion"] == __version__
+    assert governance["buildProvenance"]["softwareVersion"] == __version__
+    assert governance["authority"]["notEndorsedBySource"] is True
+    assert governance["authority"]["bundlePublisher"]["id"] == (
+        canonical_bundle_publisher_id
+    )
+    assert governance["authority"]["semanticAuthority"]["id"] == (
+        canonical_bundle_publisher_id
+    )
+    assert descriptor["publisher"] == canonical_bundle_publisher_id
+    assert descriptor["authority"] == governance["authority"]
+    assert governance["liveExecutionAvailable"] is False
+    els_source_evidence = next(
+        row
+        for row in governance["sourceEvidence"]
+        if row["sourceId"] == "ons-explore-local-statistics"
+    )
+    assert els_source_evidence["acquisitionRetrievedAt"] == ""
+    assert els_source_evidence["commitAsOf"] == "2026-07-17T08:35:03Z"
+    assert els_source_evidence["sourceAsOf"] == els_source_evidence["commitAsOf"]
+    assert els_source_evidence["sourceAsOfBasis"] == "pinned-source-commit-as-of"
 
     sdmx = json.loads((output / "data/standards/sdmx.json").read_text())
     assert sdmx["registeredStandard"]["standardId"] == "sdmx-3-1"

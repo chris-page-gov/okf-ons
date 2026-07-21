@@ -102,8 +102,10 @@ def test_main_page_has_progressive_accessible_discovery_structure() -> None:
     }
     assert 'aria-live="polite"' in html
     assert "Open in OKF Explorer" in html
-    assert "searches all 4,989 frozen records" in html
+    assert "searches all 5,097 frozen records" in html
     assert "No API key is requested or retained." in html
+    assert "non-executing candidate plan" in html
+    assert "validated plan" not in html.casefold()
 
 
 def test_static_page_assets_are_project_relative_and_present() -> None:
@@ -156,7 +158,7 @@ def test_javascript_uses_canonical_generated_entrypoints_and_safe_dom() -> None:
     assert "record.recordId" in script
     assert "item.nativeId" in script
     assert "statistical accuracy" in script
-    assert "GitHub Pages does not call ONS" in script
+    assert "GitHub Pages does not call upstream APIs or MCP" in script
     assert '"Statistical producer"' in script
     assert "Not evidenced in this metadata record" in script
     assert '"Catalogue publisher / metadata service"' in script
@@ -222,11 +224,14 @@ def test_pages_workflow_validates_prs_and_deploys_only_main() -> None:
     assert "contents: read" in text_value
     assert "pages: write" in text_value
     assert "id-token: write" in text_value
-    assert "actions/checkout@v7" in text_value
-    assert "actions/setup-python@v6" in text_value
-    assert "actions/configure-pages@v6" in text_value
-    assert "actions/upload-pages-artifact@v5" in text_value
-    assert "actions/deploy-pages@v5" in text_value
+    for action, version in (
+        ("actions/checkout", "v7"),
+        ("actions/setup-python", "v6"),
+        ("actions/configure-pages", "v6"),
+        ("actions/upload-pages-artifact", "v5"),
+        ("actions/deploy-pages", "v5"),
+    ):
+        assert re.search(rf"uses: {re.escape(action)}@[0-9a-f]{{40}} # {version}", text_value)
     assert "source/demo-snapshot" in text_value
     assert "python scripts/build_bundle.py" in text_value
     assert "secrets." not in text_value

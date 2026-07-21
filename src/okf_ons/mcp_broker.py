@@ -15,22 +15,27 @@ import re
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import quote, unquote
 
+from . import __version__
 from .build import default_inputs, load_frozen_corpus
-from .model import build_cross_source_reconciliation, tokenize
+from .model import build_cross_source_reconciliation, content_sha256, tokenize
 from .search import rank_records, search_tokenize
 
-PROTOCOL_VERSION = "2025-06-18"
+PROTOCOL_VERSION = "2025-11-25"
+SUPPORTED_PROTOCOL_VERSIONS = frozenset({PROTOCOL_VERSION, "2025-06-18"})
 SERVER_NAME = "okf-ons-metadata-broker"
-SERVER_VERSION = "0.1.0"
+SERVER_VERSION = __version__
+MCP_RECORD_SCHEMA = "okf-ons.mcp-record.v1"
+RECORD_CANONICALIZATION = "okf-ons.sorted-compact-json.v1"
 
 MATERIAL_CAVEATS = {
     "metadata-only": "The broker returns metadata and never observation values.",
     "incomplete-ons-corpus": (
-        "The frozen demonstrator represents three ONS metadata lanes, not all ONS data."
+        "The frozen demonstrator represents bounded metadata lanes, not all ONS data."
     ),
     "accuracy-not-evaluated": (
         "Metadata evidence availability does not establish statistical accuracy."
@@ -80,14 +85,24 @@ _PROHIBITED_TEXT = (
     re.compile(r"\bAIza[A-Za-z0-9_-]{30,}\b"),
     re.compile(r"(?i)(?:/Users/|/Volumes/|[A-Z]:\\\\Users\\\\)"),
 )
+_RFC3339_DATE_TIME = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 _CONTRAST_FIELDS = (
     ("native_id", "/native_id"),
     ("source_surface", "/source_surface"),
     ("record_type", "/record_type"),
+    ("dataset_family", "/dataset_family"),
+    ("subtopic", "/subtopic"),
+    ("measure", "/measure"),
+    ("unit_of_measure", "/unit_of_measure"),
     ("frequency", "/frequency"),
     ("population_type", "/population_type"),
     ("geography", "/geography"),
+    ("geography_vintage", "/geography_vintage"),
     ("time_coverage", "/time_coverage"),
+    ("source_publishers", "/source_publishers"),
+    ("metadata_derivation", "/metadata_derivation"),
     ("latest_edition", "/latest_edition"),
     ("latest_version", "/latest_version"),
     ("state", "/state"),
@@ -163,6 +178,38 @@ def _require_string(value: object, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise BrokerToolError("INVALID_ARGUMENT", f"{label} must be a non-empty string.")
     return value.strip()
+
+
+def _normalise_expiry(value: object) -> str | None:
+    """Validate and canonicalise a caller-declared RFC 3339 expiry.
+
+    The metadata broker deliberately does not compare the expiry with its local
+    clock. A trusted execution boundary must make that live decision.
+    """
+
+    if value is None:
+        return None
+    text = _require_string(value, "expires_at")
+    if not _RFC3339_DATE_TIME.fullmatch(text):
+        raise BrokerToolError(
+            "INVALID_ARGUMENT",
+            "expires_at must be an RFC 3339 date-time with a UTC offset.",
+        )
+    try:
+        parsed = datetime.fromisoformat(
+            f"{text[:-1]}+00:00" if text.endswith("Z") else text
+        )
+    except ValueError as error:
+        raise BrokerToolError(
+            "INVALID_ARGUMENT",
+            "expires_at must be an RFC 3339 date-time with a UTC offset.",
+        ) from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise BrokerToolError(
+            "INVALID_ARGUMENT",
+            "expires_at must include Z or an explicit UTC offset.",
+        )
+    return parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _tool_definition(
@@ -253,14 +300,18 @@ TOOL_DEFINITIONS = [
         "okf.prepare_mcp_plan",
         "Prepare a non-executing MCP selection plan",
         (
-            "Bind the exact frozen identity to its inspection/query tools, preserve "
-            "unresolved dimensions and reject credential fields. Never executes a query."
+            "Bind the exact frozen identity and snapshot digest to its inspection/query "
+            "tools, audience, purpose and caller-declared expiry. Preserve unresolved "
+            "dimensions and reject credential fields. Never authorises or executes a query."
         ),
         {
             "type": "object",
             "properties": {
                 "record_id": {"type": "string", "minLength": 1},
                 "arguments": {"type": "object", "default": {}},
+                "audience": {"type": "string", "minLength": 1, "maxLength": 500},
+                "purpose": {"type": "string", "minLength": 1, "maxLength": 500},
+                "expires_at": {"type": "string", "format": "date-time"},
             },
             "required": ["record_id"],
             "additionalProperties": False,
@@ -314,6 +365,70 @@ TOOL_DEFINITIONS = [
 ]
 
 
+def _build_identity_index(records: list[dict[str, Any]]) -> dict[str, set[str]]:
+    """Index canonical identities first, then aliases without shadowing them."""
+
+    index: dict[str, set[str]] = defaultdict(set)
+    for record in records:
+        record_id = str(record["id"])
+        identities = (
+            record.get("id"),
+            record.get("native_id"),
+            record.get("name"),
+            record.get("route"),
+            record.get("open"),
+        )
+        for identity in identities:
+            if identity not in {None, ""}:
+                index[str(identity).casefold()].add(record_id)
+
+    alias_owners: dict[str, tuple[str, str]] = {}
+    for record in records:
+        record_id = str(record["id"])
+        aliases = record.get("native_aliases", [])
+        if not isinstance(aliases, list):
+            raise RuntimeError(f"Record {record_id!r} has non-list native_aliases")
+        for alias in aliases:
+            if not isinstance(alias, str) or not alias or alias != alias.strip():
+                raise RuntimeError(f"Record {record_id!r} has an invalid native alias identity")
+            key = alias.casefold()
+            if key in index:
+                raise RuntimeError(
+                    f"Alias identity {alias!r} for {record_id!r} shadows an existing identity"
+                )
+            owner = alias_owners.get(key)
+            if owner is not None and owner[0] != record_id:
+                raise RuntimeError(
+                    f"Alias identity {alias!r} maps to both {owner[0]!r} and {record_id!r}"
+                )
+            alias_owners[key] = (record_id, alias)
+
+    for key, (record_id, _alias) in alias_owners.items():
+        index[key].add(record_id)
+
+    # Evaluation aliases are local test/convenience labels, so they have lower
+    # precedence than both current source identities and source-native history.
+    # Corpus expansion can legitimately introduce a current native identity
+    # that matches an older evaluation label; never make that identity
+    # ambiguous merely to preserve the convenience mapping.
+    for record in records:
+        record_id = str(record["id"])
+        aliases = record.get("evaluation_aliases", [])
+        if not isinstance(aliases, list):
+            raise RuntimeError(f"Record {record_id!r} has non-list evaluation_aliases")
+        for alias in aliases:
+            if not isinstance(alias, str) or not alias or alias != alias.strip():
+                raise RuntimeError(
+                    f"Record {record_id!r} has an invalid evaluation_aliases identity"
+                )
+            key = alias.casefold()
+            owners = index.get(key)
+            if owners and record_id not in owners:
+                continue
+            index[key].add(record_id)
+    return dict(index)
+
+
 class MCPBroker:
     """Read-only operations over one checked-in frozen corpus."""
 
@@ -326,19 +441,7 @@ class MCPBroker:
         # expensive all-record similarity pass is intentionally lazy below.
         build_cross_source_reconciliation(self.records)
         self.records_by_id = {str(record["id"]): record for record in self.records}
-        self.identity_index: dict[str, set[str]] = defaultdict(set)
-        for record in self.records:
-            identities = (
-                record.get("id"),
-                record.get("native_id"),
-                record.get("name"),
-                record.get("route"),
-                record.get("open"),
-                *record.get("evaluation_aliases", []),
-            )
-            for identity in identities:
-                if identity not in {None, ""}:
-                    self.identity_index[str(identity).casefold()].add(str(record["id"]))
+        self.identity_index = _build_identity_index(self.records)
 
         self.token_sets: list[set[str]] = []
         self.inverted_tokens: dict[str, list[int]] = defaultdict(list)
@@ -383,6 +486,10 @@ class MCPBroker:
     def snapshot_id(self) -> str:
         return str(self.corpus.snapshot["snapshotId"])
 
+    @property
+    def snapshot_sha256(self) -> str:
+        return content_sha256(self.corpus.snapshot)
+
     def _resolve_record(self, identifier: object) -> dict[str, Any]:
         text = _require_string(identifier, "identifier")
         exact = self.records_by_id.get(text)
@@ -406,12 +513,20 @@ class MCPBroker:
     @staticmethod
     def _contrast_values(record: Mapping[str, Any]) -> dict[str, Any]:
         return {
+            "native_id": record.get("native_id") or "",
             "source_surface": record.get("source_surface") or "",
             "record_type": record.get("record_type") or "",
+            "dataset_family": record.get("dataset_family") or "",
+            "subtopic": record.get("subtopic") or "",
+            "measure": record.get("measure") or "",
+            "unit_of_measure": record.get("unit_of_measure") or "",
             "frequency": record.get("frequency") or "",
             "population_type": record.get("population_type") or "",
             "geography": record.get("geography") or [],
+            "geography_vintage": record.get("geography_vintage") or "",
             "time_coverage": record.get("time_coverage") or {},
+            "source_publishers": record.get("source_publishers") or [],
+            "metadata_derivation": record.get("metadata_derivation") or {},
             "latest_edition": record.get("latest_edition") or "",
             "latest_version": record.get("latest_version") or "",
             "state": record.get("state") or "",
@@ -514,9 +629,7 @@ class MCPBroker:
             "schema": "okf-ons.mcp-descriptor.v1",
             "title": "ONS data discovery OKF metadata broker",
             "snapshotId": self.snapshot_id,
-            "snapshotSha256": hashlib.sha256(
-                canonical_json(self.corpus.snapshot).encode("utf-8")
-            ).hexdigest(),
+            "snapshotSha256": self.snapshot_sha256,
             "metadataOnly": True,
             "observationsIncluded": False,
             "networkAccess": False,
@@ -695,22 +808,19 @@ class MCPBroker:
 
     def get_record(self, identifier: object) -> dict[str, Any]:
         record = self._resolve_record(identifier)
-        hydrated = dict(record)
-        alternatives = self._alternatives_for(record)
-        hydrated["alternatives"] = alternatives
-        hydrated["alternative_count"] = len(alternatives)
+        hydrated = self._hydrated_record(record)
+        binding = self._record_binding(hydrated)
         return {
-            "schema": "okf-ons.mcp-record.v1",
+            "schema": MCP_RECORD_SCHEMA,
             "snapshotId": self.snapshot_id,
             "metadataOnly": True,
             "observationsIncluded": False,
             "hydration": {
                 "status": "complete",
                 "resolved_by": "exact-identity",
-                "record_resource": (
-                    "okf://ons/record/" + quote(str(record["id"]), safe="")
-                ),
+                "record_resource": binding["record_resource"],
             },
+            "recordBinding": binding,
             "record": hydrated,
             "materialCaveatIds": [
                 "metadata-only",
@@ -718,6 +828,25 @@ class MCPBroker:
                 "evidence-not-fitness-certification",
                 "alignment-not-certification",
             ],
+        }
+
+    def _hydrated_record(self, record: Mapping[str, Any]) -> dict[str, Any]:
+        hydrated = dict(record)
+        alternatives = self._alternatives_for(record)
+        hydrated["alternatives"] = alternatives
+        hydrated["alternative_count"] = len(alternatives)
+        return hydrated
+
+    @staticmethod
+    def _record_binding(hydrated: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            "record_resource": (
+                "okf://ons/record/" + quote(str(hydrated["id"]), safe="")
+            ),
+            "record_schema": MCP_RECORD_SCHEMA,
+            "record_json_pointer": "/record",
+            "canonicalization": RECORD_CANONICALIZATION,
+            "record_sha256": content_sha256(hydrated),
         }
 
     def compare(self, identifiers: object) -> dict[str, Any]:
@@ -801,6 +930,27 @@ class MCPBroker:
         record = self._resolve_record(arguments.get("record_id"))
         proposed = arguments.get("arguments", {})
         proposed = _require_mapping(proposed, "arguments")
+        purpose_value = arguments.get("purpose")
+        purpose = (
+            _require_string(purpose_value, "purpose")
+            if purpose_value is not None
+            else None
+        )
+        if purpose is not None and len(purpose) > 500:
+            raise BrokerToolError(
+                "INVALID_ARGUMENT", "purpose must be no more than 500 characters."
+            )
+        audience_value = arguments.get("audience")
+        audience = (
+            _require_string(audience_value, "audience")
+            if audience_value is not None
+            else None
+        )
+        if audience is not None and len(audience) > 500:
+            raise BrokerToolError(
+                "INVALID_ARGUMENT", "audience must be no more than 500 characters."
+            )
+        expires_at = _normalise_expiry(arguments.get("expires_at"))
         binding = record.get("selection") if isinstance(record.get("selection"), Mapping) else {}
         fixed = (
             dict(binding.get("arguments") or {})
@@ -846,22 +996,68 @@ class MCPBroker:
             status = "binding-planned"
         else:
             status = "requires-live-inspection"
-        return {
+        provenance = (
+            record.get("provenance")
+            if isinstance(record.get("provenance"), Mapping)
+            else {}
+        )
+        if provenance.get("source_as_of"):
+            source_as_of = str(provenance["source_as_of"])
+            source_as_of_basis = str(
+                provenance.get("source_as_of_basis") or "provenance.source_as_of"
+            )
+        elif record.get("metadata_modified"):
+            source_as_of = str(record["metadata_modified"])
+            source_as_of_basis = "metadata_modified"
+        else:
+            source_as_of = None
+            source_as_of_basis = "not-evidenced"
+
+        selection_complete = bool(
+            available and not conflicts and not unvalidated and not unknown_dimensions
+        )
+        frozen_metadata_validated = not conflicts
+        record_binding = self._record_binding(self._hydrated_record(record))
+        plan = {
             "schema": "okf-ons-selection-plan.v1",
             "snapshotId": self.snapshot_id,
+            "snapshot_binding": {
+                "snapshot_id": self.snapshot_id,
+                "snapshot_sha256": self.snapshot_sha256,
+                **record_binding,
+            },
+            "source_as_of": source_as_of,
+            "source_as_of_basis": source_as_of_basis,
             "source": record.get("source_surface"),
             "record_id": record["id"],
             "native_id": record.get("native_id"),
+            "audience": audience,
+            "audience_declared": audience is not None,
+            "purpose": purpose,
+            "purpose_declared": purpose is not None,
+            "expires_at": expires_at,
+            "expiry": {
+                "status": "requires-live-evaluation" if expires_at else "missing",
+                "evaluated": False,
+                "required_for_execution": True,
+                "evaluation_boundary": "trusted-live-execution-broker",
+            },
             "inspection_tool": binding.get("tool"),
             "query_tool": binding.get("query_tool"),
             "arguments": fixed,
             "proposed_unvalidated_arguments": unvalidated,
-            "complete": False,
+            "selection_complete": selection_complete,
+            "frozen_metadata_validated": frozen_metadata_validated,
+            "live_source_validated": False,
+            "authorised": False,
+            "executable": False,
+            # Backward-compatible alias for clients of the original v1 envelope.
+            "complete": selection_complete,
             "unknown_dimensions": unknown_dimensions,
             "invalid_options": conflicts,
             "validation": {
                 "status": status,
-                "identity_binding_valid": not conflicts,
+                "identity_binding_valid": frozen_metadata_validated,
                 "binding_available": available,
                 "live_validation_performed": False,
                 "reason": binding.get("reason")
@@ -874,6 +1070,8 @@ class MCPBroker:
             ),
             "materialCaveatIds": ["selection-incomplete-no-execution"],
         }
+        plan_id = content_sha256(plan)
+        return {"plan_id": f"sha256:{plan_id}", **plan}
 
     def _validate_answer_record_references(self, submission: Mapping[str, Any]) -> None:
         chosen = submission.get("chosen_record_id")
@@ -1073,11 +1271,17 @@ class MCPBroker:
                 "executionAllowed": False,
                 "rules": [
                     "Resolve an exact frozen record identity.",
+                    "Bind the plan ID to the frozen snapshot and record digests.",
                     "Preserve native dataset, edition and version identifiers.",
+                    (
+                        "Record source-as-of evidence, purpose and expiry without "
+                        "treating them as authorisation."
+                    ),
                     "Inspect the live MCP schema before selecting dimensions or options.",
                     "Leave unvalidated dimensions explicit.",
                     "Never pass credentials to this broker.",
-                    "Never claim that a plan was executed by this broker.",
+                    "Keep live_source_validated, authorised, executable and executed false.",
+                    "Never claim that a plan was authorised or executed by this broker.",
                 ],
             }
         prefix = "okf://ons/record/"
@@ -1150,7 +1354,7 @@ def handle_message(broker: MCPBroker, message: object) -> dict[str, Any] | None:
             requested = params.get("protocolVersion")
             protocol = (
                 requested
-                if isinstance(requested, str) and requested == PROTOCOL_VERSION
+                if isinstance(requested, str) and requested in SUPPORTED_PROTOCOL_VERSIONS
                 else PROTOCOL_VERSION
             )
             result = {

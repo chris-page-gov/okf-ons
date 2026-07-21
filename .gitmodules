@@ -1,0 +1,3 @@
+[submodule "vendor/explore-local-statistics-app"]
+	path = vendor/explore-local-statistics-app
+	url = https://github.com/ONSdigital/explore-local-statistics-app.git

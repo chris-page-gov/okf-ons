@@ -1,6 +1,6 @@
 {
   "schemaVersion": "okf-ons.evaluation-aliases.v1",
-  "snapshotId": "monday-2026-07-17",
+  "snapshotId": "monday-2026-07-17-r2",
   "policy": {
     "meaning": "Aliases reconcile a curated evaluation concept to one source-qualified record in the frozen snapshot.",
     "minimumEvidence": "The source title and metadata must match the intended statistical product; a merely similar title is not enough.",

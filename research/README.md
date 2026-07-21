@@ -84,6 +84,10 @@ The following 20 July architecture-research artefacts are separate from the
 
 - [`okf-governed-ai-deep-research-prompt.md`](okf-governed-ai-deep-research-prompt.md)
   is a research design and question set, not a completed report.
+- [`OKF_Governed_AI_Architecture_Deep_Research_Report_2026-07-20.md`](OKF_Governed_AI_Architecture_Deep_Research_Report_2026-07-20.md)
+  is the generated research assessment at its dated repository snapshot. It is
+  not factually validated, its footnote definitions are absent, and its
+  repository assessment predates the current ELS integration and submodule.
 - [`Governed_AI_Architecture_(2).pptx`](Governed_AI_Architecture_(2).pptx) and
   [`Architecting_Governed_Enterprise_AI (1).pptx`](Architecting_Governed_Enterprise_AI%20(1).pptx)
   are 15-slide, image-based architecture-research presentations.

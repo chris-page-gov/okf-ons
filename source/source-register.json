@@ -289,6 +289,50 @@
         "features.properties.typeKeywords",
         "features.properties.modified"
       ]
+    },
+    {
+      "id": "ons-explore-local-statistics",
+      "title": "ONS Explore Local Statistics indicator metadata",
+      "adapter": "els-metadata-projection",
+      "acquisitionMethod": "local-projection",
+      "interfaceStatus": "internal-undocumented-development-fixture",
+      "publisher": {
+        "name": "Office for National Statistics",
+        "url": "https://www.ons.gov.uk/explore-local-statistics/"
+      },
+      "endpoint": "https://www.ons.gov.uk/explore-local-statistics/api/v1/metadata/indicators",
+      "responseFormat": "Sanitised projection of pinned Explore Local Statistics JSON-stat metadata",
+      "standards": [
+        "JSON-stat 2.0 source metadata",
+        "HTTPS public discovery surface"
+      ],
+      "scope": {
+        "includes": [
+          "Indicator identity, labels, descriptions, topics and dataset-family references",
+          "Source-producer links and dates, caveats, measure, unit, frequency and declared statistical flags",
+          "Dimension names, roles, category counts and bounded non-geographic options plus declared and structure-derived geography and time coverage"
+        ],
+        "excludes": [
+          "Observation values, status arrays and value domains",
+          "High-volume area or period category members derived from observation structure",
+          "Binary downloads, compressed data, full geometry and postcode or request results"
+        ]
+      },
+      "identityFields": [
+        "link.item.extension.slug",
+        "link.item.extension.dataset",
+        "link.item.extension.code"
+      ],
+      "pagination": {
+        "strategy": "single-pinned-projection",
+        "defaultPageSize": 200,
+        "maximumPageSize": 200
+      },
+      "crossReferences": [
+        "link.item.extension.source.href",
+        "link.item.extension.dataset",
+        "indicator_redirects"
+      ]
     }
   ]
 }

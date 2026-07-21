@@ -6,16 +6,16 @@ Ahead of Monday’s hackathon, I’ve now published an experiment in making
 official statistics easier for both people and AI agents to discover—without
 hiding the distinctions, gaps and failures that matter.
 
-The demonstrator packages metadata from three bounded ONS catalogue
-routes—the ONS Data API, Nomis and Open Geography—into an Open Knowledge
-Format bundle:
+The demonstrator packages metadata from four bounded public catalogue
+routes—the ONS Data API, Nomis, Open Geography and Explore Local
+Statistics—into an Open Knowledge Format bundle:
 
-- 4,989 metadata records and 19,570 relationships
+- 5,097 metadata records and 19,735 relationships
 - search and comparison designed to expose easily confused alternatives
   before a dataset is selected
 - visible standards, provenance, evidence and geography
 - portable exploration in OKF Explorer
-- MCP selection plans covering 1,954 current bindings and 3,035 explicitly
+- MCP selection plans covering 1,954 current bindings and 3,143 explicitly
   planned ones
 
 This is deliberately not presented as “all ONS” yet. It is a reproducible

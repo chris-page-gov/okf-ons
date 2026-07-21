@@ -34,15 +34,22 @@ observation values or private data are included.
 
 ## Monday demonstrator
 
-The checked-in frozen snapshot represents metadata from three official source
-lanes:
+The checked-in frozen snapshot represents metadata from four bounded public
+source lanes operated or curated by ONS:
 
 | Source lane | Upstream denominator | Represented | What it contributes |
 |---|---:|---:|---|
 | ONS Data API products | 337 | 337 | dataset identities, lifecycle, links and API selection starting points |
 | Nomis definitions | 1,617 | 1,617 | SDMX-style dataset structures, concepts, dimensions and code-list references |
 | ONS Open Geography | 3,035 | 3,035 | geography products, vintages, variants, spatial envelopes and resource links |
-| **Implemented-lane total** | **4,989** | **4,989** | non-additive catalogue representations; not 4,989 unique statistical concepts |
+| ONS Explore Local Statistics | 108 | 108 | local indicators, multi-producer attribution, caveats, dimensions, geography and time coverage |
+| **Implemented-lane total** | **5,097** | **5,097** | non-additive catalogue representations; not 5,097 unique statistical concepts |
+
+The ELS source manifest also contains 12 explained unpublished entries. The
+projected 108-record denominator is closed, but the pinned development fixture
+is not a claim that the internal ELS API is a stable public contract. This OKF
+bundle is independently published and is not endorsed by ONS or the attributed
+source producers.
 
 The broader claim “all ONS metadata” is deliberately not made yet. The
 coverage ledger identifies ONS website datasets and releases, time-series and
@@ -66,7 +73,9 @@ statistical product may appear in several catalogues.
    performs a live query only after the selection is complete; no unknown
    dimension silently receives its first value. Open Geography records state
    that the general catalogue-item MCP binding is planned rather than naming a
-   tool that does not exist.
+   tool that does not exist. Explore Local Statistics indicators likewise keep
+   a planned binding until a separate live interface is documented, reviewed
+   and authorised.
 7. Open the same static descriptor in OKF Explorer to show that the corpus is
    portable and agent-readable.
 
@@ -98,8 +107,9 @@ This is not a live-data or hosted remote server. ChatGPT custom apps require a
 future supported remote or tunnel route; Claude Research, remote-session Cowork
 and M365 Copilot Researcher require a future authenticated remote deployment.
 The M365 federated connector is documented but not deployed. A separate
-downstream ONS or Nomis MCP integration would execute a validated plan and
-return observations.
+downstream ONS or Nomis MCP integration would live-validate and authorise the
+candidate plan before compiling its own executable request and returning
+observations.
 
 ## Standards and statistical-quality position
 
@@ -134,10 +144,10 @@ confusable statistical-data questions. It measures:
 - MCP selection completeness and the statistical-accuracy assurance boundary;
 - public-output secret/path checks and browser accessibility checks.
 
-Some gold aliases are intentionally unresolved by the three implemented source
+Some gold aliases are intentionally unresolved by the implemented source
 lanes. They remain visible gaps rather than being attached to the nearest
-title. That makes the evaluation useful for deciding which source lane to add
-next.
+title. Plausible ELS title matches are not silently promoted to equivalence;
+they require evidence and review.
 
 The first reconciliation pass also found a particularly useful evidence path:
 284 ONS Data API records use Census table codes; 283 have an exact code

@@ -8,8 +8,8 @@
   <https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json>
 - Repository: <https://github.com/chris-page-gov/okf-ons>
 
-The public site is static, metadata-only and key-free. It does not execute an
-ONS, Nomis or MCP request.
+The public site is static, metadata-only and key-free. It does not call an
+upstream API or execute an MCP request.
 
 ## Seven-minute route
 

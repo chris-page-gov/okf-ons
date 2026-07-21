@@ -144,7 +144,7 @@ def test_connection_guide_is_pinned_and_covers_the_broker_and_every_profile(
     guide_path = ROOT / profiles["connection_guide"]["path"]
     guide = guide_path.read_text(encoding="utf-8")
 
-    assert profiles["connection_guide"]["verified_on"] == "2026-07-19"
+    assert profiles["connection_guide"]["verified_on"] == "2026-07-21"
     assert SERVER_NAME in guide
     assert SERVER_VERSION in guide
     assert PROTOCOL_VERSION in guide

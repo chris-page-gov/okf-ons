@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -23,10 +23,12 @@ jobs:
       id-token: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
           cache: pip
@@ -39,6 +41,15 @@ jobs:
 
       - name: Run static checks
         run: python -m ruff check .
+
+      - name: Verify pinned ELS metadata projection
+        run: |
+          python scripts/project_els_snapshot.py \
+            --submodule-dir vendor/explore-local-statistics-app \
+            --output "$RUNNER_TEMP/ons-explore-local-statistics.json"
+          cmp \
+            "$RUNNER_TEMP/ons-explore-local-statistics.json" \
+            source/demo-snapshot/ons-explore-local-statistics.json
 
       - name: Build bundle from the frozen source snapshot
         run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
@@ -59,6 +70,8 @@ jobs:
           test -f bundle/okf-explorer.json
           test -f bundle/data/demo/contrast-records.json
           test -f bundle/data/coverage/ledger.json
+          test -f bundle/data/governance/context-set.json
+          test -f bundle/data/governance/release.json
           test -f bundle/data/standards/evaluation.json
           test -f bundle/data/evaluation/report.json
           test -f bundle/data/ons/mcp-bindings.json
@@ -66,11 +79,11 @@ jobs:
 
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: bundle
           retention-days: 7
@@ -88,4 +101,4 @@ jobs:
     steps:
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5

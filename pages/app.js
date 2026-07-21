@@ -201,6 +201,7 @@
       nomis: "Nomis",
       "nomis-dataset-definitions": "Nomis",
       "ons-open-geography": "Open Geography",
+      "ons-explore-local-statistics": "Explore Local Statistics",
     };
     return labels[value] || value.replaceAll("-", " ");
   }
@@ -1536,8 +1537,8 @@
       notice,
       "p",
       plan.mcp_available
-        ? "GitHub Pages does not call ONS, Nomis or MCP and never requests an API key. Copy this metadata-derived plan to a trusted MCP-Geo server for validation and execution."
-        : "GitHub Pages does not call ONS, Nomis or MCP. This record preserves a planned-binding gap because the current MCP-Geo server has no matching general catalogue-item tool.",
+        ? "GitHub Pages does not call upstream APIs or MCP and never requests an API key. Copy this metadata-derived plan to a trusted live-data service for validation and authorisation."
+        : "GitHub Pages does not call upstream APIs or MCP. This record preserves a planned-binding gap because no reviewed live execution binding is published for this source surface.",
     );
     panel.append(notice);
     const copyRow = element("div", "copy-row");
