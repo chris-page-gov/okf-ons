@@ -139,12 +139,16 @@ class NullTransport(FakeTransport):
 
 
 class ErrorTransport(FakeTransport):
+    def __init__(self, response_type: type[Any], status: int = 500) -> None:
+        super().__init__(response_type)
+        self.status = status
+
     def get(self, url: str, *, timeout: float) -> Any:
         self.calls.append(url)
         return self.response_type(
             payload=None,
             final_url=url,
-            status=500,
+            status=self.status,
             headers={"retry-after": "0"},
         )
 
@@ -158,6 +162,12 @@ class ScalarErrorTransport(FakeTransport):
             status=200,
             headers={"content-type": "application/json"},
         )
+
+
+class TransportFailure(FakeTransport):
+    def get(self, url: str, *, timeout: float) -> Any:
+        self.calls.append(url)
+        raise OSError("network unavailable")
 
 
 def _fixed_now() -> datetime:
@@ -328,7 +338,11 @@ def test_envelope_is_ranked_projected_cached_and_replayable(tmp_path: Path) -> N
             1,
             [1, 2],
         ),
-        ("NM_17_1", "TIME", "CL_17_1_TIME", ErrorTransport, 500, 0, [0, 0]),
+        ("NM_17_5", "TIME", "CL_17_5_TIME", ErrorTransport, 500, 0, [0, 0]),
+        ("NM_673_1", "TIME", "CL_673_1_TIME", ErrorTransport, 408, 0, [0, 0]),
+        ("NM_673_1", "TIME", "CL_673_1_TIME", ErrorTransport, 425, 0, [0, 0]),
+        ("NM_673_1", "TIME", "CL_673_1_TIME", ErrorTransport, 429, 0, [0, 0]),
+        ("NM_673_1", "TIME", "CL_673_1_TIME", ErrorTransport, 503, 0, [0, 0]),
         (
             "NM_17_1",
             "TIME",
@@ -340,7 +354,7 @@ def test_envelope_is_ranked_projected_cached_and_replayable(tmp_path: Path) -> N
         ),
     ],
 )
-def test_audited_upstream_failures_are_retried_and_explicitly_represented(
+def test_retry_exhaustion_is_explicitly_represented(
     tmp_path: Path,
     record_id: str,
     concept: str,
@@ -351,7 +365,11 @@ def test_audited_upstream_failures_are_retried_and_explicitly_represented(
     expected_sleeps: list[float],
 ) -> None:
     namespace = _namespace()
-    transport = transport_class(namespace["JsonResponse"])
+    transport = (
+        transport_class(namespace["JsonResponse"], http_status)
+        if transport_class is ErrorTransport
+        else transport_class(namespace["JsonResponse"])
+    )
     sleeps: list[float] = []
     payload, receipt = namespace["_fetch_codelist"](
         record_id,
@@ -382,6 +400,26 @@ def test_audited_upstream_failures_are_retried_and_explicitly_represented(
     assert receipt["upstreamRecordCount"] == upstream_count
     assert receipt["normalisedRecordCount"] == 1
     assert receipt["contentSha256"] == namespace["sha256_json"](payload)
+
+    replay_transport = FakeTransport(namespace["JsonResponse"])
+    replay_payload, replay_receipt = namespace["_fetch_codelist"](
+        record_id,
+        concept,
+        codelist_id,
+        cache_directory=tmp_path / "external-cache",
+        mode="frozen",
+        transport=replay_transport,
+        timeout_seconds=5,
+        retries=2,
+        now=_fixed_now,
+        sleep=lambda _: None,
+        before_live_request=lambda: None,
+    )
+    assert replay_transport.calls == []
+    assert replay_payload == payload
+    assert replay_receipt["cacheHit"] is True
+    assert replay_receipt["httpStatus"] == http_status
+    assert replay_receipt["upstreamRecordCount"] == upstream_count
 
 
 def test_unreviewed_failure_or_payload_shape_fails_closed(tmp_path: Path) -> None:
@@ -432,20 +470,72 @@ def test_unreviewed_failure_or_payload_shape_fails_closed(tmp_path: Path) -> Non
             "CL_673_1_TIME",
         )
 
-    with pytest.raises(namespace["NomisCodelistError"], match="HTTP 500"):
+    with pytest.raises(namespace["NomisCodelistError"], match="HTTP 404"):
         namespace["_fetch_codelist"](
             "NM_673_1",
             "TIME",
             "CL_673_1_TIME",
             cache_directory=tmp_path / "other-cache",
             mode="refresh",
-            transport=ErrorTransport(namespace["JsonResponse"]),
+            transport=ErrorTransport(namespace["JsonResponse"], 404),
             timeout_seconds=5,
             retries=0,
             now=_fixed_now,
             sleep=lambda _: None,
             before_live_request=lambda: None,
         )
+
+    transport_failure = TransportFailure(namespace["JsonResponse"])
+    with pytest.raises(namespace["NomisCodelistError"], match="unable to acquire"):
+        namespace["_fetch_codelist"](
+            "NM_673_1",
+            "TIME",
+            "CL_673_1_TIME",
+            cache_directory=tmp_path / "transport-cache",
+            mode="refresh",
+            transport=transport_failure,
+            timeout_seconds=5,
+            retries=2,
+            now=_fixed_now,
+            sleep=lambda _: None,
+            before_live_request=lambda: None,
+        )
+    assert len(transport_failure.calls) == 3
+
+
+def test_projected_cache_rejects_nonretryable_status_and_bad_attempts(
+    tmp_path: Path,
+) -> None:
+    namespace = _namespace()
+    cache = tmp_path / "external-cache"
+    codelist_id = "CL_673_1_TIME"
+    namespace["_fetch_codelist"](
+        "NM_673_1",
+        "TIME",
+        codelist_id,
+        cache_directory=cache,
+        mode="refresh",
+        transport=ErrorTransport(namespace["JsonResponse"], 503),
+        timeout_seconds=5,
+        retries=0,
+        now=_fixed_now,
+        sleep=lambda _: None,
+        before_live_request=lambda: None,
+    )
+    request_url = namespace["_codelist_url"](codelist_id)
+    cache_path = namespace["_cache_path"](cache, request_url)
+    cached = json.loads(cache_path.read_text(encoding="utf-8"))
+
+    cached["httpStatus"] = 404
+    cache_path.write_text(json.dumps(cached), encoding="utf-8")
+    with pytest.raises(namespace["NomisCodelistError"], match="outcome evidence"):
+        namespace["_load_cache"](cache_path, request_url, codelist_id)
+
+    cached["httpStatus"] = 503
+    cached["attemptCount"] = 0
+    cache_path.write_text(json.dumps(cached), encoding="utf-8")
+    with pytest.raises(namespace["NomisCodelistError"], match="outcome evidence"):
+        namespace["_load_cache"](cache_path, request_url, codelist_id)
 
 
 def test_url_cache_boundary_and_live_rate_guard_are_strict(tmp_path: Path) -> None:

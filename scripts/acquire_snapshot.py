@@ -47,7 +47,6 @@ _NOMIS_OVERVIEW_SELECT = "DatasetInfo,Coverage,DateMetadata,Contact"
 _NOMIS_CODELIST_CONCEPTS = ("FREQ", "TIME")
 _NOMIS_CODELIST_STATUSES = {"not-evidenced", "present"}
 _NOMIS_CODELIST_FAILURE_REASON = "upstream-codelist-unavailable"
-_NOMIS_CODELIST_PERSISTENT_ERROR = ("NM_17_1", "TIME", "CL_17_1_TIME")
 _NOMIS_CODELIST_ENDPOINT_TEMPLATE = (
     "https://www.nomisweb.co.uk/api/v01/codelist/{codelistId}.def.sdmx.json"
 )
@@ -1436,7 +1435,6 @@ def _validate_nomis_codelist_page(
     page: Any,
     expected_url: str,
     projected_codelist: Mapping[str, Any],
-    record_id: str,
     source_id: str,
     *,
     index: int,
@@ -1499,21 +1497,17 @@ def _validate_nomis_codelist_page(
                 f"{label} success state is invalid: {source_id}"
             )
     else:
-        codelist_id = projected_codelist.get("codeList")
         evidenced_null_response = upstream_count == 1 and http_status == 200
-        persistent_error = (
-            (
-                record_id,
-                projected_codelist.get("concept"),
-                codelist_id,
+        exhausted_retryable_http = (
+            upstream_count == 0
+            and (
+                http_status in {408, 425, 429}
+                or 500 <= http_status <= 599
             )
-            == _NOMIS_CODELIST_PERSISTENT_ERROR
-            and upstream_count == 0
-            and 500 <= http_status <= 599
         )
         if (
             failure_reason != _NOMIS_CODELIST_FAILURE_REASON
-            or not (evidenced_null_response or persistent_error)
+            or not (evidenced_null_response or exhausted_retryable_http)
         ):
             raise SnapshotCompositionError(
                 f"{label} not-evidenced state is invalid: {source_id}"
@@ -1827,7 +1821,6 @@ def _validate_nomis_codelist_replacement(
                 enrichment_pages[page_index],
                 expected_row["requestUrl"],
                 codelist,
-                selected_row["sourceRecordId"],
                 source_id,
                 index=page_index,
             )

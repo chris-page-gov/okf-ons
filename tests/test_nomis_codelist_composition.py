@@ -27,8 +27,7 @@ def _replacement(
     *,
     limit: int = 2,
     mode: str = "prefer-cache",
-    null_projection: Callable[[str, str], bool] | None = None,
-    persistent_http_error: bool = False,
+    not_evidenced_status: Callable[[str, str], int | None] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     base = json.loads((R5_SNAPSHOT / f"{SOURCE_ID}.json").read_text(encoding="utf-8"))
     replacement = copy.deepcopy(base)
@@ -73,16 +72,13 @@ def _replacement(
         ]
         records[row["sourceRecordId"]]["nomisCodelists"] = projected
         for item, expected in zip(projected, row["codelists"], strict=True):
-            is_persistent_error = (
-                persistent_http_error
-                and row["sourceRecordId"] == "NM_17_1"
-                and item["concept"] == "TIME"
+            failure_status = (
+                not_evidenced_status(row["sourceRecordId"], item["concept"])
+                if not_evidenced_status
+                else None
             )
-            is_null_projection = bool(
-                null_projection
-                and null_projection(row["sourceRecordId"], item["concept"])
-            )
-            if is_persistent_error or is_null_projection:
+            http_status = failure_status if failure_status is not None else 200
+            if failure_status is not None:
                 item["status"] = "not-evidenced"
                 item["codes"] = []
                 item["reason"] = "upstream-codelist-unavailable"
@@ -113,11 +109,11 @@ def _replacement(
                     ),
                     "responseHeaders": {"content-type": "application/json"},
                     "cacheHit": mode != "refresh",
-                    "upstreamRecordCount": 0 if is_persistent_error else 1,
+                    "upstreamRecordCount": 1 if http_status == 200 else 0,
                     "normalisedRecordCount": 1,
                     "attemptCount": 3 if item["status"] == "not-evidenced" else 1,
                     "acquisitionStatus": item["status"],
-                    "httpStatus": 500 if is_persistent_error else 200,
+                    "httpStatus": http_status,
                     "failureReason": (
                         "upstream-codelist-unavailable"
                         if item["status"] == "not-evidenced"
@@ -282,7 +278,7 @@ def test_http_200_null_freq_and_time_projections_pass_as_not_evidenced() -> None
     namespace = _namespace()
     replacement, base = _replacement(
         namespace,
-        null_projection=lambda _record_id, _concept: True,
+        not_evidenced_status=lambda _record_id, _concept: 200,
     )
 
     assert _validate(namespace, replacement, base) == {
@@ -301,6 +297,9 @@ def test_http_200_null_freq_and_time_projections_pass_as_not_evidenced() -> None
         ("httpStatus", 201, "not-evidenced state is invalid"),
         ("acquisitionStatus", "present", "counts are invalid"),
         ("failureReason", None, "not-evidenced state is invalid"),
+        ("attemptCount", 0, "counts are invalid"),
+        ("attemptCount", 7, "counts are invalid"),
+        ("contentSha256", "0" * 64, "projected response hash is invalid"),
     ],
 )
 def test_http_200_null_projection_requires_matching_receipt_evidence(
@@ -309,7 +308,7 @@ def test_http_200_null_projection_requires_matching_receipt_evidence(
     namespace = _namespace()
     replacement, base = _replacement(
         namespace,
-        null_projection=lambda _record_id, _concept: True,
+        not_evidenced_status=lambda _record_id, _concept: 200,
     )
     first_enrichment_page = len(base["provenance"]["pages"])
     replacement["provenance"]["pages"][first_enrichment_page][field] = value
@@ -318,16 +317,72 @@ def test_http_200_null_projection_requires_matching_receipt_evidence(
         _validate(namespace, replacement, base)
 
 
+def test_exhausted_retryable_http_requires_zero_upstream_records() -> None:
+    namespace = _namespace()
+    replacement, base = _replacement(
+        namespace,
+        not_evidenced_status=lambda _record_id, _concept: 503,
+    )
+    first_enrichment_page = len(base["provenance"]["pages"])
+    replacement["provenance"]["pages"][first_enrichment_page][
+        "upstreamRecordCount"
+    ] = 1
+
+    with pytest.raises(
+        namespace["SnapshotCompositionError"], match="not-evidenced state is invalid"
+    ):
+        _validate(namespace, replacement, base)
+
+
+@pytest.mark.parametrize("http_status", [408, 425, 429, 500, 503, 599])
+def test_exhausted_retryable_http_is_not_evidenced_for_arbitrary_references(
+    http_status: int,
+) -> None:
+    namespace = _namespace()
+    replacement, base = _replacement(
+        namespace,
+        not_evidenced_status=lambda _record_id, _concept: http_status,
+    )
+
+    assert _validate(namespace, replacement, base) == {
+        "changedRecords": 2,
+        "changedFields": 2,
+    }
+    assert replacement["provenance"]["enrichmentRun"][
+        "notEvidencedCodelistCount"
+    ] == 4
+
+
+@pytest.mark.parametrize("http_status", [400, 401, 403, 404, 409, 422])
+def test_nonretryable_http_cannot_be_composed_as_not_evidenced(
+    http_status: int,
+) -> None:
+    namespace = _namespace()
+    replacement, base = _replacement(
+        namespace,
+        not_evidenced_status=lambda _record_id, _concept: http_status,
+    )
+
+    with pytest.raises(
+        namespace["SnapshotCompositionError"], match="not-evidenced state is invalid"
+    ):
+        _validate(namespace, replacement, base)
+
+
 def test_full_cohort_measures_not_evidenced_projections() -> None:
     namespace = _namespace()
     replacement, base = _replacement(
         namespace,
         limit=1_617,
-        null_projection=lambda record_id, concept: (
-            concept == "FREQ"
+        not_evidenced_status=lambda record_id, concept: (
+            503
+            if concept == "FREQ"
             and int(record_id.removeprefix("NM_").split("_", 1)[0]) % 257 == 0
+            else 425
+            if concept == "TIME"
+            and int(record_id.removeprefix("NM_").split("_", 1)[0]) % 509 == 0
+            else None
         ),
-        persistent_http_error=True,
     )
 
     assert _validate(namespace, replacement, base) == {

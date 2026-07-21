@@ -149,7 +149,7 @@ _FORBIDDEN_KEYS = {
     "xapikey",
 }
 _FAILURE_REASON = "upstream-codelist-unavailable"
-_AUDITED_ERROR_CODELISTS = {
+_AUDITED_SCALAR_CODELISTS = {
     ("NM_17_1", "TIME", "CL_17_1_TIME"),
 }
 
@@ -666,10 +666,8 @@ def _load_cache(path: Path, request_url: str, codelist_id: str) -> dict[str, Any
         or (
             payload["status"] == "not-evidenced"
             and http_status != 200
-            and (
-                not 500 <= http_status < 600
-                or codelist_id != "CL_17_1_TIME"
-            )
+            and http_status not in {408, 425, 429}
+            and not 500 <= http_status < 600
         )
     ):
         raise NomisCodelistError("Nomis codelist cache outcome evidence is invalid")
@@ -747,6 +745,8 @@ def _fetch_codelist(
             if (
                 isinstance(response.status, bool)
                 or not isinstance(response.status, int)
+                or response.status < 100
+                or response.status > 599
             ):
                 raise NomisCodelistError("Nomis codelist response status is malformed")
             if response.final_url != request_url:
@@ -772,12 +772,7 @@ def _fetch_codelist(
                         else min(2**attempt, 8)
                     )
                     continue
-                if (
-                    not retryable
-                    or (record_id, concept, codelist_id)
-                    not in _AUDITED_ERROR_CODELISTS
-                    or not 500 <= response.status < 600
-                ):
+                if not retryable:
                     raise NomisCodelistError(
                         f"Nomis returned HTTP {response.status} for {codelist_id}"
                     )
@@ -792,7 +787,7 @@ def _fetch_codelist(
             else:
                 audited_scalar_error = (
                     (record_id, concept, codelist_id)
-                    in _AUDITED_ERROR_CODELISTS
+                    in _AUDITED_SCALAR_CODELISTS
                     and not isinstance(response.payload, Mapping)
                 )
                 if audited_scalar_error:
@@ -868,7 +863,7 @@ def _fetch_codelist(
             if attempt < retries:
                 sleep(min(2**attempt, 8))
                 continue
-            if (record_id, concept, codelist_id) not in _AUDITED_ERROR_CODELISTS:
+            if (record_id, concept, codelist_id) not in _AUDITED_SCALAR_CODELISTS:
                 raise NomisCodelistError(
                     f"unable to acquire Nomis codelist {codelist_id}: {exc}"
                 ) from exc
