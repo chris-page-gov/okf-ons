@@ -56,6 +56,10 @@ an immutable copy is required.
 | Live demo guide | <https://chris-page-gov.github.io/okf-ons/demo-guide.html> |
 | Accessibility statement | <https://chris-page-gov.github.io/okf-ons/accessibility.html> |
 
+Subordinate dataset, resource, search and selection-option shards are discovered
+through the data and search manifests above; their generated paths are not
+independent stable entry points.
+
 ### Repositories, release and provenance
 
 - [OKF-ONS repository](https://github.com/chris-page-gov/okf-ons),
@@ -68,7 +72,7 @@ an immutable copy is required.
 - [Pinned ONSdigital Explore Local Statistics commit](https://github.com/ONSdigital/explore-local-statistics-app/commit/795eaf204f47986f6be248a63f857a42afe4fdf2)
 - [Source register](source/source-register.json),
   [release snapshot manifest](source/demo-snapshot/snapshot.json),
-  [current enrichment snapshot manifest](source/metadata-enrichment-2026-07-21-r4/snapshot.json), and
+  [current enrichment snapshot manifest](source/metadata-enrichment-2026-07-21-r6/snapshot.json), and
   [release changelog](CHANGELOG.md)
 
 ### Documentation map
@@ -90,6 +94,10 @@ an immutable copy is required.
   [scope and denominator](docs/scope-and-denominator.md), and
   [standards register](docs/standards-register.md), plus the
   [timed metadata-enrichment campaign](docs/metadata-enrichment-campaign.md)
+  and the
+  [OKF Explorer campaign handoff](docs/okf-explorer-metadata-campaign-handoff.md),
+  with the machine-readable
+  [stopping audit](evaluation/metadata-completeness/stopping-audit.json)
 - MCP and AI access:
   [MCP selection contract](docs/mcp-selection-contract.md),
   [MCP client rollout](docs/mcp-client-rollout.md), and
@@ -134,8 +142,11 @@ governance fields are shown as first-class UI rather than only in raw JSON.
 The bundle registers SDMX 3.1 (ISO 17369), maps seven canonical OKF fields to
 SDMX concepts, and preserves the Nomis lane's SDMX agency, identifier, version,
 dimension order, component roles and code-list references. Nomis selections
-remain incomplete until their dimensions and codelist values have been chosen;
-completed live execution uses MCP-Geo's `nomis_query`.
+also retain bounded FREQ code-label options and strict available TIME extents
+where that evidence is usable. FREQ is statistical/reference frequency, not
+publication cadence, and TIME-period revision annotations are not dataset
+revision status. All other required dimensions still need live validation and
+selection; completed live execution uses MCP-Geo's `nomis_query`.
 
 The bundle is not itself an SDMX message. It is serialized as JSON-LD using
 DCAT 3, SKOS, PROV-O and RDF Data Cube terms, with no SDMX namespace in its
@@ -204,17 +215,21 @@ python scripts/build_bundle.py \
 ```
 
 The metadata-enrichment campaign also includes immutable successor snapshot
-`metadata-enrichment-2026-07-21-r4`. Relative to the v0.2.0 snapshot, r3
-refreshes the bounded ONS Data API catalogue and r4 adds bounded, metadata-only
-Nomis compact overviews. The other three source envelopes in r4 are
-byte-identical to r3. Rebuild and profile r4 without network access:
+`metadata-enrichment-2026-07-21-r6`. Relative to the v0.2.0 snapshot, r3
+refreshes the bounded ONS Data API catalogue, r4 adds bounded metadata-only
+Nomis compact overviews, and r5 adds only the reviewed dimension projection
+from each frozen ONS latest-version URL. r6 follows the exact FREQ and TIME
+codelist references in the frozen r5 Nomis cohort and retains only code-label
+metadata and explicit period revision-status annotations. The ONS Data API,
+Explore Local Statistics and Open Geography source envelopes in r6 are
+byte-identical to r5. Rebuild and profile r6 without network access:
 
 ```bash
 python scripts/build_bundle.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle
 python scripts/build_bundle.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle \
   --check
 python scripts/profile_metadata_gaps.py \
@@ -222,9 +237,15 @@ python scripts/profile_metadata_gaps.py \
   --output evaluation/metadata-completeness/current.json
 ```
 
+The live Pages and Explorer URLs above still serve governed release v0.2.0.
+The r6 campaign snapshot is checked in on its working branch but is not deployed
+until the release metadata and Pages-selected snapshot are deliberately
+switched.
+
 The measured batch history, metric definitions, timings and machine-readable
 profiles are linked from the
-[metadata-enrichment campaign](docs/metadata-enrichment-campaign.md).
+[metadata-enrichment campaign](docs/metadata-enrichment-campaign.md), including
+the [stopping audit](evaluation/metadata-completeness/stopping-audit.json).
 
 For an existing clone, run `git submodule update --init --recursive` before the
 projector. To acquire a future snapshot, keep the raw cache outside the
@@ -266,6 +287,52 @@ python scripts/acquire_snapshot.py \
   --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
   --base-snapshot source/metadata-enrichment-2026-07-21-r3 \
   --replacement-acquisition /path/to/nomis-overviews.json \
+  --require-complete
+```
+
+To reproduce or refresh the bounded ONS latest-version dimension projection,
+use r4 as the validated pre-enrichment base. The acquisition follows only the
+337 exact `links.latest_version.href` values frozen in r4, stores only the
+allowlisted projection in an external cache, and does not fetch observations,
+dimension options, codelists or downloads:
+
+```bash
+python scripts/acquire_ons_version_metadata.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --cache-dir /path/to/external-cache \
+  --output /path/to/ons-version-metadata.json \
+  --limit 337 \
+  --mode refresh \
+  --request-interval 0.5
+python scripts/acquire_snapshot.py \
+  --cache-dir /path/to/external-cache \
+  --output-dir source \
+  --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r4 \
+  --replacement-acquisition /path/to/ons-version-metadata.json \
+  --require-complete
+```
+
+To reproduce or refresh the bounded Nomis FREQ/TIME codelist projection, use
+r5 as the exact base. The acquisition follows 3,234 frozen metadata-only
+codelist references sequentially, retains explicit failed outcomes in the
+denominator, and stores only its allowlisted projection in a versioned external
+cache:
+
+```bash
+python scripts/acquire_nomis_codelists.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r5 \
+  --cache-dir /path/to/external-cache \
+  --output /path/to/nomis-codelists.json \
+  --limit 1617 \
+  --mode refresh \
+  --request-interval 0.2
+python scripts/acquire_snapshot.py \
+  --cache-dir /path/to/external-cache \
+  --output-dir source \
+  --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r5 \
+  --replacement-acquisition /path/to/nomis-codelists.json \
   --require-complete
 ```
 

@@ -48,12 +48,14 @@ counts identify evidence availability; they do not imply that every field
 applies to every source record.
 
 The applicability-aware companion measure uses four states: `present`,
-`not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
-narrow rule excludes only statistical population/universe for the 3,035 Open
-Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 07 this measure is
-41,131 of 68,323 applicable slots (60.2008%); 3,035 are not applicable, 27,192
-are not evidenced, and none are recorded as conflicted.
+`not-applicable`, `not-evidenced`, and `conflicted`. Its two deliberately
+narrow rules exclude statistical population/universe and statistical time
+coverage for the 3,035 Open Geography reference assets. Their geography
+reference or effective dates are not observation coverage. It does not assume
+that missing cadence, methodology or contact evidence is inapplicable. After
+Batch 09 this measure is 44,863 of 65,288 applicable slots (68.7155%); 6,070
+raw slots are not applicable, 20,425 are not evidenced, and none are recorded
+as conflicted.
 
 ## Stopping rule
 
@@ -82,6 +84,8 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | 05 | Frozen Open Geography utility evidence surfaced | 40 min 37 sec | 325 | 54.1341% | 480 slots/hour |
 | 06 | Live Nomis compact overviews, then frozen | 11 min 11 sec | 1,849 | 56.7252% | 9,920 slots/hour |
 | 07 | Frozen Nomis quality notes normalised | 15 min 56 sec | 653 | 57.6403% | 2,459 slots/hour |
+| 08 | Live ONS latest-version dimensions, then frozen | 31 min 58 sec | 619 | 58.5078% | 1,162 slots/hour |
+| 09 | Live Nomis FREQ/TIME codelists, then frozen | 47 min 08 sec | 3,113 | 62.8703% | 3,963 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -200,6 +204,94 @@ progress is 8,041 cells: 21.0123% of the original gaps and 42.0247% of the fixed
 halfway milestone. Another 11,093 source-backed cells would be needed to reach
 that milestone.
 
+Batch 08 followed the exact `links.latest_version.href` frozen for every one of
+the 337 ONS Data API records. A 20-record pilot failed closed on genuine API
+shape variants before the contract was corrected: the top-level version ID is
+opaque rather than the dataset ID, typed link objects may be empty or absent,
+and dimension labels may be absent. Identity remains bound to the exact request
+URL plus dataset, edition and self links; missing labels remain missing. The
+full run was sequential at a 0.5-second interval and cached only the projected
+dimension identities, explicit `isAreaType` flag, and quality statements.
+Options, codelists, observations, downloads, raw responses and cache paths are
+not present in the snapshot.
+
+All 337 records supplied explicit geography evidence and 282 supplied a
+dimension quality statement. The 31 minute 58 second conservative wall time
+runs from the Batch 07 checkpoint through design, pilots, fail-closed schema
+learning, full acquisition, immutable composition, bundle compilation and
+profiling. The resulting r5 snapshot carries the other three source envelopes
+byte-identically from r4. Its 1,162-slot/hour yield remains above the numerical
+continuation threshold.
+
+Cumulative Batches 01–08 took 2 hours 16 minutes 34 seconds and added 8,660
+source-backed evidence cells. That closes 22.6299% of the original gaps and
+45.2597% of the fixed halfway milestone. Raw completeness is 41,750 of 71,358
+(58.5078%), leaving 29,608 raw gaps and 10,474 cells still needed for the fixed
+halfway target. Including the 14-minute baseline inventory, measured campaign
+work was 2 hours 30 minutes 34 seconds.
+
+Batch 09 reopened the stopping audit after it identified one unmeasured bounded
+route in the frozen Nomis definitions: every one of the 1,617 records has an
+exact FREQ and TIME codelist reference. A deterministic 54-record semantics
+pilot covered the source families, followed by a 20-record pilot of the exact
+direct endpoint and replacement composer. The production acquisition then
+followed all 3,234 exact metadata-only endpoints sequentially and retained an
+explicit outcome for every reference. It found 34 TIME codelists that were null
+or remained unavailable after retries; those are frozen as receipt-bound `not-evidenced`
+outcomes rather than removed from the denominator.
+
+The full cohort added 1,530 unambiguous singular frequency values and 1,583
+strict time extents. Multiple FREQ options remain structured evidence and are
+not collapsed. TIME extents require unique homogeneous `YYYY` or `YYYY-MM`
+codes and exclude explicitly unavailable or prerelease periods. Optional
+release annotations, per-period revision status and malformed unused timestamp
+text do not become publication cadence or dataset revision status.
+
+The 47 minute 08 second measured wall interval includes route reopening,
+contract and edge-shape tests, resumable full acquisition, immutable r6
+composition, bundle compilation and profiling. Its 3,963-slot/hour yield is
+well above the continuation threshold. Raw completeness is now 44,863 of
+71,358 (62.8703%), leaving 26,495 raw gaps. Applicability-aware completeness is
+44,863 of 65,288 (68.7155%), leaving 20,425 applicable gaps.
+
+Cumulative Batches 01–09 took 3 hours 03 minutes 42 seconds and added 11,773
+source-backed evidence cells. That closes 30.7646% of the original gaps and
+61.5292% of the fixed halfway milestone. Another 7,361 cells would be needed to
+reach the fixed 52,224-present target. Including the 14-minute baseline
+inventory, summed measured campaign work is 3 hours 17 minutes 42 seconds; this
+is a sum of recorded batch intervals, not an end-to-end calendar duration.
+
+## Stopping decision
+
+The campaign stops after Batch 09 under the stopping rule's evidence-availability
+and marginal-return clauses, not because Batch 09 itself was slow. Its exact
+Nomis cohort is exhausted. The 20,425 remaining applicable gaps comprise 5,097
+revision-status gaps for which narrower date/version proxies were rejected, 371
+time-coverage gaps (34 explicit Nomis upstream failures and 337 ONS records),
+and 14,957 other cells for which the audited bounded sources do not expose
+qualifying record-level evidence.
+
+The only remaining deterministic source/endpoint pair with a credible generic
+field mapping was piloted before stopping. Fifty ONS records have an exact
+`time` dimension-options endpoint. An eight-family edge pilot made 8 requests,
+validated 640 option items without an identity or schema failure, and found a
+46-cell parser-safe family ceiling. The absolute 50-cell ceiling is only
+0.0701 raw percentage points. At 357 cells/hour, a governed full acquisition,
+composer, model, tests, profile and documentation would need to ship in under 8
+minutes 24 seconds (7 minutes 44 seconds at the conservative 46-cell ceiling),
+which is not credible. That route is therefore `measured-rejected`, not
+unpiloted. Other next routes require expanded source contracts, unbounded
+document crawling or unsupported record-by-record judgement.
+
+The fixed halfway milestone was not reached. Reusing Batch 09's marginal rate
+would imply about 1.86 hours for the remaining 7,361 cells, but that is not a
+defensible ETA because its finite route is exhausted and the next bounded route
+falls below threshold. The return knee first appeared in Batches 04–05, was
+temporarily lifted by four finite high-yield lanes, and is now reached after the
+last credible bounded route was measured. The machine-readable
+[`stopping audit`](../evaluation/metadata-completeness/stopping-audit.json)
+preserves the remaining-gap matrix, route inventory and decision basis.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -228,22 +320,32 @@ Batch 07 has a
 [`profile`](../evaluation/metadata-completeness/batch-07-frozen-nomis-quality-notes.json)
 and
 [`comparison`](../evaluation/metadata-completeness/batch-07-comparison.json).
+Batch 08 has a
+[`profile`](../evaluation/metadata-completeness/batch-08-live-ons-version-metadata.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-08-comparison.json).
+Batch 09 has a
+[`profile`](../evaluation/metadata-completeness/batch-09-live-nomis-codelists.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-09-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash
 python scripts/build_bundle.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle
 python scripts/profile_metadata_gaps.py \
   --bundle bundle \
-  --output /tmp/okf-ons-r4-profile.json
-cmp /tmp/okf-ons-r4-profile.json \
-  evaluation/metadata-completeness/batch-06-live-nomis-overviews.json
+  --output /tmp/okf-ons-r6-profile.json
+cmp /tmp/okf-ons-r6-profile.json \
+  evaluation/metadata-completeness/batch-09-live-nomis-codelists.json
 python scripts/compare_metadata_gaps.py \
-  evaluation/metadata-completeness/batch-05-frozen-ogp-utility.json \
-  /tmp/okf-ons-r4-profile.json \
-  --elapsed-seconds 671 \
-  --output /tmp/okf-ons-batch-06-comparison.json
-cmp /tmp/okf-ons-batch-06-comparison.json \
-  evaluation/metadata-completeness/batch-06-comparison.json
+  evaluation/metadata-completeness/batch-08-live-ons-version-metadata.json \
+  /tmp/okf-ons-r6-profile.json \
+  --started-at 2026-07-21T14:06:05Z \
+  --completed-at 2026-07-21T14:53:13Z \
+  --clock-basis "UTC wall clock; route reopening through full acquisition, r6 composition, bundle compilation and profile" \
+  --output /tmp/okf-ons-batch-09-comparison.json
+cmp /tmp/okf-ons-batch-09-comparison.json \
+  evaluation/metadata-completeness/batch-09-comparison.json
 ```

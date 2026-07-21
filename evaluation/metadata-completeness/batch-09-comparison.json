@@ -1,35 +1,35 @@
 {
   "applicabilityAwareDelta": {
-    "addedPresent": 619,
-    "baselinePossible": 68323,
-    "baselinePresent": 41131,
+    "addedPresent": 3113,
+    "baselinePossible": 65288,
+    "baselinePresent": 41750,
     "currentPossible": 65288,
-    "currentPresent": 41750,
-    "denominatorChange": -3035,
-    "percentagePointChange": 3.746622,
+    "currentPresent": 44863,
+    "denominatorChange": 0,
+    "percentagePointChange": 4.768104,
     "possible": 65288,
-    "remainingMissing": 23538,
+    "remainingMissing": 20425,
     "stateChanges": {
       "conflicted": 0,
-      "not-applicable": 3035,
-      "not-evidenced": -3654,
-      "present": 619
+      "not-applicable": 0,
+      "not-evidenced": -3113,
+      "present": 3113
     }
   },
   "baselineBundle": {
     "recordCount": 5097,
-    "snapshot": "metadata-enrichment-2026-07-21-r4",
+    "snapshot": "metadata-enrichment-2026-07-21-r5",
     "version": "0.2.0"
   },
   "currentBundle": {
     "recordCount": 5097,
-    "snapshot": "metadata-enrichment-2026-07-21-r5",
+    "snapshot": "metadata-enrichment-2026-07-21-r6",
     "version": "0.2.0"
   },
   "evidenceSlotDelta": {
-    "addedPresent": 619,
-    "baselineMissingClosed": 0.020478,
-    "baselinePresent": 41131,
+    "addedPresent": 3113,
+    "baselineMissingClosed": 0.105141,
+    "baselinePresent": 41750,
     "byField": [
       {
         "addedPresent": 0,
@@ -62,9 +62,9 @@
         "remainingMissing": 311
       },
       {
-        "addedPresent": 0,
+        "addedPresent": 1530,
         "field": "frequency",
-        "remainingMissing": 4613
+        "remainingMissing": 3083
       },
       {
         "addedPresent": 0,
@@ -72,14 +72,14 @@
         "remainingMissing": 3350
       },
       {
-        "addedPresent": 337,
+        "addedPresent": 0,
         "field": "geography",
         "remainingMissing": 0
       },
       {
-        "addedPresent": 0,
+        "addedPresent": 1583,
         "field": "time_coverage",
-        "remainingMissing": 4989
+        "remainingMissing": 3406
       },
       {
         "addedPresent": 0,
@@ -87,7 +87,7 @@
         "remainingMissing": 4887
       },
       {
-        "addedPresent": 282,
+        "addedPresent": 0,
         "field": "quality_documentation",
         "remainingMissing": 3097
       },
@@ -104,12 +104,12 @@
     ],
     "bySource": [
       {
-        "addedPresent": 0,
-        "remainingMissing": 7136,
+        "addedPresent": 3113,
+        "remainingMissing": 4023,
         "source": "nomis"
       },
       {
-        "addedPresent": 619,
+        "addedPresent": 0,
         "remainingMissing": 1347,
         "source": "ons-data-api"
       },
@@ -124,12 +124,12 @@
         "source": "ons-open-geography"
       }
     ],
-    "currentPresent": 41750,
-    "elapsedSeconds": 1918.0,
-    "percentagePointChange": 0.867457,
+    "currentPresent": 44863,
+    "elapsedSeconds": 2828.0,
+    "percentagePointChange": 4.36251,
     "possible": 71358,
-    "remainingMissing": 29608,
-    "slotsPerHour": 1161.835
+    "remainingMissing": 26495,
+    "slotsPerHour": 3962.801
   },
   "explorerMetricDeltas": {
     "explorerDatasetDisplayMetric": {
@@ -173,12 +173,12 @@
       "remainingMissing": 108
     },
     "explorerSearchFacetMetric": {
-      "addedPresent": 0,
+      "addedPresent": 1530,
       "baselinePresent": 67227,
-      "currentPresent": 67227,
-      "percentagePointChange": 0.0,
+      "currentPresent": 68757,
+      "percentagePointChange": 1.765745,
       "possible": 86649,
-      "remainingMissing": 19422
+      "remainingMissing": 17892
     },
     "explorerSearchResultDisplayMetric": {
       "addedPresent": 0,
@@ -192,9 +192,9 @@
   "recordCount": 5097,
   "schema": "okf-ons-metadata-gap-comparison.v1",
   "timing": {
-    "clockBasis": "UTC wall clock; start at Batch 07 checkpoint, completion after r5 profile",
-    "completedAt": "2026-07-21T13:52:21Z",
-    "elapsedSeconds": 1918.0,
-    "startedAt": "2026-07-21T13:20:23Z"
+    "clockBasis": "UTC wall clock; route reopening through full acquisition, r6 composition, bundle compilation and profile",
+    "completedAt": "2026-07-21T14:53:13Z",
+    "elapsedSeconds": 2828.0,
+    "startedAt": "2026-07-21T14:06:05Z"
   }
 }
