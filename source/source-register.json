@@ -226,12 +226,15 @@
       "scope": {
         "includes": [
           "Dataset key-family identities, names and catalogue annotations",
-          "Dimension, attribute, measure and code-list references"
+          "Dimension, attribute, measure and code-list references",
+          "Exact bounded FREQ and TIME codelist values and labels for the frozen dataset-definition cohort, plus explicit TIME period revision-status annotations when supplied"
         ],
         "excludes": [
           "Observation values",
           "JSON-stat data responses",
-          "Per-geography statistical cells"
+          "Per-geography statistical cells",
+          "Nomis codelists other than the exact FREQ and TIME references in the frozen cohort",
+          "Publication or update cadence inferred from FREQ, and dataset revision status inferred from individual TIME periods"
         ]
       },
       "identityFields": [
@@ -247,6 +250,8 @@
       "crossReferences": [
         "components.dimension.conceptref",
         "components.dimension.codelist",
+        "components.dimension[FREQ|TIME].codelist -> /api/v01/codelist/{codelistId}.def.sdmx.json",
+        "nomisCodelists[FREQ|TIME].codes",
         "components.dimension order",
         "components role",
         "annotations.annotation"

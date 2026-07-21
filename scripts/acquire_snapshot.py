@@ -39,8 +39,22 @@ class SnapshotCompositionError(ValueError):
 
 _BOUNDED_REPLACEMENT_SCHEMA = "okf-ons.bounded-source-replacement.v1"
 _NOMIS_ENRICHMENT_SCHEMA = "okf-ons.nomis-overview-enrichment.v1"
+_NOMIS_CODELIST_ENRICHMENT_SCHEMA = "okf-ons.nomis-codelist-enrichment.v1"
 _NOMIS_SOURCE_ID = "nomis-dataset-definitions"
+_NOMIS_CODELIST_BASE_SNAPSHOT_ID = "metadata-enrichment-2026-07-21-r5"
+_NOMIS_EXPECTED_COHORT_COUNT = 1_617
 _NOMIS_OVERVIEW_SELECT = "DatasetInfo,Coverage,DateMetadata,Contact"
+_NOMIS_CODELIST_CONCEPTS = ("FREQ", "TIME")
+_NOMIS_CODELIST_STATUSES = {"not-evidenced", "present"}
+_NOMIS_CODELIST_FAILURE_REASON = "upstream-codelist-unavailable"
+_NOMIS_CODELIST_FAILURE_ALLOWLIST = {
+    ("NM_17_1", "TIME"),
+    ("NM_1241_1", "TIME"),
+    ("NM_1251_1", "TIME"),
+}
+_NOMIS_CODELIST_ENDPOINT_TEMPLATE = (
+    "https://www.nomisweb.co.uk/api/v01/codelist/{codelistId}.def.sdmx.json"
+)
 _ONS_VERSION_ENRICHMENT_SCHEMA = "okf-ons.ons-version-metadata-enrichment.v1"
 _ONS_SOURCE_ID = "ons-data-api"
 _ONS_EXPECTED_COHORT_COUNT = 337
@@ -122,6 +136,21 @@ _ENRICHMENT_RUN_KEYS = {
     "selectionOrder",
     "unselectedCount",
 }
+_NOMIS_CODELIST_RUN_KEYS = {
+    "cohortCount",
+    "concepts",
+    "coverageComplete",
+    "endpointTemplate",
+    "notEvidencedCodelistCount",
+    "requestedLimit",
+    "selectedCodelistCount",
+    "selectedCodelistReferenceSetSha256",
+    "selectedCount",
+    "selectedRecordSetSha256",
+    "selectionOrder",
+    "schema",
+    "unselectedCount",
+}
 _ONS_VERSION_RUN_KEYS = {
     "cohortCount",
     "cohortRecordSetSha256",
@@ -139,6 +168,16 @@ _REPLACEMENT_ASSURANCE = {
     "credentialsRequired": False,
     "metadataOnly": True,
     "observationsFetched": False,
+    "rawResponsesPublished": False,
+}
+_NOMIS_CODELIST_REPLACEMENT_ASSURANCE = {
+    "cacheLocationPublished": False,
+    "codelistsFetched": True,
+    "credentialsRequired": False,
+    "metadataOnly": True,
+    "observationsFetched": False,
+    "projectedCacheOnly": True,
+    "rawResponsesCached": False,
     "rawResponsesPublished": False,
 }
 _ONS_BASE_ASSURANCE = {
@@ -164,6 +203,12 @@ _PAGE_KEYS = {
     "retrievedAt",
     "upstreamRecordCount",
 }
+_NOMIS_CODELIST_PAGE_KEYS = _PAGE_KEYS | {
+    "acquisitionStatus",
+    "attemptCount",
+    "failureReason",
+    "httpStatus",
+}
 _SAFE_RESPONSE_HEADER_KEYS = {"content-type", "etag", "last-modified"}
 _MANIFEST_KEYS = {
     "claimBoundary",
@@ -188,6 +233,7 @@ _MANIFEST_SOURCE_KEYS = {
 }
 _HEX_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _NOMIS_ID_RE = re.compile(r"^NM_[0-9]+_[0-9]+$")
+_NOMIS_CODELIST_ID_RE = re.compile(r"^CL_([0-9]+)_([0-9]+)_(FREQ|TIME)$")
 _ONS_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]*$")
 _ONS_EDITION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._~-]*$")
 _NOMIS_DATE_RE = re.compile(
@@ -332,7 +378,13 @@ def _normalised_key(value: object) -> str:
 def _assert_public_safe(value: Any, source_id: str, *, path: str = "$") -> None:
     if isinstance(value, Mapping):
         for key, child in value.items():
-            if _normalised_key(key) in _FORBIDDEN_PUBLIC_KEYS:
+            code_value_path = re.fullmatch(
+                r"\$\.records\[[0-9]+\]\.nomisCodelists\[[01]\]\.codes\[[0-9]+\]",
+                path,
+            )
+            if _normalised_key(key) in _FORBIDDEN_PUBLIC_KEYS and not (
+                key == "value" and code_value_path is not None
+            ):
                 raise SnapshotCompositionError(
                     f"bounded replacement contains unsafe field {key!r}: {source_id}"
                 )
@@ -1218,6 +1270,640 @@ def _validate_ons_bounded_replacement(
     return {"changedRecords": len(changed_record_ids), "changedFields": changed_fields}
 
 
+def _nomis_codelist_cohort_item(
+    record: Mapping[str, Any], source_id: str
+) -> dict[str, Any]:
+    record_id = record.get("sourceRecordId")
+    match = _NOMIS_ID_RE.fullmatch(record_id) if isinstance(record_id, str) else None
+    components = record.get("components")
+    if match is None or not isinstance(components, list):
+        raise SnapshotCompositionError(
+            f"base Nomis codelist cohort identity is invalid: {source_id}"
+        )
+    numeric_id, version = record_id.removeprefix("NM_").split("_", 1)
+    codelists: list[dict[str, str]] = []
+    for concept in _NOMIS_CODELIST_CONCEPTS:
+        expected_kind = "dimension" if concept == "FREQ" else "timedimension"
+        matches = [
+            component
+            for component in components
+            if isinstance(component, Mapping)
+            and component.get("kind") == expected_kind
+            and component.get("concept") == concept
+        ]
+        expected_id = f"CL_{numeric_id}_{version}_{concept}"
+        if (
+            len(matches) != 1
+            or matches[0].get("codeList") != expected_id
+            or _NOMIS_CODELIST_ID_RE.fullmatch(expected_id) is None
+        ):
+            raise SnapshotCompositionError(
+                f"base Nomis {concept} codelist reference is invalid: "
+                f"{source_id}:{record_id}"
+            )
+        codelists.append(
+            {
+                "concept": concept,
+                "codeList": expected_id,
+                "requestUrl": _NOMIS_CODELIST_ENDPOINT_TEMPLATE.format(
+                    codelistId=expected_id
+                ),
+            }
+        )
+    return {"sourceRecordId": record_id, "codelists": codelists}
+
+
+def _validate_nomis_codelists(
+    value: Any,
+    expected: Mapping[str, Any],
+    source_id: str,
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or len(value) != len(_NOMIS_CODELIST_CONCEPTS):
+        raise SnapshotCompositionError(
+            f"bounded replacement Nomis codelists are malformed: {source_id}"
+        )
+    expected_rows = expected.get("codelists")
+    if not isinstance(expected_rows, list) or len(expected_rows) != len(value):
+        raise SnapshotCompositionError(
+            f"bounded replacement Nomis codelist expectation is malformed: {source_id}"
+        )
+    projected: list[dict[str, Any]] = []
+    record_id = expected.get("sourceRecordId")
+    for index, (item, expected_row) in enumerate(
+        zip(value, expected_rows, strict=True)
+    ):
+        if not isinstance(item, Mapping):
+            raise SnapshotCompositionError(
+                f"bounded replacement Nomis codelist is malformed: {source_id}"
+            )
+        required_item_keys = {"codeList", "codes", "concept", "status"}
+        actual_item_keys = set(item)
+        if not required_item_keys.issubset(actual_item_keys) or (
+            actual_item_keys - (required_item_keys | {"reason"})
+        ):
+            raise SnapshotCompositionError(
+                f"bounded replacement Nomis codelist {index} has "
+                "unreviewed or missing fields"
+            )
+        if (
+            item.get("concept") != expected_row.get("concept")
+            or item.get("codeList") != expected_row.get("codeList")
+        ):
+            raise SnapshotCompositionError(
+                f"bounded replacement Nomis codelist identity is invalid: {source_id}"
+        )
+        codes = item.get("codes")
+        status = item.get("status")
+        if (
+            status not in _NOMIS_CODELIST_STATUSES
+            or not isinstance(codes, list)
+            or len(codes) > 100_000
+        ):
+            raise SnapshotCompositionError(
+                f"bounded replacement Nomis codelist codes are malformed: {source_id}"
+            )
+        if status == "present":
+            if not codes or "reason" in item:
+                raise SnapshotCompositionError(
+                    f"bounded replacement Nomis present codelist is malformed: "
+                    f"{source_id}"
+                )
+        elif (
+            codes
+            or item.get("reason") != _NOMIS_CODELIST_FAILURE_REASON
+            or (record_id, item.get("concept"))
+            not in _NOMIS_CODELIST_FAILURE_ALLOWLIST
+        ):
+            raise SnapshotCompositionError(
+                f"bounded replacement Nomis not-evidenced codelist is not an "
+                f"audited exception: {source_id}"
+            )
+        seen_values: set[str] = set()
+        projected_codes: list[dict[str, str]] = []
+        for code_index, code in enumerate(codes):
+            if not isinstance(code, Mapping):
+                raise SnapshotCompositionError(
+                    f"bounded replacement Nomis codelist code is malformed: {source_id}"
+                )
+            actual_code_keys = set(code)
+            if not {"label", "value"}.issubset(actual_code_keys) or (
+                actual_code_keys - {"label", "revisionStatus", "value"}
+            ):
+                raise SnapshotCompositionError(
+                    f"bounded replacement Nomis codelist {index} code {code_index} "
+                    "has unreviewed or missing fields"
+                )
+            code_value = code.get("value")
+            label = code.get("label")
+            if (
+                not isinstance(code_value, str)
+                or not code_value.strip()
+                or len(code_value) > 500
+                or code_value in seen_values
+                or not isinstance(label, str)
+                or not label.strip()
+                or len(label) > 2_000
+            ):
+                raise SnapshotCompositionError(
+                    f"bounded replacement Nomis codelist code is malformed: {source_id}"
+                )
+            seen_values.add(code_value)
+            projected_code = {"value": code_value, "label": label}
+            if "revisionStatus" in code:
+                revision_status = code["revisionStatus"]
+                if (
+                    item.get("concept") != "TIME"
+                    or not isinstance(revision_status, str)
+                    or not revision_status.strip()
+                    or len(revision_status) > 500
+                ):
+                    raise SnapshotCompositionError(
+                        f"bounded replacement Nomis revision status is malformed: "
+                        f"{source_id}"
+                    )
+                projected_code["revisionStatus"] = revision_status
+            projected_codes.append(projected_code)
+        projected.append(
+            {
+                "concept": item["concept"],
+                "codeList": item["codeList"],
+                "status": status,
+                "codes": projected_codes,
+                **(
+                    {"reason": item["reason"]}
+                    if status == "not-evidenced"
+                    else {}
+                ),
+            }
+        )
+    return projected
+
+
+def _validate_nomis_codelist_page(
+    page: Any,
+    expected_url: str,
+    projected_codelist: Mapping[str, Any],
+    source_id: str,
+    *,
+    index: int,
+) -> None:
+    label = f"bounded replacement Nomis codelist page {index}"
+    if not isinstance(page, Mapping):
+        raise SnapshotCompositionError(f"{label} is malformed: {source_id}")
+    _validate_exact_keys(page, _NOMIS_CODELIST_PAGE_KEYS, label)
+    if page.get("requestUrl") != expected_url or page.get("responseUrl") != expected_url:
+        raise SnapshotCompositionError(
+            f"{label} has invalid response identity: {source_id}"
+        )
+    _validated_sha256(page.get("contentSha256"), f"{label} content hash")
+    _validate_utc_timestamp(page.get("retrievedAt"), f"{label} retrieval time")
+    headers = page.get("responseHeaders")
+    allowed_header_keys = _SAFE_RESPONSE_HEADER_KEYS | {"retry-after"}
+    if not isinstance(headers, Mapping) or set(headers) - allowed_header_keys:
+        raise SnapshotCompositionError(f"{label} headers are unsafe: {source_id}")
+    for key, item in headers.items():
+        if (
+            key != key.casefold()
+            or not isinstance(item, str)
+            or not item.strip()
+            or len(item) > 2_000
+            or _LOCAL_PATH_RE.search(item)
+            or any(pattern.search(item) for pattern in _SECRET_VALUE_PATTERNS)
+        ):
+            raise SnapshotCompositionError(f"{label} headers are unsafe: {source_id}")
+    content_type = headers.get("content-type")
+    if content_type is not None and not content_type.casefold().startswith(
+        "application/json"
+    ):
+        raise SnapshotCompositionError(
+            f"{label} content type is unsafe: {source_id}"
+        )
+    status = projected_codelist.get("status")
+    attempt_count = page.get("attemptCount")
+    upstream_count = page.get("upstreamRecordCount")
+    normalised_count = page.get("normalisedRecordCount")
+    http_status = page.get("httpStatus")
+    failure_reason = page.get("failureReason")
+    if (
+        not isinstance(page.get("cacheHit"), bool)
+        or isinstance(attempt_count, bool)
+        or not isinstance(attempt_count, int)
+        or attempt_count < 1
+        or attempt_count > 6
+        or page.get("acquisitionStatus") != status
+        or isinstance(upstream_count, bool)
+        or not isinstance(upstream_count, int)
+        or isinstance(normalised_count, bool)
+        or normalised_count != 1
+        or isinstance(http_status, bool)
+        or not isinstance(http_status, int)
+    ):
+        raise SnapshotCompositionError(f"{label} counts are invalid: {source_id}")
+    if status == "present":
+        if upstream_count != 1 or http_status != 200 or failure_reason is not None:
+            raise SnapshotCompositionError(
+                f"{label} success state is invalid: {source_id}"
+            )
+    else:
+        codelist_id = projected_codelist.get("codeList")
+        null_response = codelist_id in {"CL_1241_1_TIME", "CL_1251_1_TIME"}
+        exhausted_error = codelist_id == "CL_17_1_TIME"
+        if (
+            failure_reason != _NOMIS_CODELIST_FAILURE_REASON
+            or (null_response and (upstream_count != 1 or http_status != 200))
+            or (
+                exhausted_error
+                and (upstream_count != 0 or not 500 <= http_status <= 599)
+            )
+            or not (null_response or exhausted_error)
+        ):
+            raise SnapshotCompositionError(
+                f"{label} not-evidenced state is invalid: {source_id}"
+            )
+    parsed = urlsplit(expected_url)
+    path_match = re.fullmatch(
+        r"/api/v01/codelist/(CL_[0-9]+_[0-9]+_(?:FREQ|TIME))\.def\.sdmx\.json",
+        parsed.path,
+    )
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "www.nomisweb.co.uk"
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or path_match is None
+        or path_match.group(1) != projected_codelist.get("codeList")
+    ):
+        raise SnapshotCompositionError(
+            f"{label} escaped the exact Nomis codelist endpoint: {source_id}"
+        )
+    projected_response = {
+        "codeList": projected_codelist.get("codeList"),
+        "status": projected_codelist.get("status"),
+        "codes": projected_codelist.get("codes"),
+        **(
+            {"reason": projected_codelist.get("reason")}
+            if projected_codelist.get("status") == "not-evidenced"
+            else {}
+        ),
+    }
+    if page.get("contentSha256") != sha256_json(projected_response):
+        raise SnapshotCompositionError(
+            f"{label} projected response hash is invalid: {source_id}"
+        )
+
+
+def _validate_nomis_codelist_replacement(
+    replacement: Mapping[str, Any],
+    base: Mapping[str, Any],
+    source_id: str,
+    *,
+    base_snapshot_id: str,
+) -> dict[str, int]:
+    """Validate an exact r5 Nomis FREQ/TIME codelist projection."""
+
+    if base_snapshot_id != _NOMIS_CODELIST_BASE_SNAPSHOT_ID:
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement requires exact r5 base: {source_id}"
+        )
+    _validate_exact_keys(
+        replacement, _ACQUISITION_KEYS, "Nomis codelist replacement acquisition"
+    )
+    _validate_exact_keys(base, _ACQUISITION_KEYS, "base r5 Nomis acquisition")
+    if (
+        replacement.get("schemaVersion") != "okf-ons.source-acquisition.v1"
+        or base.get("schemaVersion") != "okf-ons.source-acquisition.v1"
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement acquisition schema is unsupported: {source_id}"
+        )
+    provenance = replacement.get("provenance")
+    base_provenance = base.get("provenance")
+    if not isinstance(provenance, Mapping) or not isinstance(base_provenance, Mapping):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement provenance is malformed: {source_id}"
+        )
+    _validate_exact_keys(
+        base_provenance,
+        _REPLACEMENT_PROVENANCE_KEYS,
+        "base r5 Nomis acquisition provenance",
+    )
+    _validate_exact_keys(
+        provenance,
+        _REPLACEMENT_PROVENANCE_KEYS,
+        "Nomis codelist replacement provenance",
+    )
+    base_source = base_provenance.get("source")
+    if (
+        not isinstance(base_source, Mapping)
+        or base_source.get("id") != source_id
+        or provenance.get("source") != base_source
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement source provenance is invalid: {source_id}"
+        )
+    if base_provenance.get("assurance") != _REPLACEMENT_ASSURANCE:
+        raise SnapshotCompositionError(
+            f"base r5 Nomis assurance is invalid: {source_id}"
+        )
+    assurance = provenance.get("assurance")
+    if (
+        not isinstance(assurance, Mapping)
+        or set(assurance) != set(_NOMIS_CODELIST_REPLACEMENT_ASSURANCE)
+        or any(
+            assurance[key] is not expected
+            for key, expected in _NOMIS_CODELIST_REPLACEMENT_ASSURANCE.items()
+        )
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement lacks projected metadata-only assurance: {source_id}"
+        )
+
+    declaration = provenance.get("replacement")
+    if not isinstance(declaration, Mapping):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement declaration is malformed: {source_id}"
+        )
+    _validate_exact_keys(
+        declaration,
+        _REPLACEMENT_DECLARATION_KEYS,
+        "Nomis codelist replacement declaration",
+    )
+    if (
+        declaration.get("schema") != _BOUNDED_REPLACEMENT_SCHEMA
+        or declaration.get("baseSnapshotId") != base_snapshot_id
+        or declaration.get("baseRecordSetSha256")
+        != base_provenance.get("recordSetSha256")
+        or declaration.get("baseSnapshotSetSha256")
+        != base_provenance.get("snapshotSetSha256")
+        or declaration.get("allowedRecordFields") != ["nomisCodelists"]
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement is not bound to exact r5: {source_id}"
+        )
+
+    base_records = _replacement_records_by_id(
+        base.get("records"), source_id, label="base r5 Nomis acquisition"
+    )
+    replacement_records = _replacement_records_by_id(
+        replacement.get("records"), source_id, label="Nomis codelist replacement"
+    )
+    base_record_ids = list(base_records)
+    if (
+        len(base_records) != _NOMIS_EXPECTED_COHORT_COUNT
+        or set(base_records) != set(replacement_records)
+        or list(replacement_records) != base_record_ids
+        or base_provenance.get("recordCount") != _NOMIS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("reportedTotal") != _NOMIS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("normalisedRecordsSeen")
+        != _NOMIS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("upstreamRecordsSeen")
+        != _NOMIS_EXPECTED_COHORT_COUNT
+        or base_provenance.get("complete") is not True
+        or base_provenance.get("coverageComplete") is not True
+        or base_provenance.get("normalisationDroppedCount") != 0
+        or base_provenance.get("unrepresentedCount") != 0
+        or base_provenance.get("stopReason") != "sourceExhausted"
+        or base_provenance.get("recordSetSha256") != sha256_json(base.get("records"))
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement changed the exact r5 cohort: {source_id}"
+        )
+    cohort = [
+        _nomis_codelist_cohort_item(base_records[record_id], source_id)
+        for record_id in base_record_ids
+    ]
+    ranked_cohort = sorted(
+        cohort,
+        key=lambda row: (
+            hashlib.sha256(row["sourceRecordId"].encode("utf-8")).hexdigest(),
+            row["sourceRecordId"].casefold(),
+            row["sourceRecordId"],
+        ),
+    )
+
+    run = provenance.get("enrichmentRun")
+    if not isinstance(run, Mapping):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement run is missing: {source_id}"
+        )
+    _validate_exact_keys(
+        run, _NOMIS_CODELIST_RUN_KEYS, "Nomis codelist replacement run"
+    )
+    requested_limit = run.get("requestedLimit")
+    if (
+        isinstance(requested_limit, bool)
+        or not isinstance(requested_limit, int)
+        or requested_limit < 1
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist requested limit is invalid: {source_id}"
+        )
+    selected = ranked_cohort[: min(requested_limit, len(ranked_cohort))]
+    selected_count = len(selected)
+    for field in (
+        "cohortCount",
+        "notEvidencedCodelistCount",
+        "selectedCodelistCount",
+        "selectedCount",
+        "unselectedCount",
+    ):
+        count = run.get(field)
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise SnapshotCompositionError(
+                f"Nomis codelist run denominator is invalid: {source_id}"
+            )
+    if (
+        run.get("schema") != _NOMIS_CODELIST_ENRICHMENT_SCHEMA
+        or run.get("cohortCount") != _NOMIS_EXPECTED_COHORT_COUNT
+        or run.get("selectedCount") != selected_count
+        or run.get("unselectedCount")
+        != _NOMIS_EXPECTED_COHORT_COUNT - selected_count
+        or run.get("selectedCodelistCount")
+        != selected_count * len(_NOMIS_CODELIST_CONCEPTS)
+        or run.get("coverageComplete")
+        is not (selected_count == _NOMIS_EXPECTED_COHORT_COUNT)
+        or run.get("selectionOrder") != "sha256(sourceRecordId)-ascending"
+        or run.get("concepts") != list(_NOMIS_CODELIST_CONCEPTS)
+        or run.get("endpointTemplate") != _NOMIS_CODELIST_ENDPOINT_TEMPLATE
+        or run.get("selectedRecordSetSha256")
+        != sha256_json([row["sourceRecordId"] for row in selected])
+        or run.get("selectedCodelistReferenceSetSha256")
+        != sha256_json(
+            [
+                {
+                    "sourceRecordId": row["sourceRecordId"],
+                    "concept": codelist["concept"],
+                    "codeList": codelist["codeList"],
+                }
+                for row in selected
+                for codelist in row["codelists"]
+            ]
+        )
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist run denominator is invalid: {source_id}"
+        )
+
+    base_pages = base_provenance.get("pages")
+    replacement_pages = provenance.get("pages")
+    if (
+        not isinstance(base_pages, list)
+        or not isinstance(replacement_pages, list)
+        or base_provenance.get("pageCount") != len(base_pages)
+        or replacement_pages[: len(base_pages)] != base_pages
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement changed base page lineage: {source_id}"
+        )
+    base_receipts = [
+        {"requestUrl": page.get("requestUrl"), "contentSha256": page.get("contentSha256")}
+        for page in base_pages
+        if isinstance(page, Mapping)
+    ]
+    if (
+        len(base_receipts) != len(base_pages)
+        or base_provenance.get("snapshotSetSha256") != sha256_json(base_receipts)
+    ):
+        raise SnapshotCompositionError(
+            f"base r5 Nomis page lineage hash is invalid: {source_id}"
+        )
+    enrichment_pages = replacement_pages[len(base_pages) :]
+    if len(enrichment_pages) != selected_count * len(_NOMIS_CODELIST_CONCEPTS):
+        raise SnapshotCompositionError(
+            f"Nomis codelist request receipts are incomplete: {source_id}"
+        )
+
+    selected_by_id = {row["sourceRecordId"]: row for row in selected}
+    projected_by_id: dict[str, list[dict[str, Any]]] = {}
+    changed_records = 0
+    changed_fields = 0
+    not_evidenced_codelists = 0
+    for record_id, base_record in base_records.items():
+        replacement_record = replacement_records[record_id]
+        differences = {
+            key
+            for key in set(base_record) | set(replacement_record)
+            if (
+                key not in base_record
+                or key not in replacement_record
+                or base_record[key] != replacement_record[key]
+            )
+        }
+        if differences - {"nomisCodelists"}:
+            raise SnapshotCompositionError(
+                f"Nomis codelist replacement changed protected fields for "
+                f"{source_id}:{record_id}"
+            )
+        selected_row = selected_by_id.get(record_id)
+        if selected_row is None:
+            if differences:
+                raise SnapshotCompositionError(
+                    f"Nomis codelist replacement changed records outside its selection: "
+                    f"{source_id}"
+                )
+            continue
+        if differences != {"nomisCodelists"}:
+            raise SnapshotCompositionError(
+                f"Nomis codelist replacement omitted a selected record: "
+                f"{source_id}:{record_id}"
+            )
+        projected = _validate_nomis_codelists(
+            replacement_record.get("nomisCodelists"), selected_row, source_id
+        )
+        projected_by_id[record_id] = projected
+        not_evidenced_codelists += sum(
+            item["status"] == "not-evidenced" for item in projected
+        )
+        changed_records += 1
+        changed_fields += 1
+
+    page_index = 0
+    for selected_row in selected:
+        projected = projected_by_id[selected_row["sourceRecordId"]]
+        for codelist, expected_row in zip(
+            projected, selected_row["codelists"], strict=True
+        ):
+            _validate_nomis_codelist_page(
+                enrichment_pages[page_index],
+                expected_row["requestUrl"],
+                codelist,
+                source_id,
+                index=page_index,
+            )
+            page_index += 1
+    if page_index != len(enrichment_pages):
+        raise SnapshotCompositionError(
+            f"Nomis codelist request receipt order is invalid: {source_id}"
+        )
+    if run.get("notEvidencedCodelistCount") != not_evidenced_codelists:
+        raise SnapshotCompositionError(
+            f"Nomis codelist not-evidenced count is invalid: {source_id}"
+        )
+
+    mutable_provenance = {
+        "assurance",
+        "pageCount",
+        "pages",
+        "recordSetSha256",
+        "enrichmentRun",
+        "replacement",
+        "retrievalMode",
+        "snapshotSetSha256",
+        "stopReason",
+    }
+    for key in _REPLACEMENT_PROVENANCE_KEYS - mutable_provenance:
+        if provenance[key] != base_provenance[key]:
+            raise SnapshotCompositionError(
+                f"Nomis codelist replacement changed unrelated base provenance "
+                f"{key!r}: {source_id}"
+            )
+    if provenance.get("pageCount") != len(replacement_pages):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement page count is invalid: {source_id}"
+        )
+    complete = selected_count == _NOMIS_EXPECTED_COHORT_COUNT
+    retrieval_mode = provenance.get("retrievalMode")
+    if (
+        provenance.get("stopReason")
+        != ("sourceExhausted" if complete else "recordLimit")
+        or retrieval_mode
+        not in {
+            "codelist-enrichment:frozen",
+            "codelist-enrichment:prefer-cache",
+            "codelist-enrichment:refresh",
+        }
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement run state is invalid: {source_id}"
+        )
+    if (
+        retrieval_mode == "codelist-enrichment:frozen"
+        and any(page["cacheHit"] is not True for page in enrichment_pages)
+    ) or (
+        retrieval_mode == "codelist-enrichment:refresh"
+        and any(page["cacheHit"] is not False for page in enrichment_pages)
+    ):
+        raise SnapshotCompositionError(
+            f"Nomis codelist receipts contradict retrieval mode: {source_id}"
+        )
+    if provenance.get("recordSetSha256") != sha256_json(replacement.get("records")):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement record-set hash is invalid: {source_id}"
+        )
+    receipts = [
+        {"requestUrl": page["requestUrl"], "contentSha256": page["contentSha256"]}
+        for page in replacement_pages
+    ]
+    if provenance.get("snapshotSetSha256") != sha256_json(receipts):
+        raise SnapshotCompositionError(
+            f"Nomis codelist replacement snapshot-set hash is invalid: {source_id}"
+        )
+    _assert_public_safe(replacement, source_id)
+    return {"changedRecords": changed_records, "changedFields": changed_fields}
+
+
 def _validate_bounded_replacement(
     replacement: Mapping[str, Any],
     base: Mapping[str, Any],
@@ -1229,6 +1915,21 @@ def _validate_bounded_replacement(
 
     if source_id == _ONS_SOURCE_ID:
         return _validate_ons_bounded_replacement(
+            replacement,
+            base,
+            source_id,
+            base_snapshot_id=base_snapshot_id,
+        )
+    provenance = replacement.get("provenance")
+    declaration = (
+        provenance.get("replacement") if isinstance(provenance, Mapping) else None
+    )
+    if (
+        source_id == _NOMIS_SOURCE_ID
+        and isinstance(declaration, Mapping)
+        and declaration.get("allowedRecordFields") == ["nomisCodelists"]
+    ):
+        return _validate_nomis_codelist_replacement(
             replacement,
             base,
             source_id,

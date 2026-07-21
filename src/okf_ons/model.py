@@ -967,6 +967,140 @@ def _nomis_value(value: Any) -> str:
     return plain_text(value)
 
 
+def _nomis_codelist_evidence(
+    projected: Mapping[str, Any],
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    """Extract only unambiguous cadence and available-period evidence."""
+
+    raw_codelists = projected.get("nomisCodelists")
+    if not isinstance(raw_codelists, list):
+        return "", {}, {}
+    codelists: dict[str, dict[str, Any]] = {}
+    not_evidenced: list[dict[str, str]] = []
+    for raw in raw_codelists:
+        if not isinstance(raw, Mapping):
+            continue
+        concept = plain_text(raw.get("concept"), 20).upper()
+        code_list = plain_text(raw.get("codeList"), 300)
+        status = plain_text(raw.get("status"), 100).casefold()
+        raw_codes = raw.get("codes")
+        if concept not in {"FREQ", "TIME"} or not code_list:
+            continue
+        if status == "not-evidenced":
+            reason = plain_text(raw.get("reason"), 200)
+            if reason:
+                not_evidenced.append(
+                    {"concept": concept, "codeList": code_list, "reason": reason}
+                )
+            continue
+        if status not in {"", "present"} or not isinstance(raw_codes, list):
+            continue
+        codes: list[dict[str, str]] = []
+        for raw_code in raw_codes:
+            if not isinstance(raw_code, Mapping):
+                continue
+            value = plain_text(raw_code.get("value"), 300)
+            label = plain_text(raw_code.get("label"), 500)
+            revision_status = plain_text(raw_code.get("revisionStatus"), 100)
+            if not value or not label:
+                continue
+            code = {"value": value, "label": label}
+            if revision_status:
+                code["revisionStatus"] = revision_status
+            codes.append(code)
+        if codes:
+            codelists[concept] = {"codeList": code_list, "codes": codes}
+
+    frequency = ""
+    frequency_metadata: dict[str, Any] = {}
+    frequency_source = codelists.get("FREQ")
+    if frequency_source:
+        labels = sorted(
+            {
+                code["label"]
+                for code in frequency_source["codes"]
+                if code["label"].casefold()
+                not in {"n/a", "not applicable", "not available", "unknown"}
+            },
+            key=str.casefold,
+        )
+        single_frequency = len(frequency_source["codes"]) == 1 and len(labels) == 1
+        frequency_metadata = {
+            "codeList": frequency_source["codeList"],
+            "codeCount": len(frequency_source["codes"]),
+            "labels": labels,
+            "singleFrequencyDerived": single_frequency,
+        }
+        if single_frequency:
+            frequency = labels[0]
+
+    time_coverage: dict[str, Any] = {}
+    time_metadata: dict[str, Any] = {}
+    time_source = codelists.get("TIME")
+    if time_source:
+        rejected_statuses = {
+            "future",
+            "not available",
+            "not released",
+            "pre-release",
+            "prerelease",
+            "unreleased",
+        }
+        available = [
+            code
+            for code in time_source["codes"]
+            if code.get("revisionStatus", "").casefold() not in rejected_statuses
+            and not re.search(
+                r"\b(?:not yet released|not released|unreleased)\b",
+                code["label"],
+                re.IGNORECASE,
+            )
+        ]
+        time_metadata = {
+            "codeList": time_source["codeList"],
+            "codeCount": len(time_source["codes"]),
+            "availableCodeCount": len(available),
+            "coverageDerived": False,
+        }
+        years = [
+            (int(code["value"]), code)
+            for code in available
+            if re.fullmatch(r"[12][0-9]{3}", code["value"])
+        ]
+        months: list[tuple[tuple[int, int], dict[str, str]]] = []
+        for code in available:
+            match = re.fullmatch(r"([12][0-9]{3})-([0-9]{2})", code["value"])
+            if match and 1 <= int(match.group(2)) <= 12:
+                months.append(((int(match.group(1)), int(match.group(2))), code))
+        dated: list[tuple[Any, dict[str, str]]] = []
+        if years and len(years) == len(available):
+            dated = years
+            time_metadata["periodFormat"] = "YYYY"
+        elif months and len(months) == len(available):
+            dated = months
+            time_metadata["periodFormat"] = "YYYY-MM"
+        if dated and len({key for key, _ in dated}) == len(dated):
+            start = min(dated, key=lambda item: item[0])[1]
+            end = max(dated, key=lambda item: item[0])[1]
+            time_coverage = {
+                "start": start["value"],
+                "end": end["value"],
+                "startLabel": start["label"],
+                "endLabel": end["label"],
+                "availablePeriodCount": len(available),
+                "sourceCodeList": time_source["codeList"],
+            }
+            time_metadata = {
+                **time_metadata,
+                "coverageDerived": True,
+            }
+    return frequency, time_coverage, {
+        **({"frequency": frequency_metadata} if frequency_metadata else {}),
+        **({"time": time_metadata} if time_metadata else {}),
+        **({"notEvidenced": not_evidenced} if not_evidenced else {}),
+    }
+
+
 def _nomis_sdmx_structure(
     projected: Mapping[str, Any],
     *,
@@ -1841,6 +1975,9 @@ def normalize_acquisition_record(
             annotation_map.get("LastRevised"), 100
         )
         next_update = plain_text(projected.get("nextUpdate"), 100)
+        frequency, time_coverage, codelist_metadata = _nomis_codelist_evidence(
+            projected
+        )
         derivation_fields: dict[str, Any] = {}
         if geography_levels:
             derivation_fields["geography"] = {
@@ -1887,6 +2024,18 @@ def normalize_acquisition_record(
             derivation_fields["next_update"] = {
                 "mode": "source-declared",
                 "sourceField": "overview.nextupdate",
+            }
+        if frequency:
+            derivation_fields["frequency"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "nomisCodelists[FREQ].codes",
+                "rule": "single-explicit-frequency-label-v1",
+            }
+        if time_coverage:
+            derivation_fields["time_coverage"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "nomisCodelists[TIME].codes",
+                "rule": "available-time-codelist-range-v1",
             }
         raw = {
             "id": native_id,
@@ -1949,6 +2098,9 @@ def normalize_acquisition_record(
                 "first_released": plain_text(projected.get("firstReleased"), 100),
                 "last_revised": last_revised,
                 "next_update": next_update,
+                "frequency": frequency,
+                "time_coverage": time_coverage,
+                "nomis_codelist_metadata": codelist_metadata,
                 "mnemonic": plain_text(projected.get("mnemonic"), 300),
                 "publisher_uri": plain_text(projected.get("publisherUri"), 1_000),
                 "annotations": annotations if isinstance(annotations, list) else [],

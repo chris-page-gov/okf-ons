@@ -5,22 +5,29 @@ import pytest
 from okf_ons.model import normalize_acquisition_record
 
 
-def _normalise_nomis(annotations: list[dict[str, str]]) -> dict[str, object]:
-    record = normalize_acquisition_record(
-        {
-            "sourceId": "nomis-dataset-definitions",
-            "sourceRecordId": "NM_TEST_QUALITY",
-            "title": "Nomis metadata evidence test",
-            "description": "A test dataset.",
-            "firstReleased": "2024-01-15 07:00:00",
-            "annotations": annotations,
-            "links": {
-                "apiDefinition": (
-                    "https://www.nomisweb.co.uk/api/v01/dataset/"
-                    "NM_TEST_QUALITY/def.sdmx.json"
-                )
-            },
+def _normalise_nomis(
+    annotations: list[dict[str, str]],
+    *,
+    nomis_codelists: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    projected: dict[str, object] = {
+        "sourceId": "nomis-dataset-definitions",
+        "sourceRecordId": "NM_TEST_QUALITY",
+        "title": "Nomis metadata evidence test",
+        "description": "A test dataset.",
+        "firstReleased": "2024-01-15 07:00:00",
+        "annotations": annotations,
+        "links": {
+            "apiDefinition": (
+                "https://www.nomisweb.co.uk/api/v01/dataset/"
+                "NM_TEST_QUALITY/def.sdmx.json"
+            )
         },
+    }
+    if nomis_codelists is not None:
+        projected["nomisCodelists"] = nomis_codelists
+    record = normalize_acquisition_record(
+        projected,
         snapshot_id="snapshot:test",
         provenance={
             "source": {
@@ -143,3 +150,162 @@ def test_nomis_unsuffixed_quality_note_is_preserved() -> None:
         "Figures have been adjusted to avoid the release of confidential data."
     ]
     assert record["quality_evidence"]["evidence"]["quality_documentation"] is True
+
+
+def test_nomis_codelists_supply_explicit_frequency_and_time_coverage() -> None:
+    record = _normalise_nomis(
+        [],
+        nomis_codelists=[
+            {
+                "concept": "FREQ",
+                "codeList": "CL_TEST_FREQ",
+                "status": "present",
+                "codes": [{"value": "A", "label": "Annually"}],
+            },
+            {
+                "concept": "TIME",
+                "codeList": "CL_TEST_TIME",
+                "status": "present",
+                "codes": [
+                    {
+                        "value": "2011",
+                        "label": "2011",
+                    },
+                    {
+                        "value": "2021",
+                        "label": "2021",
+                        "revisionStatus": "Current",
+                    },
+                    {
+                        "value": "2027",
+                        "label": "2027 not yet released",
+                        "revisionStatus": "PreRelease",
+                    },
+                ],
+            },
+        ],
+    )
+
+    assert record["frequency"] == "Annually"
+    assert record["time_coverage"] == {
+        "start": "2011",
+        "end": "2021",
+        "startLabel": "2011",
+        "endLabel": "2021",
+        "availablePeriodCount": 2,
+        "sourceCodeList": "CL_TEST_TIME",
+    }
+    assert record["nomis_codelist_metadata"] == {
+        "frequency": {
+            "codeList": "CL_TEST_FREQ",
+            "codeCount": 1,
+            "labels": ["Annually"],
+            "singleFrequencyDerived": True,
+        },
+        "time": {
+            "codeList": "CL_TEST_TIME",
+            "codeCount": 3,
+            "availableCodeCount": 2,
+            "coverageDerived": True,
+            "periodFormat": "YYYY",
+        },
+    }
+    assert record["quality_evidence"]["evidence"]["frequency"] is True
+    assert record["quality_evidence"]["evidence"]["time_coverage"] is True
+    assert record["metadata_derivation"]["fields"] == {
+        "frequency": {
+            "mode": "deterministic-extraction",
+            "sourceField": "nomisCodelists[FREQ].codes",
+            "rule": "single-explicit-frequency-label-v1",
+        },
+        "time_coverage": {
+            "mode": "deterministic-extraction",
+            "sourceField": "nomisCodelists[TIME].codes",
+            "rule": "available-time-codelist-range-v1",
+        },
+    }
+
+
+def test_nomis_codelist_ambiguity_and_opaque_periods_remain_gaps() -> None:
+    record = _normalise_nomis(
+        [],
+        nomis_codelists=[
+            {
+                "concept": "FREQ",
+                "codeList": "CL_TEST_FREQ",
+                "status": "present",
+                "codes": [
+                    {"value": "A", "label": "Annually"},
+                    {"value": "Q", "label": "Quarterly"},
+                ],
+            },
+            {
+                "concept": "TIME",
+                "codeList": "CL_TEST_TIME",
+                "status": "present",
+                "codes": [{"value": "latest", "label": "Latest"}],
+            },
+        ],
+    )
+
+    assert record["frequency"] == ""
+    assert record["time_coverage"] == {}
+    assert record["quality_evidence"]["evidence"]["frequency"] is False
+    assert record["quality_evidence"]["evidence"]["time_coverage"] is False
+
+
+def test_nomis_frequency_requires_one_code_label_option() -> None:
+    record = _normalise_nomis(
+        [],
+        nomis_codelists=[
+            {
+                "concept": "FREQ",
+                "codeList": "CL_TEST_FREQ",
+                "status": "present",
+                "codes": [
+                    {"value": "A", "label": "Annually"},
+                    {"value": "ANNUAL", "label": "Annually"},
+                ],
+            }
+        ],
+    )
+
+    assert record["frequency"] == ""
+    assert record["nomis_codelist_metadata"]["frequency"] == {
+        "codeList": "CL_TEST_FREQ",
+        "codeCount": 2,
+        "labels": ["Annually"],
+        "singleFrequencyDerived": False,
+    }
+    assert record["quality_evidence"]["evidence"]["frequency"] is False
+
+
+def test_nomis_unavailable_time_codelist_is_preserved_as_not_evidenced() -> None:
+    record = _normalise_nomis(
+        [],
+        nomis_codelists=[
+            {
+                "concept": "FREQ",
+                "codeList": "CL_TEST_FREQ",
+                "status": "present",
+                "codes": [{"value": "A", "label": "Annually"}],
+            },
+            {
+                "concept": "TIME",
+                "codeList": "CL_TEST_TIME",
+                "status": "not-evidenced",
+                "reason": "upstream-codelist-unavailable",
+                "codes": [],
+            },
+        ],
+    )
+
+    assert record["frequency"] == "Annually"
+    assert record["time_coverage"] == {}
+    assert record["nomis_codelist_metadata"]["notEvidenced"] == [
+        {
+            "concept": "TIME",
+            "codeList": "CL_TEST_TIME",
+            "reason": "upstream-codelist-unavailable",
+        }
+    ]

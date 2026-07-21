@@ -66,6 +66,36 @@ preserved without manufacturing revision status. Frozen `MetadataText` and
 has an explicit quality, uncertainty, limitations or disclosure-control signal,
 or when its paired `MetadataTitle` explicitly supplies that context.
 
+## Bounded Nomis frequency and time codelists
+
+The exact frozen Nomis dataset-definition envelope supplies each dataset
+identity and its native `FREQ` and `TIME` codelist references. A bounded
+replacement follows only the corresponding metadata-only endpoint,
+`/api/v01/codelist/{codelistId}.def.sdmx.json`, and projects code values, labels
+and explicit TIME-period revision-status annotations. Raw SDMX responses remain
+external and are discarded after validation; the projected cache and frozen
+replacement are content hashed, bound to the base digests and prohibited from
+containing observations.
+
+`FREQ` values describe statistical or reference-frequency options. They do not
+describe publication or update cadence. All explicit options remain available
+in `nomis_codelist_metadata`; the singular `frequency` field is populated only
+when there is one unambiguous, non-placeholder code-label option. Multiple
+options remain unresolved rather than being ordered or collapsed.
+
+`TIME` values can evidence available-period extent only when all eligible,
+unique codes have one strict shape: either `YYYY` or `YYYY-MM` with a valid
+month. Explicit pre-release, future, unavailable or unreleased periods are
+excluded. Bounds are computed chronologically from the parsed codes, never from
+response order. A period's revision-status annotation remains period-level
+filtering evidence and never populates dataset `revision_status`.
+
+Each projected codelist is explicitly `present` or `not-evidenced`. An audited
+upstream null or failed response is preserved with an empty code list and the
+reason `upstream-codelist-unavailable`; opaque, mixed or duplicate TIME shapes
+likewise leave `time_coverage` empty. No fallback value is manufactured to
+improve completeness.
+
 ## Required provenance
 
 Every harvested record carries source URL, native identifier, retrieval time,
