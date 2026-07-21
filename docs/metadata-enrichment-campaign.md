@@ -46,8 +46,8 @@ The applicability-aware companion measure uses four states: `present`,
 `not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
 narrow rule excludes only statistical population/universe for the 3,035 Open
 Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 05 this measure is
-38,629 of 68,323 applicable slots (56.5388%); 3,035 are not applicable, 29,694
+methodology or contact evidence is inapplicable. After Batch 06 this measure is
+40,478 of 68,323 applicable slots (59.2451%); 3,035 are not applicable, 27,845
 are not evidenced, and none are recorded as conflicted.
 
 ## Stopping rule
@@ -75,6 +75,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | 03 | Live ONS catalogue, then frozen | 9 min 30 sec | 624 | 53.4894% | 3,941 slots/hour |
 | 04 | Frozen Explore Local Statistics caveats normalised | 14 min 18 sec | 135 | 53.6786% | 566 slots/hour |
 | 05 | Frozen Open Geography utility evidence surfaced | 40 min 37 sec | 325 | 54.1341% | 480 slots/hour |
+| 06 | Live Nomis compact overviews, then frozen | 11 min 11 sec | 1,849 | 56.7252% | 9,920 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -149,6 +150,33 @@ batch's numerator. Even on that basis the 480-slot/hour yield remains above the
 continuation threshold. Cumulative raw progress is 5,539 cells: 14.4742% of
 the original gaps and 28.9485% of the fixed halfway milestone.
 
+Batch 06 made a bounded metadata-only request for each record in the frozen
+1,617-record Nomis cohort. The successful acquisition took 8 minutes 42
+seconds; the reported 11 minute 11 second end-to-end wall time also includes a
+restricted-network retry, immutable composition, bundle compilation and
+profiling. One hundred responses were already in the external cache. The
+completed run made 1,517 live requests sequentially with a minimum 0.2-second
+interval. It requested only `DatasetInfo`, `Coverage`, `DateMetadata` and
+`Contact`; no observations or codelists were fetched, and neither raw responses
+nor the cache location are present in r4.
+
+Every Nomis record now has a source-declared public contact and compact coverage
+metadata. This adds contact evidence for 1,617 records and geography evidence
+for the 232 records that did not already have it through their frozen
+annotations. The source also supplied 97 `lastRevised` dates and three
+`nextUpdate` dates. They are preserved for display and provenance but do not
+claim that a dataset has a particular revision status. The resulting immutable
+snapshot is `metadata-enrichment-2026-07-21-r4`; its ONS Data API, Explore Local
+Statistics and Open Geography source files are byte-identical to r3.
+
+The batch also removed 1,617 dataset-detail gaps and 111 search-facet gaps. Its
+9,920-slot/hour marginal yield is well above the continuation threshold.
+Cumulative raw progress is now 7,388 cells: 19.3059% of the original gaps and
+38.6119% of the fixed halfway milestone. Reaching the milestone would still
+require 11,746 additional source-backed evidence cells; the next-source audit
+therefore tests availability rather than projecting Batch 06's exceptional
+contact yield across unrelated fields.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -169,6 +197,10 @@ Batch 05 has a
 [`profile`](../evaluation/metadata-completeness/batch-05-frozen-ogp-utility.json)
 and
 [`comparison`](../evaluation/metadata-completeness/batch-05-comparison.json).
+Batch 06 has a
+[`profile`](../evaluation/metadata-completeness/batch-06-live-nomis-overviews.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-06-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash

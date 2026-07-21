@@ -67,7 +67,8 @@ an immutable copy is required.
 - [OKF Explorer repository](https://github.com/chris-page-gov/okf-explorer)
 - [Pinned ONSdigital Explore Local Statistics commit](https://github.com/ONSdigital/explore-local-statistics-app/commit/795eaf204f47986f6be248a63f857a42afe4fdf2)
 - [Source register](source/source-register.json),
-  [frozen snapshot manifest](source/demo-snapshot/snapshot.json), and
+  [release snapshot manifest](source/demo-snapshot/snapshot.json),
+  [current enrichment snapshot manifest](source/metadata-enrichment-2026-07-21-r4/snapshot.json), and
   [release changelog](CHANGELOG.md)
 
 ### Documentation map
@@ -202,17 +203,18 @@ python scripts/build_bundle.py \
   --check
 ```
 
-The metadata-enrichment campaign also includes the immutable successor
-snapshot `metadata-enrichment-2026-07-21-r3`. It refreshes only the bounded ONS
-Data API catalogue; its other three source envelopes are byte-identical to the
-v0.2.0 snapshot. Rebuild and profile that successor without network access:
+The metadata-enrichment campaign also includes immutable successor snapshot
+`metadata-enrichment-2026-07-21-r4`. Relative to the v0.2.0 snapshot, r3
+refreshes the bounded ONS Data API catalogue and r4 adds bounded, metadata-only
+Nomis compact overviews. The other three source envelopes in r4 are
+byte-identical to r3. Rebuild and profile r4 without network access:
 
 ```bash
 python scripts/build_bundle.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r3 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
   --output bundle
 python scripts/build_bundle.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r3 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
   --output bundle \
   --check
 python scripts/profile_metadata_gaps.py \
@@ -235,11 +237,33 @@ python scripts/acquire_snapshot.py \
   --cache-dir /path/to/raw-cache \
   --output-dir source \
   --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
-  --base-snapshot source/metadata-enrichment-2026-07-21-r3 \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r4 \
   --source ons-data-api \
   --mode refresh \
   --page-size 1000 \
   --maximum-pages 1 \
+  --require-complete
+```
+
+To refresh the bounded Nomis compact overviews, first acquire them into an
+external replacement envelope, then compose that envelope over r4. The
+acquisition script independently derives its cohort from the frozen Nomis
+source and publishes neither raw responses nor cache paths:
+
+```bash
+python scripts/acquire_nomis_overviews.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --cache-dir /path/to/raw-cache \
+  --output /path/to/nomis-overviews.json \
+  --limit 1617 \
+  --mode refresh \
+  --request-interval 0.2
+python scripts/acquire_snapshot.py \
+  --cache-dir /path/to/raw-cache \
+  --output-dir source \
+  --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r4 \
+  --replacement-acquisition /path/to/nomis-overviews.json \
   --require-complete
 ```
 
