@@ -8,7 +8,7 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 STOP_WORDS = {
     "a",
@@ -86,7 +86,70 @@ _OGP_AREA_KEYWORD_CROSSWALK = {
 _OGP_FREQUENCY_RULES = (
     (re.compile(r"\bquarterly\b", re.IGNORECASE), "quarterly"),
     (re.compile(r"\bevery 6 weeks\b", re.IGNORECASE), "every 6 weeks"),
+    (re.compile(r"\bissued every 12 weeks\b", re.IGNORECASE), "every 12 weeks"),
     (re.compile(r"\bannually\b", re.IGNORECASE), "annually"),
+)
+_OGP_GENERIC_CATEGORIES = {
+    "/categories/latest",
+    "/categories/ons geography open data",
+}
+_OGP_GUIDE_TITLE_RE = re.compile(
+    r"\b(?:user guide|guidance and information|statistical guidance)\b",
+    re.IGNORECASE,
+)
+_OGP_METHODOLOGY_WORD_RE = re.compile(
+    r"\bmethodolog(?:y|ies|ical)\b",
+    re.IGNORECASE,
+)
+_OGP_SUBSTANTIVE_METHOD_RE = re.compile(
+    r"(?:"
+    r"\bmethodology used\b|"
+    r"\bmethodology has been applied\b|"
+    r"\bcreated using an automated approach\b|"
+    r"\bgenerated using\b|"
+    r"\bcalculated using\b|"
+    r"\bassigned using a ['‘’]?point-in-polygon['‘’]? methodology\b"
+    r")",
+    re.IGNORECASE,
+)
+_OGP_QUALITY_NOTE_RE = re.compile(
+    r"\b(?:"
+    r"data quality and limitations|"
+    r"quality assurance checks?|"
+    r"known limitations?/caveats?|"
+    r"known caveats and limitations"
+    r")\b",
+    re.IGNORECASE,
+)
+_OGP_REFERENCE_DATE_RE = re.compile(
+    r"\bas at\s+"
+    r"(?P<date>"
+    r"(?:(?:\d{1,2}(?:st|nd|rd|th)?\s+)?"
+    r"(?:January|February|March|April|May|June|July|August|September|"
+    r"October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|"
+    r"Oct|Nov|Dec)\s+)?"
+    r"(?P<year>(?:18|19|20)\d{2})"
+    r")\b",
+    re.IGNORECASE,
+)
+_OGP_VERSION_LABEL_RE = re.compile(r"\((V\d+(?:\.\d+)?)\)", re.IGNORECASE)
+_OGP_REVISION_HISTORY_RE = re.compile(
+    r"(?:"
+    r"\b(?:this|the)\s+"
+    r"(?:file|dataset|product|guide|boundary set|documents? folder)\s+"
+    r"(?:(?:has|have) been\s+|(?:was|were|is|are)\s+)?"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:file|dataset|product)\s+(?:has been\s+)?"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:V(?:ersion)?\s*\d+(?:\.\d+)?)\s+"
+    r"(?:corrects?|updates?|amends?|revises?)\b|"
+    r"\b(?:note|n\.?b\.?)\s*[:.-]?\s*"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\[(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:amended|updated|corrected|revised)\s+"
+    r"\d{1,2}/\d{1,2}/\d{2,4}\b"
+    r")",
+    re.IGNORECASE,
 )
 _ELS_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", re.IGNORECASE)
 _ELS_METHOD_LINK_CONTEXT_RE = re.compile(
@@ -112,6 +175,22 @@ _ELS_COUNTRY_CODE_CROSSWALK = {
     "N": "Northern Ireland",
     "S": "Scotland",
     "W": "Wales",
+}
+_SECRET_QUERY_KEYS = {
+    "access_token",
+    "apikey",
+    "api_key",
+    "authorization",
+    "client_secret",
+    "credential",
+    "key",
+    "password",
+    "secret",
+    "sig",
+    "signature",
+    "token",
+    "uid",
+    "x-api-key",
 }
 
 
@@ -177,6 +256,23 @@ def _string_list(value: Any) -> list[str]:
     return sorted({plain_text(row, 300) for row in rows if plain_text(row, 300)})
 
 
+def _public_url(value: Any, limit: int = 2_000) -> str:
+    """Return a bounded public URL without embedded credentials or secret keys."""
+
+    url = plain_text(value, limit)
+    parsed = urlparse(url)
+    query_keys = {key.casefold() for key, _ in parse_qsl(parsed.query)}
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or query_keys.intersection(_SECRET_QUERY_KEYS)
+    ):
+        return ""
+    return url
+
+
 def _contacts(value: Any) -> list[dict[str, str]]:
     if not isinstance(value, list):
         return []
@@ -184,11 +280,13 @@ def _contacts(value: Any) -> list[dict[str, str]]:
     for row in value:
         if not isinstance(row, dict):
             continue
-        contact = {
+        contact: dict[str, str] = {
             key: plain_text(row.get(key), 300)
             for key in ("name", "email", "telephone")
             if row.get(key)
         }
+        if public_url := _public_url(row.get("url")):
+            contact["url"] = public_url
         if contact:
             output.append(contact)
     return output
@@ -307,6 +405,144 @@ def _ogp_frequency(description: Any) -> str:
         if pattern.search(text):
             return frequency
     return ""
+
+
+def _ogp_informative_categories(value: Any) -> list[str]:
+    """Retain source categories except the two catalogue-wide containers."""
+
+    return [
+        category
+        for category in _string_list(value)
+        if category.rstrip("/").casefold() not in _OGP_GENERIC_CATEGORIES
+    ]
+
+
+def _ogp_category_subtopics(categories: Iterable[str]) -> list[str]:
+    """Render retained source category paths as readable, lossless subtopics."""
+
+    prefix = "/Categories/"
+    return sorted(
+        {
+            category[len(prefix) :] if category.startswith(prefix) else category
+            for category in categories
+        },
+        key=str.casefold,
+    )
+
+
+def _ogp_exact_self_url(projected: Mapping[str, Any], native_id: str) -> str:
+    """Return one public OGP self link only when it identifies this record."""
+
+    links = projected.get("links")
+    related = links.get("related") if isinstance(links, Mapping) else None
+    if not isinstance(related, list):
+        return ""
+    candidates: set[str] = set()
+    for link in related:
+        if not isinstance(link, Mapping) or plain_text(link.get("rel"), 50).casefold() != "self":
+            continue
+        url = _public_url(link.get("href"))
+        if not url:
+            continue
+        terminal_id = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+        if terminal_id == native_id:
+            candidates.add(url)
+    return next(iter(candidates)) if len(candidates) == 1 else ""
+
+
+def _ogp_labelled_methodology_links(description: Any) -> list[str]:
+    """Extract URLs immediately preceded by an explicit methodology label."""
+
+    text = plain_text(description)
+    links: set[str] = set()
+    for match in _HTTP_URL_RE.finditer(text):
+        context = text[max(0, match.start() - 180) : match.start()]
+        if not _OGP_METHODOLOGY_WORD_RE.search(context):
+            continue
+        url = _public_url(match.group().rstrip(".,;:!?"))
+        if url:
+            links.add(url)
+    return sorted(links)
+
+
+def _ogp_methodology_links(
+    title: Any,
+    description: Any,
+    self_url: str,
+) -> list[str]:
+    """Return evidence URLs only for one of three conservative method signals."""
+
+    title_text = plain_text(title, 1_000)
+    description_text = plain_text(description)
+    labelled_links = _ogp_labelled_methodology_links(description_text)
+    guide_with_method = bool(
+        _OGP_GUIDE_TITLE_RE.search(title_text)
+        and _OGP_METHODOLOGY_WORD_RE.search(description_text)
+    )
+    substantive_method = bool(_OGP_SUBSTANTIVE_METHOD_RE.search(description_text))
+    if not (guide_with_method or substantive_method or labelled_links):
+        return []
+    links = set(labelled_links)
+    if self_url:
+        links.add(self_url)
+    return sorted(links)
+
+
+def _ogp_evidence_excerpt(
+    description: Any,
+    pattern: re.Pattern[str],
+) -> str:
+    """Return one bounded source sentence around a conservative evidence match."""
+
+    text = plain_text(description)
+    match = pattern.search(text)
+    if match is None:
+        return ""
+    sentence_start = text.rfind(". ", 0, match.start()) + 2
+    sentence_end = text.find(". ", match.end())
+    if sentence_end == -1:
+        sentence_end = len(text)
+    else:
+        sentence_end += 1
+    if sentence_end - sentence_start > 500:
+        sentence_start = max(0, match.start() - 180)
+        sentence_end = min(len(text), match.end() + 300)
+    return plain_text(text[sentence_start:sentence_end], 500)
+
+
+def _ogp_quality_notes(description: Any) -> list[str]:
+    note = _ogp_evidence_excerpt(description, _OGP_QUALITY_NOTE_RE)
+    return [note] if note else []
+
+
+def _ogp_geography_reference_date(title: Any, description: Any) -> str:
+    """Extract one early resource date that agrees with the sole title year."""
+
+    text = plain_text(description)
+    matches = list(_OGP_REFERENCE_DATE_RE.finditer(text))
+    title_year = _ogp_geography_vintage(title)
+    if (
+        len(matches) != 1
+        or not isinstance(title_year, int)
+        or matches[0].start() > 300
+        or int(matches[0].group("year")) != title_year
+    ):
+        return ""
+    return plain_text(matches[0].group("date"), 100)
+
+
+def _ogp_source_version_label(title: Any) -> str:
+    """Preserve an exact parenthesised OGP version identity from the title."""
+
+    match = _OGP_VERSION_LABEL_RE.search(plain_text(title, 1_000))
+    return match.group(1).upper() if match else ""
+
+
+def _ogp_revision_history_notes(description: Any) -> list[str]:
+    """Preserve explicit update history without inferring publication status."""
+
+    note = _ogp_evidence_excerpt(description, _OGP_REVISION_HISTORY_RE)
+    return [note] if note else []
 
 
 def _merge_field_derivation(
@@ -1077,6 +1313,8 @@ def _finalise_projected_record(
     record["publication"] = {
         "release_date": record.get("first_released") or "",
         "revision_status": record.get("revision_status") or "",
+        "revision_date": record.get("last_revised") or "",
+        "next_update": record.get("next_update") or "",
         "state": record.get("state") or "",
     }
     record["statistical"] = {
@@ -1088,6 +1326,7 @@ def _finalise_projected_record(
         "frequency": record.get("frequency") or "",
         "dimensions": record.get("dimensions") or [],
         "revision_status": record.get("revision_status") or "",
+        "revision_date": record.get("last_revised") or "",
         "quality_notes": record.get("quality_notes")
         or sorted(
             {
@@ -1436,6 +1675,14 @@ def normalize_acquisition_record(
         geography_levels = _nomis_geography_levels(annotation_map)
         population_type = _nomis_population_universe(annotation_map)
         quality_links = _nomis_quality_documentation_links(annotation_map)
+        contacts = _contacts(projected.get("contacts"))
+        geographic_coverage = plain_text(projected.get("geographicCoverage"), 500)
+        area_served = _string_list(geographic_coverage)
+        declared_last_revised = plain_text(projected.get("lastRevised"), 100)
+        last_revised = declared_last_revised or plain_text(
+            annotation_map.get("LastRevised"), 100
+        )
+        next_update = plain_text(projected.get("nextUpdate"), 100)
         derivation_fields: dict[str, Any] = {}
         if geography_levels:
             derivation_fields["geography"] = {
@@ -1452,6 +1699,30 @@ def normalize_acquisition_record(
                 "mode": "deterministic-extraction",
                 "sourceAnnotationPattern": "MetadataTextN",
                 "classifier": "nomis-quality-context-v1",
+            }
+        if contacts:
+            derivation_fields["contacts"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.contact",
+            }
+        if area_served:
+            derivation_fields["area_served"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.coverage",
+            }
+        if last_revised:
+            derivation_fields["last_revised"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "overview.lastrevised"
+                    if declared_last_revised
+                    else "annotations.LastRevised"
+                ),
+            }
+        if next_update:
+            derivation_fields["next_update"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.nextupdate",
             }
         raw = {
             "id": native_id,
@@ -1485,16 +1756,24 @@ def normalize_acquisition_record(
         record.update(
             {
                 "metadata_modified": plain_text(projected.get("lastUpdated"), 100),
+                "contacts": contacts,
                 "population_type": population_type,
                 "geography": geography_levels,
                 "geography_metadata": (
                     {
                         "levels": geography_levels,
                         "derivationMode": "source-declared",
+                        **(
+                            {"coverage": geographic_coverage}
+                            if geographic_coverage
+                            else {}
+                        ),
                     }
-                    if geography_levels
+                    if geography_levels or geographic_coverage
                     else {}
                 ),
+                "geographic_coverage": geographic_coverage,
+                "area_served": area_served,
                 "quality_links": quality_links,
                 "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 300),
                 "dimensions": sdmx["dimensions"],
@@ -1503,17 +1782,13 @@ def normalize_acquisition_record(
                 "agency_id": plain_text(projected.get("agencyId"), 200),
                 "content_source": plain_text(projected.get("contentSource"), 500),
                 "first_released": plain_text(projected.get("firstReleased"), 100),
+                "last_revised": last_revised,
+                "next_update": next_update,
                 "mnemonic": plain_text(projected.get("mnemonic"), 300),
                 "publisher_uri": plain_text(projected.get("publisherUri"), 1_000),
                 "annotations": annotations if isinstance(annotations, list) else [],
                 "metadata_derivation": (
-                    {
-                        "schema": "okf-ons-field-derivation.v1",
-                        "modes": sorted(
-                            {field["mode"] for field in derivation_fields.values()}
-                        ),
-                        "fields": derivation_fields,
-                    }
+                    _merge_field_derivation({}, derivation_fields)
                     if derivation_fields
                     else {}
                 ),
@@ -1521,7 +1796,8 @@ def normalize_acquisition_record(
             }
         )
     elif source_id == "ons-open-geography":
-        item_url = _projected_url(projected, "item")
+        item_url = _public_url(_projected_url(projected, "item"))
+        self_url = _ogp_exact_self_url(projected, native_id)
         feature = {
             "id": native_id,
             "bbox": projected.get("spatialEnvelope", []),
@@ -1529,7 +1805,7 @@ def normalize_acquisition_record(
                 "title": title,
                 "description": description,
                 "snippet": projected.get("snippet"),
-                "url": item_url,
+                "url": item_url or self_url,
                 "modified": projected.get("modified"),
                 "created": projected.get("created"),
                 "record_kind": projected.get("recordKind"),
@@ -1549,6 +1825,27 @@ def normalize_acquisition_record(
         if record is None:
             return None
         portal_extent = projected.get("portalExtent", {})
+        informative_categories = _ogp_informative_categories(
+            projected.get("categories")
+        )
+        methodology_links = _ogp_methodology_links(
+            title,
+            description,
+            self_url,
+        )
+        quality_notes = _ogp_quality_notes(description)
+        geography_reference_date = _ogp_geography_reference_date(title, description)
+        source_version_label = _ogp_source_version_label(title)
+        revision_history_notes = _ogp_revision_history_notes(description)
+        endpoint_host = _public_host(item_url or self_url)
+        documentation_host = _public_host(self_url)
+        resource_hosts = sorted(
+            {
+                host
+                for url in (item_url, self_url)
+                if (host := _public_host(url))
+            }
+        )
         record.update(
             {
                 "access": plain_text(projected.get("access"), 500),
@@ -1559,8 +1856,32 @@ def normalize_acquisition_record(
                 "spatial_reference": projected.get("spatialReference", {}),
                 "portal_extent": portal_extent,
                 "temporal_extent": projected.get("temporalExtent", {}),
+                "groups": informative_categories,
+                "subtopic": _ogp_category_subtopics(informative_categories),
+                "methodology_links": methodology_links,
+                "quality_notes": quality_notes,
+                "geography_reference_date": geography_reference_date,
+                "geography_metadata": (
+                    {
+                        "referenceDate": geography_reference_date,
+                        "referenceDateSemantics": (
+                            "source-declared geography resource reference/effective date"
+                        ),
+                        "derivationMode": "deterministic-extraction",
+                    }
+                    if geography_reference_date
+                    else {}
+                ),
+                "source_version_label": source_version_label,
+                "revision_history_notes": revision_history_notes,
+                "endpoint_host": endpoint_host,
+                "documentation_host": documentation_host,
+                "resource_hosts": resource_hosts,
             }
         )
+        if self_url:
+            record["documentation"] = self_url
+            record["selection"]["direct_metadata_url"] = self_url
         derivation_fields: dict[str, Mapping[str, Any]] = {}
         if record.get("metadata_created"):
             derivation_fields["metadata_created"] = {
@@ -1596,6 +1917,63 @@ def normalize_acquisition_record(
                 "mode": "deterministic-extraction",
                 "sourceField": "description",
                 "rule": "explicit-cadence-phrase-v1",
+            }
+        if informative_categories:
+            for field in ("groups", "subtopic"):
+                derivation_fields[field] = {
+                    "mode": "deterministic-normalisation",
+                    "sourceField": "categories",
+                    "rule": "exclude-generic-ogp-categories-v1",
+                }
+        if methodology_links:
+            derivation_fields["methodology_links"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["title", "description", "links.related.self"],
+                "classifier": "ogp-conservative-method-evidence-v1",
+            }
+        if quality_notes:
+            derivation_fields["quality_notes"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "classifier": "ogp-explicit-quality-limitations-v1",
+            }
+        if geography_reference_date:
+            derivation_fields["geography_reference_date"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["title", "description"],
+                "rule": "single-early-as-at-date-matching-title-year-v1",
+                "semantics": "geography-resource-reference-date",
+            }
+        if source_version_label:
+            derivation_fields["source_version_label"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "title",
+                "rule": "parenthesised-ogp-version-label-v1",
+            }
+        if revision_history_notes:
+            derivation_fields["revision_history_notes"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "classifier": "ogp-explicit-revision-history-v1",
+                "doesNotImply": "revision_status",
+            }
+        if endpoint_host:
+            derivation_fields["endpoint_host"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["links.item", "links.related.self"],
+                "rule": "item-host-else-exact-self-host-v1",
+            }
+        if documentation_host:
+            derivation_fields["documentation_host"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "links.related.self",
+                "rule": "exact-self-host-v1",
+            }
+        if resource_hosts:
+            derivation_fields["resource_hosts"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["links.item", "links.related.self"],
+                "rule": "exact-public-ogp-hosts-v1",
             }
         if not description and record.get("description") and projected.get("snippet"):
             derivation_fields["description"] = {
@@ -1643,7 +2021,10 @@ def _contrast_values(record: dict[str, Any]) -> dict[str, Any]:
             for publisher in record.get("source_publishers", [])
             if isinstance(publisher, Mapping)
         ],
-        "metadata derivation": record.get("metadata_derivation") or {},
+        # Derivation remains available on each hydrated record, but it is provenance
+        # about how a field was produced rather than an evidence-backed distinction
+        # between two datasets. Including the full ledger here also makes compact
+        # alternative previews grow with every metadata enrichment.
         "edition": record.get("latest_edition") or "",
         "version": record.get("latest_version") or "",
         "release state": record.get("state") or "",
