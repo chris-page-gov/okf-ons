@@ -66,6 +66,10 @@ def _raw_payload(
                                 "annotationtitle": "MetadataCount",
                                 "annotationtext": 1,
                             },
+                            {
+                                "annotationtitle": None,
+                                "annotationtext": "2017-04-01",
+                            },
                         ]
                     },
                 },

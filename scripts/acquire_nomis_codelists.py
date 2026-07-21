@@ -403,7 +403,11 @@ def _annotation_rows(value: Any, label: str) -> list[Mapping[str, Any]]:
         ):
             raise NomisCodelistError(f"{label}[{index}] is malformed")
         for key, child in row.items():
+            if key == "annotationtitle" and child is None:
+                continue
             _bounded_text(child, 20_000, f"{label}[{index}].{key}")
+        if row["annotationtitle"] is None:
+            continue
         validated.append(row)
     return validated
 
