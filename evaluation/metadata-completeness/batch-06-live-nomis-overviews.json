@@ -1,0 +1,1960 @@
+{
+  "applicabilityAwareEvidenceMetric": {
+    "applicablePossible": 68323,
+    "byField": [
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "identity",
+        "not-applicable": 0,
+        "not-evidenced": 0,
+        "present": 5097
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "description",
+        "not-applicable": 0,
+        "not-evidenced": 13,
+        "present": 5084
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "publisher",
+        "not-applicable": 0,
+        "not-evidenced": 0,
+        "present": 5097
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "licence",
+        "not-applicable": 0,
+        "not-evidenced": 108,
+        "present": 4989
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "contact",
+        "not-applicable": 0,
+        "not-evidenced": 3143,
+        "present": 1954
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "release_or_modified",
+        "not-applicable": 0,
+        "not-evidenced": 311,
+        "present": 4786
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "frequency",
+        "not-applicable": 0,
+        "not-evidenced": 4613,
+        "present": 484
+      },
+      {
+        "applicablePossible": 2062,
+        "conflicted": 0,
+        "field": "population",
+        "not-applicable": 3035,
+        "not-evidenced": 315,
+        "present": 1747
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "geography",
+        "not-applicable": 0,
+        "not-evidenced": 337,
+        "present": 4760
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "time_coverage",
+        "not-applicable": 0,
+        "not-evidenced": 4989,
+        "present": 108
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "methodology",
+        "not-applicable": 0,
+        "not-evidenced": 4887,
+        "present": 210
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "quality_documentation",
+        "not-applicable": 0,
+        "not-evidenced": 4032,
+        "present": 1065
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "revision_status",
+        "not-applicable": 0,
+        "not-evidenced": 5097,
+        "present": 0
+      },
+      {
+        "applicablePossible": 5097,
+        "conflicted": 0,
+        "field": "provenance",
+        "not-applicable": 0,
+        "not-evidenced": 0,
+        "present": 5097
+      }
+    ],
+    "bySource": [
+      {
+        "applicablePossible": 22638,
+        "conflicted": 0,
+        "not-applicable": 0,
+        "not-evidenced": 7789,
+        "present": 14849,
+        "source": "nomis"
+      },
+      {
+        "applicablePossible": 4718,
+        "conflicted": 0,
+        "not-applicable": 0,
+        "not-evidenced": 1966,
+        "present": 2752,
+        "source": "ons-data-api"
+      },
+      {
+        "applicablePossible": 1512,
+        "conflicted": 0,
+        "not-applicable": 0,
+        "not-evidenced": 513,
+        "present": 999,
+        "source": "ons-explore-local-statistics"
+      },
+      {
+        "applicablePossible": 39455,
+        "conflicted": 0,
+        "not-applicable": 3035,
+        "not-evidenced": 17577,
+        "present": 21878,
+        "source": "ons-open-geography"
+      }
+    ],
+    "completeness": 0.592451,
+    "definition": "The same evidence inventory with only explicit record-class exclusions removed from the denominator. Uncertain applicability remains not-evidenced.",
+    "present": 40478,
+    "rules": [
+      {
+        "field": "population",
+        "rationale": "An Open Geography boundary, code or lookup asset is a geospatial reference product, not a statistical population or universe.",
+        "ruleId": "geospatial-reference-has-no-statistical-universe",
+        "sourceSurface": "ons-open-geography"
+      }
+    ],
+    "states": {
+      "conflicted": 0,
+      "not-applicable": 3035,
+      "not-evidenced": 27845,
+      "present": 40478
+    }
+  },
+  "bundle": {
+    "recordCount": 5097,
+    "snapshot": "metadata-enrichment-2026-07-21-r4",
+    "version": "0.2.0"
+  },
+  "evidenceSlotMetric": {
+    "byField": [
+      {
+        "completeness": 1.0,
+        "field": "identity",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.997449,
+        "field": "description",
+        "missing": 13,
+        "missingBySource": {
+          "nomis": 11,
+          "ons-open-geography": 2
+        },
+        "present": 5084,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_110_1",
+          "nomis:dataset:NM_12_1",
+          "nomis:dataset:NM_117_1",
+          "nomis:dataset:NM_39_1",
+          "nomis:dataset:NM_2010_1",
+          "nomis:dataset:NM_2014_1",
+          "nomis:dataset:NM_93_1",
+          "nomis:dataset:NM_91_1",
+          "nomis:dataset:NM_89_1",
+          "nomis:dataset:NM_92_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "publisher",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.978811,
+        "field": "licence",
+        "missing": 108,
+        "missingBySource": {
+          "ons-explore-local-statistics": 108
+        },
+        "present": 4989,
+        "sampleMissingRecordIds": [
+          "ons-explore-local-statistics:indicator:4g-coverage",
+          "ons-explore-local-statistics:indicator:5g-coverage",
+          "ons-explore-local-statistics:indicator:active-businesses",
+          "ons-explore-local-statistics:indicator:adult-obesity-prevalence",
+          "ons-explore-local-statistics:indicator:air-pollution-regulating",
+          "ons-explore-local-statistics:indicator:wellbeing-anxiety",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements-scotland",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts-ni"
+        ]
+      },
+      {
+        "completeness": 0.383363,
+        "field": "contact",
+        "missing": 3143,
+        "missingBySource": {
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 1954,
+        "sampleMissingRecordIds": [
+          "ons-explore-local-statistics:indicator:4g-coverage",
+          "ons-explore-local-statistics:indicator:5g-coverage",
+          "ons-explore-local-statistics:indicator:active-businesses",
+          "ons-explore-local-statistics:indicator:adult-obesity-prevalence",
+          "ons-explore-local-statistics:indicator:air-pollution-regulating",
+          "ons-explore-local-statistics:indicator:wellbeing-anxiety",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements-scotland",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts-ni"
+        ]
+      },
+      {
+        "completeness": 0.938984,
+        "field": "release_or_modified",
+        "missing": 311,
+        "missingBySource": {
+          "nomis": 311
+        },
+        "present": 4786,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.094958,
+        "field": "frequency",
+        "missing": 4613,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 289,
+          "ons-open-geography": 2707
+        },
+        "present": 484,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.342751,
+        "field": "population",
+        "missing": 3350,
+        "missingBySource": {
+          "nomis": 157,
+          "ons-data-api": 50,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 1747,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.933883,
+        "field": "geography",
+        "missing": 337,
+        "missingBySource": {
+          "ons-data-api": 337
+        },
+        "present": 4760,
+        "sampleMissingRecordIds": [
+          "ons-data-api:dataset:RM154",
+          "ons-data-api:dataset:RM149",
+          "ons-data-api:dataset:RM150",
+          "ons-data-api:dataset:RM151",
+          "ons-data-api:dataset:RM152",
+          "ons-data-api:dataset:RM153",
+          "ons-data-api:dataset:TS044",
+          "ons-data-api:dataset:RM001",
+          "ons-data-api:dataset:RM002",
+          "ons-data-api:dataset:RM003"
+        ]
+      },
+      {
+        "completeness": 0.021189,
+        "field": "time_coverage",
+        "missing": 4989,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-open-geography": 3035
+        },
+        "present": 108,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.041201,
+        "field": "methodology",
+        "missing": 4887,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 328,
+          "ons-explore-local-statistics": 75,
+          "ons-open-geography": 2867
+        },
+        "present": 210,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.208946,
+        "field": "quality_documentation",
+        "missing": 4032,
+        "missingBySource": {
+          "nomis": 842,
+          "ons-data-api": 288,
+          "ons-explore-local-statistics": 6,
+          "ons-open-geography": 2896
+        },
+        "present": 1065,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "revision_status",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "provenance",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      }
+    ],
+    "bySource": [
+      {
+        "completeness": 0.655933,
+        "missing": 7789,
+        "possible": 22638,
+        "present": 14849,
+        "records": 1617,
+        "source": "nomis"
+      },
+      {
+        "completeness": 0.583298,
+        "missing": 1966,
+        "possible": 4718,
+        "present": 2752,
+        "records": 337,
+        "source": "ons-data-api"
+      },
+      {
+        "completeness": 0.660714,
+        "missing": 513,
+        "possible": 1512,
+        "present": 999,
+        "records": 108,
+        "source": "ons-explore-local-statistics"
+      },
+      {
+        "completeness": 0.514898,
+        "missing": 20612,
+        "possible": 42490,
+        "present": 21878,
+        "records": 3035,
+        "source": "ons-open-geography"
+      }
+    ],
+    "completeness": 0.567252,
+    "definition": "Population of the 14 existing quality_evidence boolean slots across every record; this is evidence availability, not statistical accuracy.",
+    "halfRemainingGapSlots": 15440,
+    "halfRemainingTargetCompleteness": 0.783626,
+    "halfRemainingTargetPresent": 55918,
+    "missing": 30880,
+    "possible": 71358,
+    "present": 40478,
+    "recordScoreDistribution": {
+      "0.429": 2,
+      "0.5": 2594,
+      "0.571": 988,
+      "0.643": 726,
+      "0.714": 787
+    }
+  },
+  "explorerDatasetDisplayMetric": {
+    "byField": [
+      {
+        "completeness": 1.0,
+        "field": "overview.record_type",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.source_adapter",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.source_tier",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.confidence",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.licence",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "overview.concept_id",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.595448,
+        "field": "overview.access_model",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.595448,
+        "field": "overview.visibility",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "overview.contract_status",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.dcat_type",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "overview.openapi_type",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.lifecycle",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.873455,
+        "field": "overview.area_served",
+        "missing": 645,
+        "missingBySource": {
+          "ons-data-api": 337,
+          "ons-open-geography": 308
+        },
+        "present": 4452,
+        "sampleMissingRecordIds": [
+          "ons-data-api:dataset:RM154",
+          "ons-data-api:dataset:RM149",
+          "ons-data-api:dataset:RM150",
+          "ons-data-api:dataset:RM151",
+          "ons-data-api:dataset:RM152",
+          "ons-data-api:dataset:RM153",
+          "ons-data-api:dataset:TS044",
+          "ons-data-api:dataset:RM001",
+          "ons-data-api:dataset:RM002",
+          "ons-data-api:dataset:RM003"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.url",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "overview.documentation",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "normal.id",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "normal.state",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.675103,
+        "field": "normal.type",
+        "missing": 1656,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 39
+        },
+        "present": 3441,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "normal.protocol",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "normal.isopen",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.595448,
+        "field": "normal.private",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.595448,
+        "field": "normal.metadata_created",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.938984,
+        "field": "normal.metadata_modified",
+        "missing": 311,
+        "missingBySource": {
+          "nomis": 311
+        },
+        "present": 4786,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "normal.timestamp",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "normal.formats",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.978811,
+        "field": "normal.topics",
+        "missing": 108,
+        "missingBySource": {
+          "nomis": 97,
+          "ons-data-api": 11
+        },
+        "present": 4989,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1",
+          "nomis:dataset:NM_94_1",
+          "nomis:dataset:NM_120_1",
+          "nomis:dataset:NM_124_1",
+          "nomis:dataset:NM_507_1",
+          "nomis:dataset:NM_192_1",
+          "nomis:dataset:NM_191_1",
+          "nomis:dataset:NM_187_1"
+        ]
+      },
+      {
+        "completeness": 0.978811,
+        "field": "normal.source_licence",
+        "missing": 108,
+        "missingBySource": {
+          "ons-explore-local-statistics": 108
+        },
+        "present": 4989,
+        "sampleMissingRecordIds": [
+          "ons-explore-local-statistics:indicator:4g-coverage",
+          "ons-explore-local-statistics:indicator:5g-coverage",
+          "ons-explore-local-statistics:indicator:active-businesses",
+          "ons-explore-local-statistics:indicator:adult-obesity-prevalence",
+          "ons-explore-local-statistics:indicator:air-pollution-regulating",
+          "ons-explore-local-statistics:indicator:wellbeing-anxiety",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements",
+          "ons-explore-local-statistics:indicator:apprenticeship-achievements-scotland",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts",
+          "ons-explore-local-statistics:indicator:apprenticeship-starts-ni"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "normal.publisher_concept_id",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.449872,
+        "field": "normal.groups",
+        "missing": 2804,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 742
+        },
+        "present": 2293,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.616637,
+        "field": "normal.resource_hosts",
+        "missing": 1954,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337
+        },
+        "present": 3143,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "standards.dcat_term",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "standards.dcat_export_status",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "standards.openapi_term",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "standards.openapi_export_status",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "standards.openapi_security_scheme",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      }
+    ],
+    "completeness": 0.625528,
+    "definition": "Fixed dataset-detail fields that Explorer can render as a metadata gap. This diagnostic includes duplicated and inapplicable generic fields.",
+    "fieldCount": 35,
+    "missing": 66804,
+    "possible": 178395,
+    "present": 111591,
+    "rowCount": 5097
+  },
+  "explorerDatasetDynamicProvenanceMetric": {
+    "completeness": 0.997894,
+    "definition": "Values in the dynamic provenance rows rendered by Explorer (up to 14 per record).",
+    "missing": 108,
+    "possible": 51294,
+    "present": 51186
+  },
+  "explorerPublisherDisplayMetric": {
+    "byField": [
+      {
+        "completeness": 0.0,
+        "field": "concept_id",
+        "missing": 24,
+        "missingBySource": {
+          "not-specified": 24
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "department-for-culture-media-and-sport",
+          "department-for-education",
+          "department-for-energy-security-and-net-zero",
+          "department-for-energy-security-and-net-zero-great-britain",
+          "department-for-energy-security-and-net-zero-northern-ireland",
+          "department-for-the-economy-northern-ireland-apprenticeshipsni",
+          "department-for-transport",
+          "department-for-transport-sourced-from-zapmap",
+          "department-for-work-and-pensions",
+          "further-education-colleges-and-cafre"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "id",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 24,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "type",
+        "missing": 24,
+        "missingBySource": {
+          "not-specified": 24
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "department-for-culture-media-and-sport",
+          "department-for-education",
+          "department-for-energy-security-and-net-zero",
+          "department-for-energy-security-and-net-zero-great-britain",
+          "department-for-energy-security-and-net-zero-northern-ireland",
+          "department-for-the-economy-northern-ireland-apprenticeshipsni",
+          "department-for-transport",
+          "department-for-transport-sourced-from-zapmap",
+          "department-for-work-and-pensions",
+          "further-education-colleges-and-cafre"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "approval_status",
+        "missing": 24,
+        "missingBySource": {
+          "not-specified": 24
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "department-for-culture-media-and-sport",
+          "department-for-education",
+          "department-for-energy-security-and-net-zero",
+          "department-for-energy-security-and-net-zero-great-britain",
+          "department-for-energy-security-and-net-zero-northern-ireland",
+          "department-for-the-economy-northern-ireland-apprenticeshipsni",
+          "department-for-transport",
+          "department-for-transport-sourced-from-zapmap",
+          "department-for-work-and-pensions",
+          "further-education-colleges-and-cafre"
+        ]
+      }
+    ],
+    "completeness": 0.25,
+    "definition": "Fixed publisher-detail fields that Explorer can render as a metadata gap.",
+    "fieldCount": 4,
+    "missing": 72,
+    "possible": 96,
+    "present": 24,
+    "rowCount": 24
+  },
+  "explorerResourceDisplayMetric": {
+    "byField": [
+      {
+        "completeness": 1.0,
+        "field": "source_format",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "concept_id",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "url",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "govuk_content_path",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "state",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "position",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.595448,
+        "field": "created",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.938984,
+        "field": "last_modified",
+        "missing": 311,
+        "missingBySource": {
+          "nomis": 311
+        },
+        "present": 4786,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.938984,
+        "field": "metadata_modified",
+        "missing": 311,
+        "missingBySource": {
+          "nomis": 311
+        },
+        "present": 4786,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "size",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "hash",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "schema_url",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "schema_type",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1#source",
+          "nomis:dataset:NM_67_1#source",
+          "nomis:dataset:NM_35_1#source",
+          "nomis:dataset:NM_38_1#source",
+          "nomis:dataset:NM_63_1#source",
+          "nomis:dataset:NM_37_1#source",
+          "nomis:dataset:NM_62_1#source",
+          "nomis:dataset:NM_62_5#source",
+          "nomis:dataset:NM_88_1#source",
+          "nomis:dataset:NM_123_1#source"
+        ]
+      }
+    ],
+    "completeness": 0.421032,
+    "definition": "Fixed resource-detail fields that Explorer can render as a metadata gap. Most are generic catalogue fields and can be inapplicable to source links.",
+    "fieldCount": 13,
+    "missing": 38363,
+    "possible": 66261,
+    "present": 27898,
+    "rowCount": 5097
+  },
+  "explorerResourceDynamicProvenanceMetric": {
+    "completeness": 0.997894,
+    "definition": "Values in the dynamic provenance rows rendered by Explorer (up to 14 per record).",
+    "missing": 108,
+    "possible": 51294,
+    "present": 51186
+  },
+  "explorerSearchFacetMetric": {
+    "byField": [
+      {
+        "completeness": 1.0,
+        "field": "source_surface",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "record_type",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.978811,
+        "field": "topic",
+        "missing": 108,
+        "missingBySource": {
+          "nomis": 97,
+          "ons-data-api": 11
+        },
+        "present": 4989,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1",
+          "nomis:dataset:NM_94_1",
+          "nomis:dataset:NM_120_1",
+          "nomis:dataset:NM_124_1",
+          "nomis:dataset:NM_507_1",
+          "nomis:dataset:NM_192_1",
+          "nomis:dataset:NM_191_1",
+          "nomis:dataset:NM_187_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "state",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.094958,
+        "field": "frequency",
+        "missing": 4613,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 289,
+          "ons-open-geography": 2707
+        },
+        "present": 484,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.342751,
+        "field": "population_type",
+        "missing": 3350,
+        "missingBySource": {
+          "nomis": 157,
+          "ons-data-api": 50,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 1747,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "source_publisher",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.527173,
+        "field": "subtopic",
+        "missing": 2410,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 51,
+          "ons-open-geography": 742
+        },
+        "present": 2687,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.397293,
+        "field": "unit_of_measure",
+        "missing": 3072,
+        "missingBySource": {
+          "ons-data-api": 37,
+          "ons-open-geography": 3035
+        },
+        "present": 2025,
+        "sampleMissingRecordIds": [
+          "ons-data-api:dataset:regional-gdp-by-year",
+          "ons-data-api:dataset:childrens-wellbeing",
+          "ons-data-api:dataset:faster-indicators-shipping-data",
+          "ons-data-api:dataset:weekly-deaths-health-board",
+          "ons-data-api:dataset:weekly-deaths-local-authority",
+          "ons-data-api:dataset:weekly-deaths-age-sex",
+          "ons-data-api:dataset:weekly-deaths-region",
+          "ons-data-api:dataset:ashe-tables-20",
+          "ons-data-api:dataset:ashe-tables-26",
+          "ons-data-api:dataset:ashe-tables-27-and-28"
+        ]
+      },
+      {
+        "completeness": 0.292917,
+        "field": "geography_level",
+        "missing": 3604,
+        "missingBySource": {
+          "nomis": 232,
+          "ons-data-api": 337,
+          "ons-open-geography": 3035
+        },
+        "present": 1493,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.555621,
+        "field": "geography_vintage",
+        "missing": 2265,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-open-geography": 311
+        },
+        "present": 2832,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "derivation_mode",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "binding_status",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "metadata_evidence_band",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "has_methodology",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "has_quality_documentation",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "has_alternatives",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      }
+    ],
+    "completeness": 0.775854,
+    "definition": "Bundle static-search facet fields whose missing value is shown as Not specified. This metric preserves nested OKF-ONS field semantics.",
+    "fieldCount": 17,
+    "missing": 19422,
+    "possible": 86649,
+    "present": 67227,
+    "rowCount": 5097
+  },
+  "explorerSearchResultDisplayMetric": {
+    "byField": [
+      {
+        "completeness": 1.0,
+        "field": "record_type",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "source_adapter",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "confidence",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "licence",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "protocol",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.978811,
+        "field": "topics",
+        "missing": 108,
+        "missingBySource": {
+          "nomis": 97,
+          "ons-data-api": 11
+        },
+        "present": 4989,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1",
+          "nomis:dataset:NM_94_1",
+          "nomis:dataset:NM_120_1",
+          "nomis:dataset:NM_124_1",
+          "nomis:dataset:NM_507_1",
+          "nomis:dataset:NM_192_1",
+          "nomis:dataset:NM_191_1",
+          "nomis:dataset:NM_187_1"
+        ]
+      },
+      {
+        "completeness": 0.616637,
+        "field": "endpoint_host",
+        "missing": 1954,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337
+        },
+        "present": 3143,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.616637,
+        "field": "documentation_host",
+        "missing": 1954,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337
+        },
+        "present": 3143,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.595448,
+        "field": "access_model",
+        "missing": 2062,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108
+        },
+        "present": 3035,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 0.0,
+        "field": "contract_status",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "dcat_type",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.0,
+        "field": "openapi_type",
+        "missing": 5097,
+        "missingBySource": {
+          "nomis": 1617,
+          "ons-data-api": 337,
+          "ons-explore-local-statistics": 108,
+          "ons-open-geography": 3035
+        },
+        "present": 0,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      },
+      {
+        "completeness": 1.0,
+        "field": "url",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 1.0,
+        "field": "documentation",
+        "missing": 0,
+        "missingBySource": {},
+        "present": 5097,
+        "sampleMissingRecordIds": []
+      },
+      {
+        "completeness": 0.938984,
+        "field": "timestamp",
+        "missing": 311,
+        "missingBySource": {
+          "nomis": 311
+        },
+        "present": 4786,
+        "sampleMissingRecordIds": [
+          "nomis:dataset:NM_66_1",
+          "nomis:dataset:NM_67_1",
+          "nomis:dataset:NM_35_1",
+          "nomis:dataset:NM_38_1",
+          "nomis:dataset:NM_63_1",
+          "nomis:dataset:NM_37_1",
+          "nomis:dataset:NM_62_1",
+          "nomis:dataset:NM_62_5",
+          "nomis:dataset:NM_88_1",
+          "nomis:dataset:NM_123_1"
+        ]
+      }
+    ],
+    "completeness": 0.783101,
+    "definition": "Fixed search-result fields that Explorer can render as a metadata gap. These duplicate canonical records and are not added to the evidence KPI.",
+    "fieldCount": 15,
+    "missing": 16583,
+    "possible": 76455,
+    "present": 59872,
+    "rowCount": 5097
+  },
+  "recordCount": 5097,
+  "schema": "okf-ons-metadata-gap-profile.v1"
+}

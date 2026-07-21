@@ -1,0 +1,225 @@
+{
+  "schema": "okf-ons.metadata-campaign-stopping-audit.v1",
+  "auditedAt": "2026-07-21T14:53:13Z",
+  "campaign": {
+    "branch": "codex/metadata-gap-enrichment",
+    "baselineSnapshot": "monday-2026-07-17-r2",
+    "currentSnapshot": "metadata-enrichment-2026-07-21-r6",
+    "recordCount": 5097,
+    "fixedEvidenceSlotsPerRecord": 14
+  },
+  "baseline": {
+    "possible": 71358,
+    "present": 33090,
+    "missing": 38268,
+    "completeness": 0.463718
+  },
+  "current": {
+    "possible": 71358,
+    "present": 44863,
+    "missing": 26495,
+    "completeness": 0.628703,
+    "applicabilityAware": {
+      "possible": 65288,
+      "present": 44863,
+      "notEvidenced": 20425,
+      "notApplicable": 6070,
+      "conflicted": 0,
+      "completeness": 0.687155
+    }
+  },
+  "fixedHalfwayMilestone": {
+    "targetAddedPresent": 19134,
+    "targetPresent": 52224,
+    "targetCompleteness": 0.731859,
+    "actualAddedPresent": 11773,
+    "remainingToTarget": 7361,
+    "fractionCompleted": 0.615292,
+    "reached": false,
+    "defensibleEtaSeconds": null,
+    "etaRationale": "The final high-yield bounded cohort is exhausted and the only remaining piloted bounded route has a 46-cell conservative ceiling below the continuation threshold.",
+    "invalidNaiveProjection": {
+      "basis": "Batch 09 marginal rate of 3962.801 slots per hour",
+      "seconds": 6687,
+      "hours": 1.858,
+      "validEta": false
+    }
+  },
+  "timing": {
+    "baselineInventorySeconds": 840,
+    "enrichmentBatchSeconds": 11022,
+    "totalMeasuredSeconds": 11862,
+    "clockBasis": "Sum of separately recorded UTC wall-clock batch intervals; not end-to-end calendar duration",
+    "cumulativeAddedPresent": 11773,
+    "cumulativeSlotsPerEnrichmentHour": 3845.291,
+    "batches": [
+      {"batch": 1, "elapsedSeconds": 313, "addedPresent": 3620, "slotsPerHour": 41635.783},
+      {"batch": 2, "elapsedSeconds": 471, "addedPresent": 835, "slotsPerHour": 6382.166},
+      {"batch": 3, "elapsedSeconds": 570, "addedPresent": 624, "slotsPerHour": 3941.053},
+      {"batch": 4, "elapsedSeconds": 858, "addedPresent": 135, "slotsPerHour": 566.434},
+      {"batch": 5, "elapsedSeconds": 2437, "addedPresent": 325, "slotsPerHour": 480.098},
+      {"batch": 6, "elapsedSeconds": 671, "addedPresent": 1849, "slotsPerHour": 9920.119},
+      {"batch": 7, "elapsedSeconds": 956, "addedPresent": 653, "slotsPerHour": 2458.996},
+      {"batch": 8, "elapsedSeconds": 1918, "addedPresent": 619, "slotsPerHour": 1161.835},
+      {
+        "batch": 9,
+        "startedAt": "2026-07-21T14:06:05Z",
+        "completedAt": "2026-07-21T14:53:13Z",
+        "elapsedSeconds": 2828,
+        "addedPresent": 3113,
+        "slotsPerHour": 3962.801
+      }
+    ]
+  },
+  "batch09": {
+    "route": "nomis-exact-freq-time-codelists",
+    "cohortRecords": 1617,
+    "selectedCodelists": 3234,
+    "selectedCodelistReferenceSetSha256": "4b4aa8d5dca3d536d3280e3beb1b52cb69695776292fb08ba7aec21cc9c4fe81",
+    "notEvidencedCodelists": 34,
+    "notEvidencedConcepts": {"TIME": 34},
+    "semanticPilot": {
+      "records": 54,
+      "requests": 108,
+      "selectionSha256": "b0470bf9fe53054da1debf23251deb86cccc2c20dc8038ee47a60a1f1148aa99"
+    },
+    "directEndpointPilot": {"records": 20, "requests": 40},
+    "addedByField": {"frequency": 1530, "time_coverage": 1583},
+    "coverageComplete": true,
+    "status": "full-cohort-measured-exhausted"
+  },
+  "remainingRawByField": {
+    "description": 13,
+    "licence": 108,
+    "contact": 3143,
+    "release_or_modified": 311,
+    "frequency": 3083,
+    "population": 3350,
+    "time_coverage": 3406,
+    "methodology": 4887,
+    "quality_documentation": 3097,
+    "revision_status": 5097
+  },
+  "remainingRawBySource": {
+    "nomis": 4023,
+    "ons-data-api": 1347,
+    "ons-explore-local-statistics": 513,
+    "ons-open-geography": 20612
+  },
+  "remainingApplicableByField": {
+    "description": 13,
+    "licence": 108,
+    "contact": 3143,
+    "release_or_modified": 311,
+    "frequency": 3083,
+    "population": 315,
+    "time_coverage": 371,
+    "methodology": 4887,
+    "quality_documentation": 3097,
+    "revision_status": 5097
+  },
+  "remainingApplicableBySource": {
+    "nomis": 4023,
+    "ons-data-api": 1347,
+    "ons-explore-local-statistics": 513,
+    "ons-open-geography": 14542
+  },
+  "explicitlyNotApplicable": {
+    "count": 6070,
+    "source": "ons-open-geography",
+    "fields": {"population": 3035, "time_coverage": 3035}
+  },
+  "sourceSurfaceAudit": [
+    {
+      "source": "nomis",
+      "records": 1617,
+      "auditedSurfaces": [
+        "frozen dataset definitions and annotations",
+        "full-cohort compact DatasetInfo,Coverage,DateMetadata,Contact overviews",
+        "all exact frozen FREQ and TIME codelist references"
+      ],
+      "remainingApplicable": 4023,
+      "status": "bounded-routes-measured-exhausted"
+    },
+    {
+      "source": "ons-data-api",
+      "records": 337,
+      "auditedSurfaces": [
+        "full catalogue page",
+        "exact frozen latest-version resource for every record",
+        "eight-family pilot of exact time dimension-option endpoints"
+      ],
+      "remainingApplicable": 1347,
+      "status": "remaining-bounded-route-measured-rejected"
+    },
+    {
+      "source": "ons-explore-local-statistics",
+      "records": 108,
+      "auditedSurfaces": ["full pinned allowlisted internal-API projection"],
+      "remainingApplicable": 513,
+      "status": "bounded-route-exhausted"
+    },
+    {
+      "source": "ons-open-geography",
+      "records": 3035,
+      "auditedSurfaces": [
+        "full frozen catalogue metadata projection",
+        "descriptions, links, cadence, quality, methodology, version and reference-date evidence"
+      ],
+      "remainingApplicable": 14542,
+      "status": "bounded-routes-exhausted"
+    }
+  ],
+  "boundedRouteInventory": [
+    {
+      "route": "nomis-freq-time-codelists",
+      "status": "full-cohort-measured-exhausted",
+      "records": 1617,
+      "requests": 3234,
+      "actualAddedPresent": 3113
+    },
+    {
+      "route": "ons-data-api-version-time-dimension-options",
+      "status": "measured-rejected",
+      "cohortRecords": 50,
+      "pilotFamilies": 8,
+      "pilotRequests": 8,
+      "pilotItems": 640,
+      "pilotSeconds": 2.801,
+      "pilotSelectionSha256": "23b16ed0e4da032c8b629730036a2cf19e62538d4aa93da76255f31f2f1e1760",
+      "absoluteCellCeiling": 50,
+      "pilotSupportedStratumCeiling": 46,
+      "maximumRawPercentagePointGain": 0.070069,
+      "maximumImplementationSecondsAtThreshold": 504,
+      "reason": "The governed production batch cannot credibly ship within the 8 minute 24 second threshold ceiling; mixed-granularity families must remain structured options."
+    },
+    {
+      "route": "unbounded-linked-document-or-open-web-crawl",
+      "status": "rejected-unbounded",
+      "potentialFields": ["contact", "methodology", "quality_documentation", "licence"],
+      "reason": "Requires record-specific document classification beyond registered deterministic source contracts."
+    },
+    {
+      "route": "source-global-defaults",
+      "status": "rejected-semantic",
+      "potentialFields": ["contact", "licence"],
+      "reason": "Publisher-wide contacts or rights cannot be copied to records without governing evidence."
+    },
+    {
+      "route": "date-version-dimension-title-proxies",
+      "status": "rejected-semantic",
+      "potentialFields": ["revision_status", "time_coverage", "frequency"],
+      "reason": "Narrower source concepts are preserved but do not evidence the generic fields."
+    }
+  ],
+  "stoppingDecision": {
+    "decision": "stop",
+    "continuationThresholdSlotsPerHour": 357,
+    "lastBatchSlotsPerHour": 3962.801,
+    "trigger": "bounded-cohort-exhausted-and-next-route-below-threshold",
+    "knownImmediateBoundedQualifyingGainAboveThreshold": 0,
+    "remainingPilotedBoundedCellCeiling": 46,
+    "reason": "The high-yield Nomis cohort is exhausted. Every other known deterministic cohort/endpoint pair is measured, rejected or exhausted; the sole remaining credible generic mapping has a utility ceiling below its governed implementation cost.",
+    "completeCoverageClaimed": false
+  }
+}

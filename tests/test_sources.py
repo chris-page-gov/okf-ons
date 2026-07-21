@@ -124,6 +124,24 @@ def test_ons_pages_resume_and_replay_deterministically(
                         "last_updated": "2026-07-17T08:00:00Z",
                         "release_frequency": "Quarterly",
                         "unit_of_measure": "Percentage",
+                        "canonical_topic": "7779",
+                        "subtopics": ["7755", "6885"],
+                        "type": "cantabular_flexible_table",
+                        "survey": "census",
+                        "license": "Open Government Licence v3.0",
+                        "contacts": [
+                            {
+                                "name": "Expert statistical team",
+                                "email": "statistics@example.ons.gov.uk",
+                                "telephone": "+44 300 123 0000",
+                                "internal_note": "must-not-publish",
+                            }
+                        ],
+                        "is_based_on": {
+                            "@id": "usual-residents",
+                            "@type": "cantabular_flexible_table",
+                            "internal": "must-not-publish",
+                        },
                         "national_statistic": True,
                         "methodologies": [
                             {
@@ -136,6 +154,19 @@ def test_ons_pages_resume_and_replay_deterministically(
                             {
                                 "title": "Related series",
                                 "href": "https://www.ons.gov.uk/related",
+                            }
+                        ],
+                        "publications": [
+                            {
+                                "title": "Statistical bulletin",
+                                "href": "https://www.ons.gov.uk/publication",
+                                "description": "Not projected by this bounded reference",
+                            }
+                        ],
+                        "related_content": [
+                            {
+                                "title": "Related analysis",
+                                "href": "https://www.ons.gov.uk/analysis",
                             }
                         ],
                         "links": {
@@ -202,10 +233,38 @@ def test_ons_pages_resume_and_replay_deterministically(
     beta = next(record for record in live.records if record["sourceRecordId"] == "beta")
     assert beta["releaseFrequency"] == "Quarterly"
     assert beta["unitOfMeasure"] == "Percentage"
+    assert beta["canonicalTopic"] == "7779"
+    assert beta["subtopics"] == ["6885", "7755"]
+    assert beta["datasetType"] == "cantabular_flexible_table"
+    assert beta["survey"] == "census"
+    assert beta["licence"] == "Open Government Licence v3.0"
+    assert beta["contacts"] == [
+        {
+            "name": "Expert statistical team",
+            "email": "statistics@example.ons.gov.uk",
+            "telephone": "+44 300 123 0000",
+        }
+    ]
+    assert beta["isBasedOn"] == {
+        "id": "usual-residents",
+        "type": "cantabular_flexible_table",
+    }
     assert beta["nationalStatistic"] is True
     assert beta["methodologies"][0]["title"] == "Technical report"
     assert beta["qualityMethodologyInformation"][0]["href"].endswith("/qmi")
     assert beta["relatedDatasets"][0]["title"] == "Related series"
+    assert beta["publications"] == [
+        {
+            "title": "Statistical bulletin",
+            "href": "https://www.ons.gov.uk/publication",
+        }
+    ]
+    assert beta["relatedContent"] == [
+        {
+            "title": "Related analysis",
+            "href": "https://www.ons.gov.uk/analysis",
+        }
+    ]
 
     frozen_one = acquire_source(
         source,

@@ -137,7 +137,11 @@ def filter_values(record: dict[str, Any], key: str) -> list[str]:
     elif key == "has_methodology":
         values = ["yes" if record.get("methodology_links") else "no"]
     elif key == "has_quality_documentation":
-        values = ["yes" if record.get("quality_links") else "no"]
+        values = [
+            "yes"
+            if record.get("quality_links") or record.get("quality_notes")
+            else "no"
+        ]
     elif key == "has_alternatives":
         values = ["yes" if record.get("alternatives") else "no"]
     elif key == "source_publisher":
@@ -189,6 +193,7 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "context_note": record.get("context_note", "")[:1_000],
         "topics": record.get("topics", []),
         "state": record.get("state", ""),
+        "access_model": record.get("access_model", ""),
         "frequency": record.get("frequency", ""),
         "population_type": record.get("population_type", ""),
         "agency_id": record.get("agency_id", ""),
@@ -198,6 +203,8 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "publisher_uri": record.get("publisher_uri", ""),
         "portal_owner": record.get("portal_owner", ""),
         "source_organisation": record.get("source_organisation", ""),
+        "endpoint_host": record.get("endpoint_host", ""),
+        "documentation_host": record.get("documentation_host", ""),
         "source_publishers": record.get("source_publishers", []),
         "surface_operator": record.get("surface_operator", {}),
         "authority": record.get("authority", {}),
@@ -214,11 +221,15 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "measure": record.get("measure", ""),
         "unit_of_measure": record.get("unit_of_measure", ""),
         "subtopic": record.get("subtopic", ""),
+        "groups": record.get("groups", []),
         "dataset_family": record.get("dataset_family", ""),
         "geography": record.get("geography", []),
         "geography_metadata": record.get("geography_metadata", {}),
         "geography_vintage": record.get("geography_vintage", ""),
+        "geography_reference_date": record.get("geography_reference_date", ""),
         "time_coverage": record.get("time_coverage", {}),
+        "source_version_label": record.get("source_version_label", ""),
+        "revision_history_notes": record.get("revision_history_notes", []),
         "caveats": record.get("caveats", []),
         "statistical_flags": record.get("statistical_flags", {}),
         "metadata_derivation": record.get("metadata_derivation", {}),

@@ -1,0 +1,63 @@
+{
+  "basedOn": {
+    "manifestSha256": "88dc0ffd5a20a8e8fabd059e7870e44feae7a79fcd4d0f09f03ce735bee9dbd1",
+    "snapshotId": "metadata-enrichment-2026-07-21-r4"
+  },
+  "claimBoundary": "Completeness here covers only the implemented registered adapters. The bundle coverage ledger separately records planned and reconciliation lanes.",
+  "completeForRegisteredAdapters": true,
+  "metadataOnly": true,
+  "observationsIncluded": false,
+  "schema": "okf-ons.frozen-snapshot.v1",
+  "snapshotId": "metadata-enrichment-2026-07-21-r5",
+  "sources": [
+    {
+      "coverageComplete": true,
+      "file": "nomis-dataset-definitions.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 1617,
+      "recordSetSha256": "df138d06a2627c3ddd3a0e47c4e482e3c9dde6ef371893f76f6242926a15b30a",
+      "reportedTotal": 1617,
+      "sha256": "58aecb59cf32386b8c2a4d236070f43fd0e044c42ed44587de1e9012bf365622",
+      "snapshotSetSha256": "32d03c8315e05208abadd14c2c9050d13ee0ee0f97dae93fff9e403727f67cfe",
+      "sourceId": "nomis-dataset-definitions",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "file": "ons-data-api.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 337,
+      "recordSetSha256": "48aa3ef1eb9b2bac8480c2a972a7541c17f77f6e17d6229d3a3fed61aab04ecf",
+      "reportedTotal": 337,
+      "sha256": "68ac8e0f59c47d0eba6fadaf172721f0190daa0e390487e181f039ceb9deeb9a",
+      "snapshotSetSha256": "ac5a15728646e1ea4fdbb4e6a7c7d60d2192f6881ae86d3022b3627bf587624c",
+      "sourceId": "ons-data-api",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "explainedExclusionCount": 12,
+      "file": "ons-explore-local-statistics.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 108,
+      "recordSetSha256": "189b5845578b1f7c1dd7e1ebe0fe41c6f79329e7ee16fec6113ebff7e565f3ae",
+      "reportedTotal": 108,
+      "sha256": "de7096a59dfae234ccd2d1abe3bc9eb77289c165d8f9e9ad605fae25b93a33f9",
+      "snapshotSetSha256": "289f28d94355dda7f7c18fdfd34f255f79db97e478b5150e662348db917ca0c0",
+      "sourceId": "ons-explore-local-statistics",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "file": "ons-open-geography.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 3035,
+      "recordSetSha256": "72a580228c7c070202825f13f0075974e5cdddc0f5a9d248fc15cd86dc59e57b",
+      "reportedTotal": 3035,
+      "sha256": "044185ce47e676c5a54ab6e8807606d0f22204d888c5ab5d2bea5e7beb561b1d",
+      "snapshotSetSha256": "2d0479f764de73e490b2df230332d61c7f8808fd0f14544d279be69dc0fe8a45",
+      "sourceId": "ons-open-geography",
+      "unrepresentedCount": 0
+    }
+  ]
+}

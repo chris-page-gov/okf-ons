@@ -8,7 +8,7 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 STOP_WORDS = {
     "a",
@@ -47,6 +47,151 @@ _TITLE_TABLE_CODE_RE = re.compile(
     r"^\s*([A-Z]{2}\d{3}[A-Z]*)\s*(?:[-:–—]|$)",
     re.IGNORECASE,
 )
+_HTTP_URL_RE = re.compile(r"https?://[^\s<>\"'\[\]()]+", re.IGNORECASE)
+_NOMIS_QUALITY_CONTEXT_RE = re.compile(
+    r"(?:"
+    r"\bquality(?:\s+(?:information|consideration|work|report|guidance))?\b|"
+    r"\buncertaint(?:y|ies)\b|"
+    r"\bstatistical\s+disclosure\s+control\b|"
+    r"\bprotect(?:ing|ion)?\b.{0,40}\bpersonal\s+(?:data|information)\b|"
+    r"\bprotect\b.{0,40}\bagainst\s+disclosure\b"
+    r")",
+    re.IGNORECASE,
+)
+_NOMIS_POPULATION_CONTEXT_RE = re.compile(
+    r"\b(?:"
+    r"people|persons?|residents?|population|households?|famil(?:y|ies)|"
+    r"dwellings?|children|child|adults?|students?|schoolchildren|parents?|"
+    r"males?|females?|establishments?|armed\s+forces"
+    r")\b",
+    re.IGNORECASE,
+)
+_OGP_TITLE_YEAR_RE = re.compile(r"(?<!\d)(?:18|19|20)\d{2}(?!\d)")
+_OGP_AREA_KEYWORD_CROSSWALK = {
+    "united kingdom": "United Kingdom",
+    "uk": "United Kingdom",
+    "great britain": "Great Britain",
+    "gb": "Great Britain",
+    "england": "England",
+    "en": "England",
+    "england and wales": "England and Wales",
+    "ew": "England and Wales",
+    "wales": "Wales",
+    "wa": "Wales",
+    "scotland": "Scotland",
+    "sc": "Scotland",
+    "northern ireland": "Northern Ireland",
+    "ni": "Northern Ireland",
+}
+_OGP_FREQUENCY_RULES = (
+    (re.compile(r"\bquarterly\b", re.IGNORECASE), "quarterly"),
+    (re.compile(r"\bevery 6 weeks\b", re.IGNORECASE), "every 6 weeks"),
+    (re.compile(r"\bissued every 12 weeks\b", re.IGNORECASE), "every 12 weeks"),
+    (re.compile(r"\bannually\b", re.IGNORECASE), "annually"),
+)
+_OGP_GENERIC_CATEGORIES = {
+    "/categories/latest",
+    "/categories/ons geography open data",
+}
+_OGP_GUIDE_TITLE_RE = re.compile(
+    r"\b(?:user guide|guidance and information|statistical guidance)\b",
+    re.IGNORECASE,
+)
+_OGP_METHODOLOGY_WORD_RE = re.compile(
+    r"\bmethodolog(?:y|ies|ical)\b",
+    re.IGNORECASE,
+)
+_OGP_SUBSTANTIVE_METHOD_RE = re.compile(
+    r"(?:"
+    r"\bmethodology used\b|"
+    r"\bmethodology has been applied\b|"
+    r"\bcreated using an automated approach\b|"
+    r"\bgenerated using\b|"
+    r"\bcalculated using\b|"
+    r"\bassigned using a ['‘’]?point-in-polygon['‘’]? methodology\b"
+    r")",
+    re.IGNORECASE,
+)
+_OGP_QUALITY_NOTE_RE = re.compile(
+    r"\b(?:"
+    r"data quality and limitations|"
+    r"quality assurance checks?|"
+    r"known limitations?/caveats?|"
+    r"known caveats and limitations"
+    r")\b",
+    re.IGNORECASE,
+)
+_OGP_REFERENCE_DATE_RE = re.compile(
+    r"\bas at\s+"
+    r"(?P<date>"
+    r"(?:(?:\d{1,2}(?:st|nd|rd|th)?\s+)?"
+    r"(?:January|February|March|April|May|June|July|August|September|"
+    r"October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|"
+    r"Oct|Nov|Dec)\s+)?"
+    r"(?P<year>(?:18|19|20)\d{2})"
+    r")\b",
+    re.IGNORECASE,
+)
+_OGP_VERSION_LABEL_RE = re.compile(r"\((V\d+(?:\.\d+)?)\)", re.IGNORECASE)
+_OGP_REVISION_HISTORY_RE = re.compile(
+    r"(?:"
+    r"\b(?:this|the)\s+"
+    r"(?:file|dataset|product|guide|boundary set|documents? folder)\s+"
+    r"(?:(?:has|have) been\s+|(?:was|were|is|are)\s+)?"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:file|dataset|product)\s+(?:has been\s+)?"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:V(?:ersion)?\s*\d+(?:\.\d+)?)\s+"
+    r"(?:corrects?|updates?|amends?|revises?)\b|"
+    r"\b(?:note|n\.?b\.?)\s*[:.-]?\s*"
+    r"(?:updated|corrected|amended|revised)\b|"
+    r"\[(?:updated|corrected|amended|revised)\b|"
+    r"\b(?:amended|updated|corrected|revised)\s+"
+    r"\d{1,2}/\d{1,2}/\d{2,4}\b"
+    r")",
+    re.IGNORECASE,
+)
+_ELS_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", re.IGNORECASE)
+_ELS_METHOD_LINK_CONTEXT_RE = re.compile(
+    r"(?:"
+    r"\bmethodolog(?:y|ies|ical)\b|"
+    r"\bmethods?\b|"
+    r"\buser[ -]?guide\b|"
+    r"\bfrascati[ -]?manual\b|"
+    r"\btechnical[ -]?report\b|"
+    r"\bmodel-params\b|"
+    r"\bnotes-and-definitions\b|"
+    r"\bindicator[ -]?definitions\b|"
+    r"\bsupporting[ -]?information\b"
+    r")",
+    re.IGNORECASE,
+)
+_ELS_QUALITY_LINK_CONTEXT_RE = re.compile(
+    r"(?:\bquality\b|\bqmi\b|\buncertaint(?:y|ies)\b|\brobustness\b)",
+    re.IGNORECASE,
+)
+_ELS_COUNTRY_CODE_CROSSWALK = {
+    "E": "England",
+    "N": "Northern Ireland",
+    "S": "Scotland",
+    "W": "Wales",
+}
+_SECRET_QUERY_KEYS = {
+    "access_token",
+    "apikey",
+    "api_key",
+    "authorization",
+    "client_secret",
+    "credential",
+    "key",
+    "password",
+    "secret",
+    "sig",
+    "signature",
+    "token",
+    "uid",
+    "x-api-key",
+}
 
 
 def plain_text(value: Any, limit: int = 10_000) -> str:
@@ -111,6 +256,23 @@ def _string_list(value: Any) -> list[str]:
     return sorted({plain_text(row, 300) for row in rows if plain_text(row, 300)})
 
 
+def _public_url(value: Any, limit: int = 2_000) -> str:
+    """Return a bounded public URL without embedded credentials or secret keys."""
+
+    url = plain_text(value, limit)
+    parsed = urlparse(url)
+    query_keys = {key.casefold() for key, _ in parse_qsl(parsed.query)}
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or query_keys.intersection(_SECRET_QUERY_KEYS)
+    ):
+        return ""
+    return url
+
+
 def _contacts(value: Any) -> list[dict[str, str]]:
     if not isinstance(value, list):
         return []
@@ -118,11 +280,13 @@ def _contacts(value: Any) -> list[dict[str, str]]:
     for row in value:
         if not isinstance(row, dict):
             continue
-        contact = {
+        contact: dict[str, str] = {
             key: plain_text(row.get(key), 300)
             for key in ("name", "email", "telephone")
             if row.get(key)
         }
+        if public_url := _public_url(row.get("url")):
+            contact["url"] = public_url
         if contact:
             output.append(contact)
     return output
@@ -133,6 +297,430 @@ def _version_identity(link: str) -> tuple[str, str, str]:
     return match.groups() if match else ("", "", "")
 
 
+def _ons_version_dimensions(value: Any) -> list[dict[str, Any]]:
+    """Return a bounded projection of source-declared ONS version dimensions."""
+
+    if not isinstance(value, list):
+        return []
+    dimensions: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in value[:100]:
+        if not isinstance(item, Mapping):
+            continue
+        dimension: dict[str, Any] = {}
+        for key, limit in (
+            ("id", 300),
+            ("name", 300),
+            ("label", 500),
+            ("description", 5_000),
+            ("variable", 300),
+        ):
+            if text := plain_text(item.get(key), limit):
+                dimension[key] = text
+        quality_text = plain_text(
+            item.get("qualityStatementText", item.get("quality_statement_text")),
+            5_000,
+        )
+        if quality_text:
+            dimension["quality_statement_text"] = quality_text
+        if url := _public_url(item.get("href")):
+            dimension["href"] = url
+        quality_url = _public_url(
+            item.get("qualityStatementUrl", item.get("quality_statement_url"))
+        )
+        if quality_url:
+            dimension["quality_statement_url"] = quality_url
+        is_area_type = item.get("isAreaType", item.get("is_area_type"))
+        if isinstance(is_area_type, bool):
+            dimension["is_area_type"] = is_area_type
+        option_count = item.get("number_of_options")
+        if (
+            isinstance(option_count, int)
+            and not isinstance(option_count, bool)
+            and 0 <= option_count <= 100_000_000
+        ):
+            dimension["number_of_options"] = option_count
+        identity = (
+            str(dimension.get("id") or ""),
+            str(dimension.get("name") or ""),
+            str(dimension.get("label") or ""),
+        )
+        if not any(identity) or identity in seen:
+            continue
+        seen.add(identity)
+        dimensions.append(dimension)
+    return dimensions
+
+
+def _ons_geography_dimensions(
+    dimensions: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Select only explicitly declared ONS area dimensions."""
+
+    return [
+        dict(dimension)
+        for dimension in dimensions
+        if dimension.get("is_area_type") is True
+        or plain_text(dimension.get("name"), 300).casefold() == "geography"
+        or plain_text(dimension.get("label"), 500).casefold() == "geography"
+    ]
+
+
+def _nomis_annotation_map(value: Any) -> dict[str, str]:
+    """Return text-bearing projected Nomis annotations by their native title."""
+
+    if not isinstance(value, list):
+        return {}
+    annotations: dict[str, str] = {}
+    for item in value:
+        if not isinstance(item, Mapping):
+            continue
+        title = plain_text(item.get("title"), 300)
+        text = plain_text(item.get("text"))
+        if title and text:
+            annotations.setdefault(title, text)
+    return annotations
+
+
+def _nomis_geography_levels(annotation_map: Mapping[str, str]) -> list[str]:
+    """Normalise only the source-declared Nomis geography-level annotation."""
+
+    value = annotation_map.get("contenttype/geoglevel", "")
+    return sorted(
+        {
+            level
+            for item in re.split(r"[,;|]", value)
+            if (level := plain_text(item, 300))
+        },
+        key=str.casefold,
+    )
+
+
+def _nomis_population_universe(annotation_map: Mapping[str, str]) -> str:
+    """Return a source-declared universe, rejecting codes and gap sentinels.
+
+    Most ``SubDescription`` values are natural-language statistical universes,
+    but the frozen Nomis source also uses the field for legacy mnemonics such
+    as ``vat`` and the sentinel ``previously unavailable``. Requiring an
+    explicit population-unit noun retains only values that evidence a universe.
+    """
+
+    value = plain_text(annotation_map.get("SubDescription"))
+    return value if _NOMIS_POPULATION_CONTEXT_RE.search(value) else ""
+
+
+def _nomis_quality_documentation_links(
+    annotation_map: Mapping[str, str],
+) -> list[str]:
+    """Extract public quality-documentation URLs from Nomis metadata notes.
+
+    Nomis ``MetadataTextN`` annotations also contain general explanatory and
+    classification links. A URL is therefore retained only when the matching
+    ``MetadataTitleN``, the note text, or the URL itself contains an explicit
+    quality, uncertainty, privacy-protection, or disclosure-control signal.
+    """
+
+    links: set[str] = set()
+    for title, note in annotation_map.items():
+        match = re.fullmatch(r"MetadataText(\d*)", title)
+        if not match:
+            continue
+        companion_title = annotation_map.get(f"MetadataTitle{match.group(1)}", "")
+        for url_match in _HTTP_URL_RE.finditer(note):
+            url = _public_url(url_match.group().rstrip(".,;:!?"))
+            if not url:
+                continue
+            context_start = max(0, url_match.start() - 180)
+            context_end = min(len(note), url_match.end() + 180)
+            quality_context = " ".join(
+                (companion_title, note[context_start:context_end], url)
+            )
+            if _NOMIS_QUALITY_CONTEXT_RE.search(quality_context):
+                links.add(url)
+    return sorted(links)
+
+
+def _nomis_quality_documentation_notes(
+    annotation_map: Mapping[str, str],
+) -> list[str]:
+    """Return explicitly labelled or self-describing Nomis quality notes."""
+
+    notes: set[str] = set()
+    for title, note in annotation_map.items():
+        match = re.fullmatch(r"MetadataText(\d*)", title)
+        if not match:
+            continue
+        bounded_note = plain_text(note, 5_000)
+        if len(bounded_note) < 20:
+            continue
+        companion_title = annotation_map.get(f"MetadataTitle{match.group(1)}", "")
+        if _NOMIS_QUALITY_CONTEXT_RE.search(
+            " ".join((companion_title, bounded_note))
+        ):
+            notes.add(bounded_note)
+    return sorted(notes)
+
+
+def _ogp_area_served(keywords: Any) -> list[str]:
+    """Crosswalk exact source keywords to a small controlled country list."""
+
+    return sorted(
+        {
+            area
+            for keyword in _string_list(keywords)
+            if (area := _OGP_AREA_KEYWORD_CROSSWALK.get(keyword.casefold()))
+        },
+        key=str.casefold,
+    )
+
+
+def _ogp_geography_vintage(title: Any) -> int | str:
+    """Return a title year only when the source title has one distinct year."""
+
+    years = {int(value) for value in _OGP_TITLE_YEAR_RE.findall(plain_text(title, 1_000))}
+    return years.pop() if len(years) == 1 else ""
+
+
+def _ogp_frequency(description: Any) -> str:
+    """Return cadence only for an explicit, bounded source-description phrase."""
+
+    text = plain_text(description)
+    for pattern, frequency in _OGP_FREQUENCY_RULES:
+        if pattern.search(text):
+            return frequency
+    return ""
+
+
+def _ogp_informative_categories(value: Any) -> list[str]:
+    """Retain source categories except the two catalogue-wide containers."""
+
+    return [
+        category
+        for category in _string_list(value)
+        if category.rstrip("/").casefold() not in _OGP_GENERIC_CATEGORIES
+    ]
+
+
+def _ogp_category_subtopics(categories: Iterable[str]) -> list[str]:
+    """Render retained source category paths as readable, lossless subtopics."""
+
+    prefix = "/Categories/"
+    return sorted(
+        {
+            category[len(prefix) :] if category.startswith(prefix) else category
+            for category in categories
+        },
+        key=str.casefold,
+    )
+
+
+def _ogp_exact_self_url(projected: Mapping[str, Any], native_id: str) -> str:
+    """Return one public OGP self link only when it identifies this record."""
+
+    links = projected.get("links")
+    related = links.get("related") if isinstance(links, Mapping) else None
+    if not isinstance(related, list):
+        return ""
+    candidates: set[str] = set()
+    for link in related:
+        if not isinstance(link, Mapping) or plain_text(link.get("rel"), 50).casefold() != "self":
+            continue
+        url = _public_url(link.get("href"))
+        if not url:
+            continue
+        terminal_id = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+        if terminal_id == native_id:
+            candidates.add(url)
+    return next(iter(candidates)) if len(candidates) == 1 else ""
+
+
+def _ogp_labelled_methodology_links(description: Any) -> list[str]:
+    """Extract URLs immediately preceded by an explicit methodology label."""
+
+    text = plain_text(description)
+    links: set[str] = set()
+    for match in _HTTP_URL_RE.finditer(text):
+        context = text[max(0, match.start() - 180) : match.start()]
+        if not _OGP_METHODOLOGY_WORD_RE.search(context):
+            continue
+        url = _public_url(match.group().rstrip(".,;:!?"))
+        if url:
+            links.add(url)
+    return sorted(links)
+
+
+def _ogp_methodology_links(
+    title: Any,
+    description: Any,
+    self_url: str,
+) -> list[str]:
+    """Return evidence URLs only for one of three conservative method signals."""
+
+    title_text = plain_text(title, 1_000)
+    description_text = plain_text(description)
+    labelled_links = _ogp_labelled_methodology_links(description_text)
+    guide_with_method = bool(
+        _OGP_GUIDE_TITLE_RE.search(title_text)
+        and _OGP_METHODOLOGY_WORD_RE.search(description_text)
+    )
+    substantive_method = bool(_OGP_SUBSTANTIVE_METHOD_RE.search(description_text))
+    if not (guide_with_method or substantive_method or labelled_links):
+        return []
+    links = set(labelled_links)
+    if self_url:
+        links.add(self_url)
+    return sorted(links)
+
+
+def _ogp_evidence_excerpt(
+    description: Any,
+    pattern: re.Pattern[str],
+) -> str:
+    """Return one bounded source sentence around a conservative evidence match."""
+
+    text = plain_text(description)
+    match = pattern.search(text)
+    if match is None:
+        return ""
+    sentence_start = text.rfind(". ", 0, match.start()) + 2
+    sentence_end = text.find(". ", match.end())
+    if sentence_end == -1:
+        sentence_end = len(text)
+    else:
+        sentence_end += 1
+    if sentence_end - sentence_start > 500:
+        sentence_start = max(0, match.start() - 180)
+        sentence_end = min(len(text), match.end() + 300)
+    return plain_text(text[sentence_start:sentence_end], 500)
+
+
+def _ogp_quality_notes(description: Any) -> list[str]:
+    note = _ogp_evidence_excerpt(description, _OGP_QUALITY_NOTE_RE)
+    return [note] if note else []
+
+
+def _ogp_geography_reference_date(title: Any, description: Any) -> str:
+    """Extract one early resource date that agrees with the sole title year."""
+
+    text = plain_text(description)
+    matches = list(_OGP_REFERENCE_DATE_RE.finditer(text))
+    title_year = _ogp_geography_vintage(title)
+    if (
+        len(matches) != 1
+        or not isinstance(title_year, int)
+        or matches[0].start() > 300
+        or int(matches[0].group("year")) != title_year
+    ):
+        return ""
+    return plain_text(matches[0].group("date"), 100)
+
+
+def _ogp_source_version_label(title: Any) -> str:
+    """Preserve an exact parenthesised OGP version identity from the title."""
+
+    match = _OGP_VERSION_LABEL_RE.search(plain_text(title, 1_000))
+    return match.group(1).upper() if match else ""
+
+
+def _ogp_revision_history_notes(description: Any) -> list[str]:
+    """Preserve explicit update history without inferring publication status."""
+
+    note = _ogp_evidence_excerpt(description, _OGP_REVISION_HISTORY_RE)
+    return [note] if note else []
+
+
+def _merge_field_derivation(
+    existing: Any,
+    additions: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Merge per-field derivations without discarding existing evidence."""
+
+    merged = dict(existing) if isinstance(existing, Mapping) else {}
+    existing_fields = merged.get("fields")
+    fields = {
+        str(field): dict(details)
+        for field, details in existing_fields.items()
+        if isinstance(details, Mapping)
+    } if isinstance(existing_fields, Mapping) else {}
+    for field, details in additions.items():
+        prior = fields.get(field, {})
+        fields[field] = {**dict(details), **prior}
+
+    modes = {
+        plain_text(mode, 300)
+        for mode in merged.get("modes", [])
+        if plain_text(mode, 300)
+    } if isinstance(merged.get("modes"), list) else set()
+    modes.update(
+        plain_text(details.get("mode"), 300)
+        for details in fields.values()
+        if plain_text(details.get("mode"), 300)
+    )
+    merged.update(
+        {
+            "schema": "okf-ons-field-derivation.v1",
+            "modes": sorted(modes),
+            "fields": dict(sorted(fields.items())),
+        }
+    )
+    return merged
+
+
+def _els_documentation_links(caveats: Iterable[str]) -> tuple[list[str], list[str]]:
+    """Extract only explicitly labelled method and quality links from ELS caveats."""
+
+    methodology_links: set[str] = set()
+    quality_links: set[str] = set()
+    for caveat in caveats:
+        for match in _ELS_MARKDOWN_LINK_RE.finditer(caveat):
+            label = plain_text(match.group(1), 1_000)
+            url = match.group(2).rstrip(".,;:!?")
+            parsed = urlparse(url)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.hostname
+                or parsed.username
+                or parsed.password
+            ):
+                continue
+            context = f"{label} {url}"
+            if _ELS_METHOD_LINK_CONTEXT_RE.search(context):
+                methodology_links.add(url)
+            if _ELS_QUALITY_LINK_CONTEXT_RE.search(context):
+                quality_links.add(url)
+    return sorted(methodology_links), sorted(quality_links)
+
+
+def _els_area_served(geography: Mapping[str, Any]) -> list[str]:
+    """Crosswalk projected ELS country codes without inferring wider coverage."""
+
+    countries = geography.get("countries")
+    if not isinstance(countries, list):
+        return []
+    return sorted(
+        {
+            area
+            for code in countries
+            if (area := _ELS_COUNTRY_CODE_CROSSWALK.get(plain_text(code, 10).upper()))
+        },
+        key=str.casefold,
+    )
+
+
+def _public_host(value: Any) -> str:
+    """Return the host of an explicit public HTTP(S) URL without credentials."""
+
+    parsed = urlparse(plain_text(value, 2_000))
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+    ):
+        return ""
+    return parsed.hostname.casefold()
+
+
 def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
     evidence = {
         "identity": bool(record.get("native_id") and record.get("source_surface")),
@@ -141,13 +729,22 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
         "licence": bool(record.get("license_id"))
         and record.get("license_id") != "not-evaluated",
         "contact": bool(record.get("contacts")),
-        "release_or_modified": bool(record.get("metadata_modified")),
+        "release_or_modified": bool(
+            record.get("metadata_modified") or record.get("first_released")
+        ),
         "frequency": bool(record.get("frequency")),
         "population": bool(record.get("population_type")),
-        "geography": bool(record.get("geography")),
+        "geography": bool(
+            record.get("geography")
+            or record.get("portal_extent")
+            or record.get("geography_vintage")
+            or record.get("area_served")
+        ),
         "time_coverage": bool(record.get("time_coverage")),
         "methodology": bool(record.get("methodology_links")),
-        "quality_documentation": bool(record.get("quality_links")),
+        "quality_documentation": bool(
+            record.get("quality_links") or record.get("quality_notes")
+        ),
         "revision_status": bool(record.get("revision_status")),
         "provenance": bool(record.get("provenance")),
     }
@@ -170,7 +767,7 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
 
 def _standards_evidence(record: dict[str, Any]) -> dict[str, Any]:
     has_method = bool(record.get("methodology_links"))
-    has_quality = bool(record.get("quality_links"))
+    has_quality = bool(record.get("quality_links") or record.get("quality_notes"))
     has_release = bool(record.get("metadata_modified"))
     has_provenance = bool(record.get("provenance"))
     has_dimensions = bool(record.get("dimensions") or record.get("dimension_count"))
@@ -328,6 +925,7 @@ def normalize_ons_dataset(
             "metadata_modified": plain_text(row.get("last_updated"), 100),
             "frequency": plain_text(row.get("release_frequency"), 200),
             "population_type": plain_text(based_on.get("id"), 300),
+            "geography": _string_list(row.get("geography")),
             "state": plain_text(row.get("state"), 100) or "published",
             "canonical_topic": plain_text(row.get("canonical_topic"), 200),
             "latest_edition": edition,
@@ -337,6 +935,7 @@ def normalize_ons_dataset(
             "dimension_count": int(row.get("dimension_count") or 0),
             "methodology_links": _string_list(row.get("methodology_links")),
             "quality_links": _string_list(row.get("quality_links")),
+            "quality_notes": _string_list(row.get("quality_notes")),
             "selection": {
                 "schema": "okf-ons-selection-binding.v1",
                 "tool": selection_tool,
@@ -366,6 +965,145 @@ def _nomis_value(value: Any) -> str:
             if value.get(key):
                 return plain_text(value[key])
     return plain_text(value)
+
+
+def _nomis_codelist_evidence(
+    projected: Mapping[str, Any],
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    """Extract only unambiguous cadence and available-period evidence."""
+
+    raw_codelists = projected.get("nomisCodelists")
+    if not isinstance(raw_codelists, list):
+        return "", {}, {}
+    codelists: dict[str, dict[str, Any]] = {}
+    not_evidenced: list[dict[str, str]] = []
+    for raw in raw_codelists:
+        if not isinstance(raw, Mapping):
+            continue
+        concept = plain_text(raw.get("concept"), 20).upper()
+        code_list = plain_text(raw.get("codeList"), 300)
+        status = plain_text(raw.get("status"), 100).casefold()
+        raw_codes = raw.get("codes")
+        if concept not in {"FREQ", "TIME"} or not code_list:
+            continue
+        if status == "not-evidenced":
+            reason = plain_text(raw.get("reason"), 200)
+            if reason:
+                not_evidenced.append(
+                    {"concept": concept, "codeList": code_list, "reason": reason}
+                )
+            continue
+        if status not in {"", "present"} or not isinstance(raw_codes, list):
+            continue
+        codes: list[dict[str, str]] = []
+        for raw_code in raw_codes:
+            if not isinstance(raw_code, Mapping):
+                continue
+            value = plain_text(raw_code.get("value"), 300)
+            label = plain_text(raw_code.get("label"), 500)
+            revision_status = plain_text(raw_code.get("revisionStatus"), 100)
+            if not value or not label:
+                continue
+            code = {"value": value, "label": label}
+            if revision_status:
+                code["revisionStatus"] = revision_status
+            codes.append(code)
+        if codes:
+            codelists[concept] = {"codeList": code_list, "codes": codes}
+
+    frequency = ""
+    frequency_metadata: dict[str, Any] = {}
+    frequency_source = codelists.get("FREQ")
+    if frequency_source:
+        options = [
+            {"code": code["value"], "label": code["label"]}
+            for code in frequency_source["codes"]
+        ]
+        labels = sorted(
+            {
+                code["label"]
+                for code in frequency_source["codes"]
+                if code["label"].casefold()
+                not in {"n/a", "not applicable", "not available", "unknown"}
+            },
+            key=str.casefold,
+        )
+        single_frequency = len(frequency_source["codes"]) == 1 and len(labels) == 1
+        frequency_metadata = {
+            "codeList": frequency_source["codeList"],
+            "codeCount": len(frequency_source["codes"]),
+            "labels": labels,
+            "options": options,
+            "singleFrequencyDerived": single_frequency,
+        }
+        if single_frequency:
+            frequency = labels[0]
+
+    time_coverage: dict[str, Any] = {}
+    time_metadata: dict[str, Any] = {}
+    time_source = codelists.get("TIME")
+    if time_source:
+        rejected_statuses = {
+            "future",
+            "not available",
+            "not released",
+            "pre-release",
+            "prerelease",
+            "unreleased",
+        }
+        available = [
+            code
+            for code in time_source["codes"]
+            if code.get("revisionStatus", "").casefold() not in rejected_statuses
+            and not re.search(
+                r"\b(?:not yet released|not released|unreleased)\b",
+                code["label"],
+                re.IGNORECASE,
+            )
+        ]
+        time_metadata = {
+            "codeList": time_source["codeList"],
+            "codeCount": len(time_source["codes"]),
+            "availableCodeCount": len(available),
+            "coverageDerived": False,
+        }
+        years = [
+            (int(code["value"]), code)
+            for code in available
+            if re.fullmatch(r"[12][0-9]{3}", code["value"])
+        ]
+        months: list[tuple[tuple[int, int], dict[str, str]]] = []
+        for code in available:
+            match = re.fullmatch(r"([12][0-9]{3})-([0-9]{2})", code["value"])
+            if match and 1 <= int(match.group(2)) <= 12:
+                months.append(((int(match.group(1)), int(match.group(2))), code))
+        dated: list[tuple[Any, dict[str, str]]] = []
+        if years and len(years) == len(available):
+            dated = years
+            time_metadata["periodFormat"] = "YYYY"
+        elif months and len(months) == len(available):
+            dated = months
+            time_metadata["periodFormat"] = "YYYY-MM"
+        if dated and len({key for key, _ in dated}) == len(dated):
+            start = min(dated, key=lambda item: item[0])[1]
+            end = max(dated, key=lambda item: item[0])[1]
+            time_coverage = {
+                "start": start["value"],
+                "end": end["value"],
+                "startLabel": start["label"],
+                "endLabel": end["label"],
+                "availablePeriodCount": len(available),
+                "sourceCodeList": time_source["codeList"],
+            }
+            time_metadata = {
+                **time_metadata,
+                "coverageDerived": True,
+            }
+    return frequency, time_coverage, {
+        **({"frequency": frequency_metadata} if frequency_metadata else {}),
+        **({"time": time_metadata} if time_metadata else {}),
+        **({"notEvidenced": not_evidenced} if not_evidenced else {}),
+    }
 
 
 def _nomis_sdmx_structure(
@@ -527,8 +1265,9 @@ def normalize_ogp_dataset(
     if not item_id:
         return None
     title = plain_text(properties.get("title") or properties.get("name"), 1_000) or item_id
-    description = plain_text(
-        properties.get("description") or properties.get("snippet") or properties.get("summary")
+    source_description = plain_text(properties.get("description"))
+    description = source_description or plain_text(
+        properties.get("snippet") or properties.get("summary")
     )
     url = plain_text(
         properties.get("url")
@@ -562,17 +1301,29 @@ def normalize_ogp_dataset(
         or ""
     )
     keywords = properties.get("keywords") or properties.get("tags") or []
+    access = plain_text(properties.get("access"), 100)
+    record_kind = plain_text(
+        properties.get("record_kind") or properties.get("recordKind"), 200
+    )
+    area_served = _ogp_area_served(keywords)
+    geography_vintage = _ogp_geography_vintage(title)
+    frequency = _ogp_frequency(source_description)
     record.update(
         {
             "topics": _string_list(keywords) or ["Geography"],
             "tags": _string_list(keywords) + ["open-geography"],
+            "metadata_created": plain_text(properties.get("created"), 100),
             "metadata_modified": plain_text(modified, 100),
+            "type": record_kind,
             "state": plain_text(properties.get("status"), 100) or "published",
+            "frequency": frequency,
             "geography": _string_list(
                 properties.get("geography")
                 or properties.get("spatial")
                 or properties.get("coverage")
             ),
+            "geography_vintage": geography_vintage,
+            "area_served": area_served,
             "spatial": {"bbox": bbox, "crs": "EPSG:4326"} if bbox else {},
             "formats": _string_list(properties.get("formats")) or ["Download/Service"],
             "selection": {
@@ -590,6 +1341,14 @@ def normalize_ogp_dataset(
             },
         }
     )
+    if access.casefold() == "public":
+        record.update(
+            {
+                "access_model": "public",
+                "visibility": "public",
+                "private": False,
+            }
+        )
     record["quality_evidence"] = _quality_evidence(record)
     record["quality"] = {
         "overall": record["quality_evidence"]["score"],
@@ -779,6 +1538,8 @@ def _finalise_projected_record(
     record["publication"] = {
         "release_date": record.get("first_released") or "",
         "revision_status": record.get("revision_status") or "",
+        "revision_date": record.get("last_revised") or "",
+        "next_update": record.get("next_update") or "",
         "state": record.get("state") or "",
     }
     record["statistical"] = {
@@ -790,7 +1551,9 @@ def _finalise_projected_record(
         "frequency": record.get("frequency") or "",
         "dimensions": record.get("dimensions") or [],
         "revision_status": record.get("revision_status") or "",
-        "quality_notes": sorted(
+        "revision_date": record.get("last_revised") or "",
+        "quality_notes": record.get("quality_notes")
+        or sorted(
             {
                 *record.get("methodology_links", []),
                 *record.get("quality_links", []),
@@ -838,6 +1601,18 @@ def _normalize_els_indicator(
     subtopic = plain_text(taxonomy.get("subTopic"), 300)
     title = plain_text(projected.get("title"), 1_000) or slug
     description = plain_text(projected.get("description"))
+    caveats = [
+        plain_text(value)
+        for value in projected.get("caveats", [])
+        if plain_text(value)
+    ] if isinstance(projected.get("caveats"), list) else []
+    methodology_links, quality_links = _els_documentation_links(caveats)
+    area_served = _els_area_served(geography)
+    endpoint_host = _public_host(metadata_url)
+    documentation_host = _public_host(self_url)
+    resource_hosts = sorted(
+        {host for host in (endpoint_host, documentation_host) if host}
+    )
     record = _base_record(
         record_id=f"ons-explore-local-statistics:indicator:{slug}",
         native_id=slug,
@@ -873,6 +1648,7 @@ def _normalize_els_indicator(
             "publisher_title": publisher_title,
             "publisher_uri": publisher_uri,
             "source_publishers": source_publishers,
+            "type": plain_text(projected.get("recordKind"), 200),
             "formats": ["JSON-stat metadata", "REST/HTTP"],
             "protocol": ["REST/HTTP"],
             "topics": _string_list([topic, subtopic]),
@@ -899,6 +1675,10 @@ def _normalize_els_indicator(
             "geography": _string_list(geography.get("levels")),
             "geography_metadata": geography,
             "geography_vintage": geography.get("vintage") or "",
+            "area_served": area_served,
+            "endpoint_host": endpoint_host,
+            "documentation_host": documentation_host,
+            "resource_hosts": resource_hosts,
             "time_coverage": (
                 dict(projected["timeCoverage"])
                 if isinstance(projected.get("timeCoverage"), Mapping)
@@ -914,13 +1694,10 @@ def _normalize_els_indicator(
             ]
             if isinstance(projected.get("dimensionOrder"), list)
             else [],
-            "caveats": [
-                plain_text(value)
-                for value in projected.get("caveats", [])
-                if plain_text(value)
-            ]
-            if isinstance(projected.get("caveats"), list)
-            else [],
+            "caveats": caveats,
+            "quality_notes": caveats,
+            "methodology_links": methodology_links,
+            "quality_links": quality_links,
             "statistical_flags": classification,
             "metadata_derivation": {
                 **derivation,
@@ -967,6 +1744,53 @@ def _normalize_els_indicator(
             },
         }
     )
+    derivation_fields: dict[str, Mapping[str, Any]] = {}
+    if record.get("type"):
+        derivation_fields["type"] = {
+            "mode": "source-declared",
+            "sourceField": "recordKind",
+        }
+    if caveats:
+        derivation_fields["quality_notes"] = {
+            "mode": "source-declared",
+            "sourceField": "caveats",
+        }
+    if methodology_links:
+        derivation_fields["methodology_links"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "caveats",
+            "classifier": "els-explicit-method-link-v1",
+        }
+    if quality_links:
+        derivation_fields["quality_links"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "caveats",
+            "classifier": "els-explicit-quality-link-v1",
+        }
+    if area_served:
+        derivation_fields["area_served"] = {
+            "mode": "controlled-vocabulary-crosswalk",
+            "sourceField": "geography.countries",
+            "crosswalk": "els-country-code-v1",
+        }
+    if endpoint_host:
+        derivation_fields["endpoint_host"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "links.metadata",
+        }
+    if documentation_host:
+        derivation_fields["documentation_host"] = {
+            "mode": "deterministic-extraction",
+            "sourceField": "links.self",
+        }
+    if resource_hosts:
+        derivation_fields["resource_hosts"] = {
+            "mode": "deterministic-extraction",
+            "sourceFields": ["links.metadata", "links.self"],
+        }
+    record["metadata_derivation"] = _merge_field_derivation(
+        record.get("metadata_derivation"), derivation_fields
+    )
     return record
 
 
@@ -989,6 +1813,90 @@ def normalize_acquisition_record(
     keywords = _string_list(projected.get("keywords"))
 
     if source_id == "ons-data-api":
+        based_on = (
+            dict(projected["isBasedOn"])
+            if isinstance(projected.get("isBasedOn"), Mapping)
+            else {}
+        )
+        contacts = projected.get("contacts")
+        contacts = contacts if isinstance(contacts, list) else []
+        dimensions = _ons_version_dimensions(
+            projected.get("versionDimensions", projected.get("dimensions"))
+        )
+        geography_dimensions = _ons_geography_dimensions(dimensions)
+        geography = [
+            plain_text(
+                dimension.get("label")
+                or dimension.get("name")
+                or dimension.get("id"),
+                500,
+            )
+            for dimension in geography_dimensions
+        ]
+        geography = list(dict.fromkeys(value for value in geography if value))
+        dimension_quality_links = sorted(
+            {
+                str(dimension["quality_statement_url"])
+                for dimension in dimensions
+                if dimension.get("quality_statement_url")
+            }
+        )
+        dimension_quality_notes = sorted(
+            {
+                str(dimension["quality_statement_text"])
+                for dimension in dimensions
+                if dimension.get("quality_statement_text")
+            }
+        )
+        quality_links = sorted(
+            {
+                *_reference_links(projected.get("qualityMethodologyInformation")),
+                *dimension_quality_links,
+            }
+        )
+        canonical_topic = plain_text(projected.get("canonicalTopic"), 200)
+        subtopics = _string_list(projected.get("subtopics"))
+        derivation_fields: dict[str, Any] = {}
+        if contacts:
+            derivation_fields["contacts"] = {
+                "mode": "source-declared",
+                "sourceField": "contacts",
+            }
+        if based_on.get("id"):
+            derivation_fields["population_type"] = {
+                "mode": "source-declared",
+                "sourceField": "is_based_on",
+            }
+        if canonical_topic or subtopics:
+            derivation_fields["taxonomy"] = {
+                "mode": "source-declared",
+                "sourceFields": ["canonical_topic", "subtopics"],
+            }
+        if dimensions:
+            derivation_fields["dimensions"] = {
+                "mode": "source-declared",
+                "sourceField": "version.metadata.dimensions",
+            }
+        if geography_dimensions:
+            derivation_fields["geography"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "version.metadata.dimensions",
+                "rule": "is-area-type-or-exact-geography-name-v1",
+            }
+        if dimension_quality_links:
+            derivation_fields["quality_links"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "version.metadata.dimensions[].quality_statement_url"
+                ),
+            }
+        if dimension_quality_notes:
+            derivation_fields["quality_notes"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "version.metadata.dimensions[].quality_statement_text"
+                ),
+            }
         raw = {
             "id": native_id,
             "title": title,
@@ -998,8 +1906,15 @@ def normalize_acquisition_record(
             "release_frequency": projected.get("releaseFrequency"),
             "keywords": keywords,
             "links": projected.get("links"),
+            "contacts": contacts,
+            "is_based_on": based_on,
+            "canonical_topic": canonical_topic,
             "methodology_links": _reference_links(projected.get("methodologies")),
-            "quality_links": _reference_links(projected.get("qualityMethodologyInformation")),
+            "quality_links": quality_links,
+            "quality_notes": dimension_quality_notes,
+            "geography": geography,
+            "dimensions": dimensions,
+            "dimension_count": len(dimensions),
         }
         record = normalize_ons_dataset(
             raw,
@@ -1015,10 +1930,118 @@ def normalize_acquisition_record(
                 "next_release": plain_text(projected.get("nextRelease"), 100),
                 "national_statistic": projected.get("nationalStatistic"),
                 "related_datasets": projected.get("relatedDatasets", []),
+                "related_content": projected.get("relatedContent", []),
+                "publications": projected.get("publications", []),
                 "themes": projected.get("themes", []),
+                "canonical_topic": canonical_topic,
+                "subtopic": subtopics,
+                "type": plain_text(projected.get("datasetType"), 200),
+                "dataset_type": plain_text(projected.get("datasetType"), 200),
+                "survey": plain_text(projected.get("survey"), 200),
+                "source_licence": plain_text(projected.get("licence"), 500),
+                "population_type_metadata": based_on,
+                "geography_metadata": (
+                    {
+                        "dimensions": geography_dimensions,
+                        "derivationMode": "source-declared",
+                    }
+                    if geography_dimensions
+                    else {}
+                ),
+                "taxonomy_metadata": {
+                    "canonicalTopicId": canonical_topic,
+                    "subtopicIds": subtopics,
+                }
+                if canonical_topic or subtopics
+                else {},
+                "metadata_derivation": (
+                    {
+                        "schema": "okf-ons-field-derivation.v1",
+                        "modes": ["source-declared"],
+                        "fields": derivation_fields,
+                    }
+                    if derivation_fields
+                    else {}
+                ),
             }
         )
     elif source_id == "nomis-dataset-definitions":
+        annotations = projected.get("annotations")
+        annotation_map = _nomis_annotation_map(annotations)
+        geography_levels = _nomis_geography_levels(annotation_map)
+        population_type = _nomis_population_universe(annotation_map)
+        quality_links = _nomis_quality_documentation_links(annotation_map)
+        quality_notes = _nomis_quality_documentation_notes(annotation_map)
+        contacts = _contacts(projected.get("contacts"))
+        geographic_coverage = plain_text(projected.get("geographicCoverage"), 500)
+        area_served = _string_list(geographic_coverage)
+        declared_last_revised = plain_text(projected.get("lastRevised"), 100)
+        last_revised = declared_last_revised or plain_text(
+            annotation_map.get("LastRevised"), 100
+        )
+        next_update = plain_text(projected.get("nextUpdate"), 100)
+        frequency, time_coverage, codelist_metadata = _nomis_codelist_evidence(
+            projected
+        )
+        derivation_fields: dict[str, Any] = {}
+        if geography_levels:
+            derivation_fields["geography"] = {
+                "mode": "source-declared",
+                "sourceAnnotation": "contenttype/geoglevel",
+            }
+        if population_type:
+            derivation_fields["population_type"] = {
+                "mode": "source-declared",
+                "sourceAnnotation": "SubDescription",
+            }
+        if quality_links:
+            derivation_fields["quality_links"] = {
+                "mode": "deterministic-extraction",
+                "sourceAnnotationPattern": "MetadataTextN",
+                "classifier": "nomis-quality-context-v1",
+            }
+        if quality_notes:
+            derivation_fields["quality_notes"] = {
+                "mode": "deterministic-extraction",
+                "sourceAnnotationPattern": "MetadataTextN",
+                "classifier": "nomis-quality-context-v1",
+            }
+        if contacts:
+            derivation_fields["contacts"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.contact",
+            }
+        if area_served:
+            derivation_fields["area_served"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.coverage",
+            }
+        if last_revised:
+            derivation_fields["last_revised"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "overview.lastrevised"
+                    if declared_last_revised
+                    else "annotations.LastRevised"
+                ),
+            }
+        if next_update:
+            derivation_fields["next_update"] = {
+                "mode": "source-declared",
+                "sourceField": "overview.nextupdate",
+            }
+        if frequency:
+            derivation_fields["frequency"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "nomisCodelists[FREQ].codes",
+                "rule": "single-explicit-frequency-label-v1",
+            }
+        if time_coverage:
+            derivation_fields["time_coverage"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "nomisCodelists[TIME].codes",
+                "rule": "available-time-codelist-range-v1",
+            }
         raw = {
             "id": native_id,
             "name": title,
@@ -1051,6 +2074,26 @@ def normalize_acquisition_record(
         record.update(
             {
                 "metadata_modified": plain_text(projected.get("lastUpdated"), 100),
+                "contacts": contacts,
+                "population_type": population_type,
+                "geography": geography_levels,
+                "geography_metadata": (
+                    {
+                        "levels": geography_levels,
+                        "derivationMode": "source-declared",
+                        **(
+                            {"coverage": geographic_coverage}
+                            if geographic_coverage
+                            else {}
+                        ),
+                    }
+                    if geography_levels or geographic_coverage
+                    else {}
+                ),
+                "geographic_coverage": geographic_coverage,
+                "area_served": area_served,
+                "quality_links": quality_links,
+                "quality_notes": quality_notes,
                 "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 300),
                 "dimensions": sdmx["dimensions"],
                 "dimension_count": len(dimensions),
@@ -1058,23 +2101,37 @@ def normalize_acquisition_record(
                 "agency_id": plain_text(projected.get("agencyId"), 200),
                 "content_source": plain_text(projected.get("contentSource"), 500),
                 "first_released": plain_text(projected.get("firstReleased"), 100),
+                "last_revised": last_revised,
+                "next_update": next_update,
+                "frequency": frequency,
+                "time_coverage": time_coverage,
+                "nomis_codelist_metadata": codelist_metadata,
                 "mnemonic": plain_text(projected.get("mnemonic"), 300),
                 "publisher_uri": plain_text(projected.get("publisherUri"), 1_000),
-                "annotations": projected.get("annotations", []),
+                "annotations": annotations if isinstance(annotations, list) else [],
+                "metadata_derivation": (
+                    _merge_field_derivation({}, derivation_fields)
+                    if derivation_fields
+                    else {}
+                ),
                 "sdmx": sdmx,
             }
         )
     elif source_id == "ons-open-geography":
-        item_url = _projected_url(projected, "item")
+        item_url = _public_url(_projected_url(projected, "item"))
+        self_url = _ogp_exact_self_url(projected, native_id)
         feature = {
             "id": native_id,
             "bbox": projected.get("spatialEnvelope", []),
             "properties": {
                 "title": title,
                 "description": description,
-                "url": item_url,
+                "snippet": projected.get("snippet"),
+                "url": item_url or self_url,
                 "modified": projected.get("modified"),
                 "created": projected.get("created"),
+                "record_kind": projected.get("recordKind"),
+                "access": projected.get("access"),
                 "keywords": keywords,
                 "status": projected.get("lifecycleState"),
                 "formats": [projected.get("itemType")] if projected.get("itemType") else [],
@@ -1089,6 +2146,28 @@ def normalize_acquisition_record(
         )
         if record is None:
             return None
+        portal_extent = projected.get("portalExtent", {})
+        informative_categories = _ogp_informative_categories(
+            projected.get("categories")
+        )
+        methodology_links = _ogp_methodology_links(
+            title,
+            description,
+            self_url,
+        )
+        quality_notes = _ogp_quality_notes(description)
+        geography_reference_date = _ogp_geography_reference_date(title, description)
+        source_version_label = _ogp_source_version_label(title)
+        revision_history_notes = _ogp_revision_history_notes(description)
+        endpoint_host = _public_host(item_url or self_url)
+        documentation_host = _public_host(self_url)
+        resource_hosts = sorted(
+            {
+                host
+                for url in (item_url, self_url)
+                if (host := _public_host(url))
+            }
+        )
         record.update(
             {
                 "access": plain_text(projected.get("access"), 500),
@@ -1097,9 +2176,139 @@ def normalize_acquisition_record(
                 "portal_owner": plain_text(projected.get("owner"), 500),
                 "source_organisation": plain_text(projected.get("source"), 500),
                 "spatial_reference": projected.get("spatialReference", {}),
-                "portal_extent": projected.get("portalExtent", {}),
+                "portal_extent": portal_extent,
                 "temporal_extent": projected.get("temporalExtent", {}),
+                "groups": informative_categories,
+                "subtopic": _ogp_category_subtopics(informative_categories),
+                "methodology_links": methodology_links,
+                "quality_notes": quality_notes,
+                "geography_reference_date": geography_reference_date,
+                "geography_metadata": (
+                    {
+                        "referenceDate": geography_reference_date,
+                        "referenceDateSemantics": (
+                            "source-declared geography resource reference/effective date"
+                        ),
+                        "derivationMode": "deterministic-extraction",
+                    }
+                    if geography_reference_date
+                    else {}
+                ),
+                "source_version_label": source_version_label,
+                "revision_history_notes": revision_history_notes,
+                "endpoint_host": endpoint_host,
+                "documentation_host": documentation_host,
+                "resource_hosts": resource_hosts,
             }
+        )
+        if self_url:
+            record["documentation"] = self_url
+            record["selection"]["direct_metadata_url"] = self_url
+        derivation_fields: dict[str, Mapping[str, Any]] = {}
+        if record.get("metadata_created"):
+            derivation_fields["metadata_created"] = {
+                "mode": "source-declared",
+                "sourceField": "created",
+            }
+        if record.get("type"):
+            derivation_fields["type"] = {
+                "mode": "source-declared",
+                "sourceField": "recordKind",
+            }
+        if record.get("access_model") == "public":
+            for field in ("access_model", "visibility", "private"):
+                derivation_fields[field] = {
+                    "mode": "deterministic-normalisation",
+                    "sourceField": "access",
+                    "rule": "public-access-v1",
+                }
+        if record.get("area_served"):
+            derivation_fields["area_served"] = {
+                "mode": "controlled-vocabulary-crosswalk",
+                "sourceField": "keywords",
+                "crosswalk": "ogp-country-area-keyword-v1",
+            }
+        if record.get("geography_vintage"):
+            derivation_fields["geography_vintage"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "title",
+                "rule": "exactly-one-distinct-title-year-v1",
+            }
+        if record.get("frequency"):
+            derivation_fields["frequency"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "rule": "explicit-cadence-phrase-v1",
+            }
+        if informative_categories:
+            for field in ("groups", "subtopic"):
+                derivation_fields[field] = {
+                    "mode": "deterministic-normalisation",
+                    "sourceField": "categories",
+                    "rule": "exclude-generic-ogp-categories-v1",
+                }
+        if methodology_links:
+            derivation_fields["methodology_links"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["title", "description", "links.related.self"],
+                "classifier": "ogp-conservative-method-evidence-v1",
+            }
+        if quality_notes:
+            derivation_fields["quality_notes"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "classifier": "ogp-explicit-quality-limitations-v1",
+            }
+        if geography_reference_date:
+            derivation_fields["geography_reference_date"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["title", "description"],
+                "rule": "single-early-as-at-date-matching-title-year-v1",
+                "semantics": "geography-resource-reference-date",
+            }
+        if source_version_label:
+            derivation_fields["source_version_label"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "title",
+                "rule": "parenthesised-ogp-version-label-v1",
+            }
+        if revision_history_notes:
+            derivation_fields["revision_history_notes"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "description",
+                "classifier": "ogp-explicit-revision-history-v1",
+                "doesNotImply": "revision_status",
+            }
+        if endpoint_host:
+            derivation_fields["endpoint_host"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["links.item", "links.related.self"],
+                "rule": "item-host-else-exact-self-host-v1",
+            }
+        if documentation_host:
+            derivation_fields["documentation_host"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "links.related.self",
+                "rule": "exact-self-host-v1",
+            }
+        if resource_hosts:
+            derivation_fields["resource_hosts"] = {
+                "mode": "deterministic-extraction",
+                "sourceFields": ["links.item", "links.related.self"],
+                "rule": "exact-public-ogp-hosts-v1",
+            }
+        if not description and record.get("description") and projected.get("snippet"):
+            derivation_fields["description"] = {
+                "mode": "source-declared-fallback",
+                "sourceField": "snippet",
+            }
+        if portal_extent:
+            derivation_fields["portal_extent"] = {
+                "mode": "source-declared",
+                "sourceField": "portalExtent",
+            }
+        record["metadata_derivation"] = _merge_field_derivation(
+            record.get("metadata_derivation"), derivation_fields
         )
     elif source_id == "ons-explore-local-statistics":
         record = _normalize_els_indicator(
@@ -1134,7 +2343,10 @@ def _contrast_values(record: dict[str, Any]) -> dict[str, Any]:
             for publisher in record.get("source_publishers", [])
             if isinstance(publisher, Mapping)
         ],
-        "metadata derivation": record.get("metadata_derivation") or {},
+        # Derivation remains available on each hydrated record, but it is provenance
+        # about how a field was produced rather than an evidence-backed distinction
+        # between two datasets. Including the full ledger here also makes compact
+        # alternative previews grow with every metadata enrichment.
         "edition": record.get("latest_edition") or "",
         "version": record.get("latest_version") or "",
         "release state": record.get("state") or "",
