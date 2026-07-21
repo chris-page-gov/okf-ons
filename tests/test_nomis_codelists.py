@@ -302,6 +302,7 @@ def test_envelope_is_ranked_projected_cached_and_replayable(tmp_path: Path) -> N
 @pytest.mark.parametrize(
     (
         "record_id",
+        "concept",
         "codelist_id",
         "transport_class",
         "http_status",
@@ -309,14 +310,40 @@ def test_envelope_is_ranked_projected_cached_and_replayable(tmp_path: Path) -> N
         "expected_sleeps",
     ),
     [
-        ("NM_1241_1", "CL_1241_1_TIME", NullTransport, 200, 1, [1, 2]),
-        ("NM_17_1", "CL_17_1_TIME", ErrorTransport, 500, 0, [0, 0]),
-        ("NM_17_1", "CL_17_1_TIME", ScalarErrorTransport, 200, 1, [1, 2]),
+        (
+            "NM_1234_1",
+            "TIME",
+            "CL_1234_1_TIME",
+            NullTransport,
+            200,
+            1,
+            [1, 2],
+        ),
+        (
+            "NM_673_1",
+            "FREQ",
+            "CL_673_1_FREQ",
+            NullTransport,
+            200,
+            1,
+            [1, 2],
+        ),
+        ("NM_17_1", "TIME", "CL_17_1_TIME", ErrorTransport, 500, 0, [0, 0]),
+        (
+            "NM_17_1",
+            "TIME",
+            "CL_17_1_TIME",
+            ScalarErrorTransport,
+            200,
+            1,
+            [1, 2],
+        ),
     ],
 )
 def test_audited_upstream_failures_are_retried_and_explicitly_represented(
     tmp_path: Path,
     record_id: str,
+    concept: str,
     codelist_id: str,
     transport_class: type[FakeTransport],
     http_status: int,
@@ -328,7 +355,7 @@ def test_audited_upstream_failures_are_retried_and_explicitly_represented(
     sleeps: list[float] = []
     payload, receipt = namespace["_fetch_codelist"](
         record_id,
-        "TIME",
+        concept,
         codelist_id,
         cache_directory=tmp_path / "external-cache",
         mode="refresh",
@@ -359,14 +386,14 @@ def test_audited_upstream_failures_are_retried_and_explicitly_represented(
 
 def test_unreviewed_failure_or_payload_shape_fails_closed(tmp_path: Path) -> None:
     namespace = _namespace()
-    with pytest.raises(namespace["NomisCodelistError"], match="null codelist"):
+    with pytest.raises(namespace["NomisCodelistError"], match="malformed"):
         namespace["_fetch_codelist"](
             "NM_673_1",
             "TIME",
             "CL_673_1_TIME",
             cache_directory=tmp_path / "external-cache",
             mode="refresh",
-            transport=NullTransport(namespace["JsonResponse"]),
+            transport=ScalarErrorTransport(namespace["JsonResponse"]),
             timeout_seconds=5,
             retries=0,
             now=_fixed_now,
@@ -384,15 +411,40 @@ def test_unreviewed_failure_or_payload_shape_fails_closed(tmp_path: Path) -> Non
             codelist_id="CL_673_1_TIME",
         )
 
+    assert namespace["_validate_projected_payload"](
+        {
+            "codeList": "CL_673_1_TIME",
+            "codes": [],
+            "status": "not-evidenced",
+            "reason": "upstream-codelist-unavailable",
+        },
+        "CL_673_1_TIME",
+    )["status"] == "not-evidenced"
+
     with pytest.raises(namespace["NomisCodelistError"], match="unavailable"):
         namespace["_validate_projected_payload"](
             {
                 "codeList": "CL_673_1_TIME",
                 "codes": [],
                 "status": "not-evidenced",
-                "reason": "upstream-codelist-unavailable",
+                "reason": "unsupported-reason",
             },
             "CL_673_1_TIME",
+        )
+
+    with pytest.raises(namespace["NomisCodelistError"], match="HTTP 500"):
+        namespace["_fetch_codelist"](
+            "NM_673_1",
+            "TIME",
+            "CL_673_1_TIME",
+            cache_directory=tmp_path / "other-cache",
+            mode="refresh",
+            transport=ErrorTransport(namespace["JsonResponse"]),
+            timeout_seconds=5,
+            retries=0,
+            now=_fixed_now,
+            sleep=lambda _: None,
+            before_live_request=lambda: None,
         )
 
 

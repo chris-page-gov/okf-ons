@@ -200,6 +200,7 @@ def test_nomis_codelists_supply_explicit_frequency_and_time_coverage() -> None:
             "codeList": "CL_TEST_FREQ",
             "codeCount": 1,
             "labels": ["Annually"],
+            "options": [{"code": "A", "label": "Annually"}],
             "singleFrequencyDerived": True,
         },
         "time": {
@@ -275,6 +276,10 @@ def test_nomis_frequency_requires_one_code_label_option() -> None:
         "codeList": "CL_TEST_FREQ",
         "codeCount": 2,
         "labels": ["Annually"],
+        "options": [
+            {"code": "A", "label": "Annually"},
+            {"code": "ANNUAL", "label": "Annually"},
+        ],
         "singleFrequencyDerived": False,
     }
     assert record["quality_evidence"]["evidence"]["frequency"] is False

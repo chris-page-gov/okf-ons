@@ -47,11 +47,7 @@ _NOMIS_OVERVIEW_SELECT = "DatasetInfo,Coverage,DateMetadata,Contact"
 _NOMIS_CODELIST_CONCEPTS = ("FREQ", "TIME")
 _NOMIS_CODELIST_STATUSES = {"not-evidenced", "present"}
 _NOMIS_CODELIST_FAILURE_REASON = "upstream-codelist-unavailable"
-_NOMIS_CODELIST_FAILURE_ALLOWLIST = {
-    ("NM_17_1", "TIME"),
-    ("NM_1241_1", "TIME"),
-    ("NM_1251_1", "TIME"),
-}
+_NOMIS_CODELIST_PERSISTENT_ERROR = ("NM_17_1", "TIME", "CL_17_1_TIME")
 _NOMIS_CODELIST_ENDPOINT_TEMPLATE = (
     "https://www.nomisweb.co.uk/api/v01/codelist/{codelistId}.def.sdmx.json"
 )
@@ -1328,7 +1324,6 @@ def _validate_nomis_codelists(
             f"bounded replacement Nomis codelist expectation is malformed: {source_id}"
         )
     projected: list[dict[str, Any]] = []
-    record_id = expected.get("sourceRecordId")
     for index, (item, expected_row) in enumerate(
         zip(value, expected_rows, strict=True)
     ):
@@ -1371,12 +1366,10 @@ def _validate_nomis_codelists(
         elif (
             codes
             or item.get("reason") != _NOMIS_CODELIST_FAILURE_REASON
-            or (record_id, item.get("concept"))
-            not in _NOMIS_CODELIST_FAILURE_ALLOWLIST
         ):
             raise SnapshotCompositionError(
-                f"bounded replacement Nomis not-evidenced codelist is not an "
-                f"audited exception: {source_id}"
+                f"bounded replacement Nomis not-evidenced codelist is malformed: "
+                f"{source_id}"
             )
         seen_values: set[str] = set()
         projected_codes: list[dict[str, str]] = []
@@ -1443,6 +1436,7 @@ def _validate_nomis_codelist_page(
     page: Any,
     expected_url: str,
     projected_codelist: Mapping[str, Any],
+    record_id: str,
     source_id: str,
     *,
     index: int,
@@ -1506,16 +1500,20 @@ def _validate_nomis_codelist_page(
             )
     else:
         codelist_id = projected_codelist.get("codeList")
-        null_response = codelist_id in {"CL_1241_1_TIME", "CL_1251_1_TIME"}
-        exhausted_error = codelist_id == "CL_17_1_TIME"
+        evidenced_null_response = upstream_count == 1 and http_status == 200
+        persistent_error = (
+            (
+                record_id,
+                projected_codelist.get("concept"),
+                codelist_id,
+            )
+            == _NOMIS_CODELIST_PERSISTENT_ERROR
+            and upstream_count == 0
+            and 500 <= http_status <= 599
+        )
         if (
             failure_reason != _NOMIS_CODELIST_FAILURE_REASON
-            or (null_response and (upstream_count != 1 or http_status != 200))
-            or (
-                exhausted_error
-                and (upstream_count != 0 or not 500 <= http_status <= 599)
-            )
-            or not (null_response or exhausted_error)
+            or not (evidenced_null_response or persistent_error)
         ):
             raise SnapshotCompositionError(
                 f"{label} not-evidenced state is invalid: {source_id}"
@@ -1829,6 +1827,7 @@ def _validate_nomis_codelist_replacement(
                 enrichment_pages[page_index],
                 expected_row["requestUrl"],
                 codelist,
+                selected_row["sourceRecordId"],
                 source_id,
                 index=page_index,
             )

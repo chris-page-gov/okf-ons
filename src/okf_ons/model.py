@@ -1015,6 +1015,10 @@ def _nomis_codelist_evidence(
     frequency_metadata: dict[str, Any] = {}
     frequency_source = codelists.get("FREQ")
     if frequency_source:
+        options = [
+            {"code": code["value"], "label": code["label"]}
+            for code in frequency_source["codes"]
+        ]
         labels = sorted(
             {
                 code["label"]
@@ -1029,6 +1033,7 @@ def _nomis_codelist_evidence(
             "codeList": frequency_source["codeList"],
             "codeCount": len(frequency_source["codes"]),
             "labels": labels,
+            "options": options,
             "singleFrequencyDerived": single_frequency,
         }
         if single_frequency:

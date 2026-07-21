@@ -149,10 +149,6 @@ _FORBIDDEN_KEYS = {
     "xapikey",
 }
 _FAILURE_REASON = "upstream-codelist-unavailable"
-_AUDITED_NULL_CODELISTS = {
-    ("NM_1241_1", "TIME", "CL_1241_1_TIME"),
-    ("NM_1251_1", "TIME", "CL_1251_1_TIME"),
-}
 _AUDITED_ERROR_CODELISTS = {
     ("NM_17_1", "TIME", "CL_17_1_TIME"),
 }
@@ -556,12 +552,6 @@ def _validate_projected_payload(value: Any, codelist_id: str) -> dict[str, Any]:
             codes
             or value["status"] != "not-evidenced"
             or value["reason"] != _FAILURE_REASON
-            or codelist_id
-            not in {
-                "CL_1241_1_TIME",
-                "CL_1251_1_TIME",
-                "CL_17_1_TIME",
-            }
         ):
             raise NomisCodelistError(
                 "projected unavailable Nomis codelist is malformed"
@@ -676,7 +666,10 @@ def _load_cache(path: Path, request_url: str, codelist_id: str) -> dict[str, Any
         or (
             payload["status"] == "not-evidenced"
             and http_status != 200
-            and not 500 <= http_status < 600
+            and (
+                not 500 <= http_status < 600
+                or codelist_id != "CL_17_1_TIME"
+            )
         )
     ):
         raise NomisCodelistError("Nomis codelist cache outcome evidence is invalid")
@@ -825,14 +818,6 @@ def _fetch_codelist(
                     if attempt < retries:
                         sleep(min(2**attempt, 8))
                         continue
-                    if (
-                        record_id,
-                        concept,
-                        codelist_id,
-                    ) not in _AUDITED_NULL_CODELISTS:
-                        raise NomisCodelistError(
-                            f"Nomis returned a null codelist for {codelist_id}"
-                        )
                     payload = {
                         "codeList": codelist_id,
                         "codes": [],

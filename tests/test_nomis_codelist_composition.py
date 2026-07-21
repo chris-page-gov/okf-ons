@@ -16,7 +16,6 @@ ACQUISITION_SCRIPT = ROOT / "scripts" / "acquire_nomis_codelists.py"
 REGISTER = ROOT / "source" / "source-register.json"
 R5_SNAPSHOT = ROOT / "source" / "metadata-enrichment-2026-07-21-r5"
 SOURCE_ID = "nomis-dataset-definitions"
-AUDITED_TIME_FAILURES = {"NM_17_1", "NM_1241_1", "NM_1251_1"}
 
 
 def _namespace() -> dict[str, Any]:
@@ -24,7 +23,12 @@ def _namespace() -> dict[str, Any]:
 
 
 def _replacement(
-    namespace: dict[str, Any], *, limit: int = 2, mode: str = "prefer-cache"
+    namespace: dict[str, Any],
+    *,
+    limit: int = 2,
+    mode: str = "prefer-cache",
+    null_projection: Callable[[str, str], bool] | None = None,
+    persistent_http_error: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     base = json.loads((R5_SNAPSHOT / f"{SOURCE_ID}.json").read_text(encoding="utf-8"))
     replacement = copy.deepcopy(base)
@@ -69,17 +73,20 @@ def _replacement(
         ]
         records[row["sourceRecordId"]]["nomisCodelists"] = projected
         for item, expected in zip(projected, row["codelists"], strict=True):
-            if (
-                row["sourceRecordId"] in AUDITED_TIME_FAILURES
+            is_persistent_error = (
+                persistent_http_error
+                and row["sourceRecordId"] == "NM_17_1"
                 and item["concept"] == "TIME"
-            ):
+            )
+            is_null_projection = bool(
+                null_projection
+                and null_projection(row["sourceRecordId"], item["concept"])
+            )
+            if is_persistent_error or is_null_projection:
                 item["status"] = "not-evidenced"
                 item["codes"] = []
                 item["reason"] = "upstream-codelist-unavailable"
                 not_evidenced_count += 1
-            failed_error = (
-                row["sourceRecordId"] == "NM_17_1" and item["concept"] == "TIME"
-            )
             references.append(
                 {
                     "sourceRecordId": row["sourceRecordId"],
@@ -106,11 +113,11 @@ def _replacement(
                     ),
                     "responseHeaders": {"content-type": "application/json"},
                     "cacheHit": mode != "refresh",
-                    "upstreamRecordCount": 0 if failed_error else 1,
+                    "upstreamRecordCount": 0 if is_persistent_error else 1,
                     "normalisedRecordCount": 1,
                     "attemptCount": 3 if item["status"] == "not-evidenced" else 1,
                     "acquisitionStatus": item["status"],
-                    "httpStatus": 500 if failed_error else 200,
+                    "httpStatus": 500 if is_persistent_error else 200,
                     "failureReason": (
                         "upstream-codelist-unavailable"
                         if item["status"] == "not-evidenced"
@@ -271,9 +278,57 @@ def test_real_acquirer_prefix_passes_composer_without_network(tmp_path: Path) ->
     }
 
 
-def test_full_cohort_represents_only_three_audited_time_failures() -> None:
+def test_http_200_null_freq_and_time_projections_pass_as_not_evidenced() -> None:
     namespace = _namespace()
-    replacement, base = _replacement(namespace, limit=1_617)
+    replacement, base = _replacement(
+        namespace,
+        null_projection=lambda _record_id, _concept: True,
+    )
+
+    assert _validate(namespace, replacement, base) == {
+        "changedRecords": 2,
+        "changedFields": 2,
+    }
+    run = replacement["provenance"]["enrichmentRun"]
+    assert run["notEvidencedCodelistCount"] == 4
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("upstreamRecordCount", 0, "not-evidenced state is invalid"),
+        ("normalisedRecordCount", 0, "counts are invalid"),
+        ("httpStatus", 201, "not-evidenced state is invalid"),
+        ("acquisitionStatus", "present", "counts are invalid"),
+        ("failureReason", None, "not-evidenced state is invalid"),
+    ],
+)
+def test_http_200_null_projection_requires_matching_receipt_evidence(
+    field: str, value: Any, message: str
+) -> None:
+    namespace = _namespace()
+    replacement, base = _replacement(
+        namespace,
+        null_projection=lambda _record_id, _concept: True,
+    )
+    first_enrichment_page = len(base["provenance"]["pages"])
+    replacement["provenance"]["pages"][first_enrichment_page][field] = value
+
+    with pytest.raises(namespace["SnapshotCompositionError"], match=message):
+        _validate(namespace, replacement, base)
+
+
+def test_full_cohort_measures_not_evidenced_projections() -> None:
+    namespace = _namespace()
+    replacement, base = _replacement(
+        namespace,
+        limit=1_617,
+        null_projection=lambda record_id, concept: (
+            concept == "FREQ"
+            and int(record_id.removeprefix("NM_").split("_", 1)[0]) % 257 == 0
+        ),
+        persistent_http_error=True,
+    )
 
     assert _validate(namespace, replacement, base) == {
         "changedRecords": 1_617,
@@ -282,7 +337,13 @@ def test_full_cohort_represents_only_three_audited_time_failures() -> None:
     run = replacement["provenance"]["enrichmentRun"]
     assert run["coverageComplete"] is True
     assert run["selectedCodelistCount"] == 3_234
-    assert run["notEvidencedCodelistCount"] == 3
+    measured = sum(
+        item["status"] == "not-evidenced"
+        for record in replacement["records"]
+        for item in record.get("nomisCodelists", [])
+    )
+    assert measured > 0
+    assert run["notEvidencedCodelistCount"] == measured
 
 
 Mutation = Callable[[dict[str, Any], dict[str, Any]], None]
@@ -338,7 +399,7 @@ def _weaken_assurance(replacement: dict[str, Any], _: dict[str, Any]) -> None:
         (_protected_change, "changed protected fields"),
         (_wrong_codelist, "codelist identity is invalid"),
         (_observation_like_code, "unreviewed or missing fields"),
-        (_status_on_frequency, "not an audited exception"),
+        (_status_on_frequency, "counts are invalid"),
         (_escape_endpoint, "invalid response identity"),
         (_stale_projection_hash, "projected response hash is invalid"),
         (_wrong_reference_hash, "run denominator is invalid"),
