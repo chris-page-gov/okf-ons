@@ -23,6 +23,9 @@ Open Geography and data.gov.uk.
 - Nomis dataset definitions, concepts, codelists, coverage and update metadata.
 - ONS Open Geography Portal dataset records, spatial extents, vintages,
   variants, services and downloads.
+- ONS Explore Local Statistics indicator metadata, including its multi-producer
+  attribution, taxonomy, caveats, dimensions and declared or structure-derived
+  geography and time coverage.
 - ONS website time-series, dataset and download metadata when it identifies or
   describes a data asset.
 - Cross-source identities, succession, methodology, quality and publication
@@ -48,8 +51,14 @@ The Monday release is a demonstrator until the ledger proves otherwise.
 
 ## Planned reconciliation lanes
 
-The registered acquisition adapters currently cover the ONS Data API, Nomis
-dataset definitions and ONS Open Geography catalogue. The top-level
+The implemented source lanes currently cover the ONS Data API, Nomis dataset
+definitions, ONS Open Geography catalogue and a deterministic projection of a
+pinned Explore Local Statistics application revision. The ELS lane is projected
+locally because its application routes are internal and undocumented; it is not
+treated as a stable live execution contract. Its verified Git `commitAsOf` is
+kept distinct from an actual acquisition `retrievedAt`; because no acquisition
+time was recorded for the checked-in projection, no retrieval time is invented.
+The top-level
 `reconciliationSourceLedger` in
 [`source/source-register.json`](../source/source-register.json) separately
 records planned official cross-reference lanes for:

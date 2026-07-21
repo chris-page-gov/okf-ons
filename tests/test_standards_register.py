@@ -298,11 +298,12 @@ def test_ontology_crosswalk_preserves_identity_and_confusable_alternatives() -> 
     ]
 
 
-def test_reconciliation_ledger_is_planned_and_does_not_add_source_adapters() -> None:
+def test_reconciliation_ledger_is_separate_from_implemented_source_adapters() -> None:
     register = load_json(SOURCE_REGISTER)
 
     assert {source["id"] for source in register["sources"]} == {
         "ons-data-api",
+        "ons-explore-local-statistics",
         "nomis-dataset-definitions",
         "ons-open-geography",
     }

@@ -11,7 +11,7 @@
     "technicalPublicReleaseReview": true,
     "formalInformationGovernanceClearance": false,
     "factuallyValidatedReport": false,
-    "statement": "The artefacts preserve research questions, generated presentations and a generated visual. Their claims require verification against primary sources and controlled evidence."
+    "statement": "The artefacts preserve research questions, a generated research assessment, generated presentations and a generated visual. Their claims require verification against primary sources and controlled evidence."
   },
   "artifacts": [
     {
@@ -23,6 +23,19 @@
       "limitations": [
         "This is a prompt, not a completed research report.",
         "Starting hypotheses are propositions to test, not established conclusions."
+      ]
+    },
+    {
+      "path": "OKF_Governed_AI_Architecture_Deep_Research_Report_2026-07-20.md",
+      "role": "generated-architecture-research-report",
+      "mediaType": "text/markdown",
+      "sha256": "d82e4727a7500fe244dc92f1ca3e6ef095285803d26702d463f6a80f4d364cb2",
+      "authoritativeFor": "The report's dated research assessment and recommendations only",
+      "limitations": [
+        "The Markdown contains footnote references but no footnote definitions or bibliography, so cited claims cannot be independently traced from this artefact alone.",
+        "The report has not been independently factually validated, formally assured or endorsed by ONS or UK Government.",
+        "Its okf-ons repository evidence snapshot is commit af8ff14e9e91b00d7af6b1faa37034f8ecd510fd and predates the current ELS integration and submodule; repository claims must be revalidated against the current workspace.",
+        "Recommendations and scoring are research judgements to test, not adopted architecture decisions or evidence of production readiness."
       ]
     },
     {

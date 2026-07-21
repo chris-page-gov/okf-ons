@@ -5,7 +5,7 @@
 A user should be able to start with an intent such as “local authority
 population estimates by age” and finish with:
 
-- the correct ONS or Nomis dataset and version;
+- the correct source-qualified statistical product and version where available;
 - visible alternatives that a careful statistician would consider;
 - the differences that make those alternatives unsuitable or preferable;
 - available methodology, quality, revisions, comparability and provenance

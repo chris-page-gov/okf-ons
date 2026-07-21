@@ -4,7 +4,7 @@
   "metadataOnly": true,
   "observationsIncluded": false,
   "schema": "okf-ons.frozen-snapshot.v1",
-  "snapshotId": "monday-2026-07-17",
+  "snapshotId": "monday-2026-07-17-r2",
   "sources": [
     {
       "coverageComplete": true,
@@ -28,6 +28,19 @@
       "sha256": "8cbce2757ae00589d0e0b8799c42b3c0121377bbd8f93512496ba9301575ca87",
       "snapshotSetSha256": "9214bc2e22102bf21399c124cb75b6ac1aa8d4b9927bb7dee91117803ebaada3",
       "sourceId": "ons-data-api",
+      "unrepresentedCount": 0
+    },
+    {
+      "coverageComplete": true,
+      "explainedExclusionCount": 12,
+      "file": "ons-explore-local-statistics.json",
+      "normalisationDroppedCount": 0,
+      "recordCount": 108,
+      "recordSetSha256": "189b5845578b1f7c1dd7e1ebe0fe41c6f79329e7ee16fec6113ebff7e565f3ae",
+      "reportedTotal": 108,
+      "sha256": "de7096a59dfae234ccd2d1abe3bc9eb77289c165d8f9e9ad605fae25b93a33f9",
+      "snapshotSetSha256": "289f28d94355dda7f7c18fdfd34f255f79db97e478b5150e662348db917ca0c0",
+      "sourceId": "ons-explore-local-statistics",
       "unrepresentedCount": 0
     },
     {

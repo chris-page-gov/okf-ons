@@ -57,7 +57,7 @@ The four layers are intentionally separate:
 | Static OKF bundle and Pages site | Built and publishable | Human/agent discovery, comparison, provenance and selection metadata over public HTTPS. |
 | Local OKF-ONS stdio broker | Implemented and tested | Gives local MCP clients bounded metadata tools over the same frozen snapshot. |
 | Remote OKF-ONS broker | **Not implemented or deployed** | Future authenticated HTTPS parity for remote-only clients and enterprise connectors. |
-| Downstream live retrieval MCP | Separate system | Executes an ONS or Nomis observation query only after a complete selection plan; this repository only prepares the plan. |
+| Downstream live retrieval MCP | Separate system | Executes a supported live statistical query only after a complete, revalidated and authorised selection plan; this repository only prepares a non-executing plan. |
 
 Connecting a client to this repository never turns the local broker into a live
 ONS query service. `okf.prepare_mcp_plan` is a non-executing hand-off to a
@@ -65,9 +65,10 @@ separately trusted downstream MCP such as MCP-Geo.
 
 ## Broker contract and local smoke test
 
-The server identifies itself as `okf-ons-metadata-broker` version `0.1.0` and
-negotiates MCP protocol `2025-06-18`. If a client requests an unsupported
-version, it returns that supported version during initialization.
+The server identifies itself as `okf-ons-metadata-broker` version `0.2.0` and
+negotiates the current MCP protocol `2025-11-25` while retaining
+`2025-06-18` compatibility for existing clients. If a client requests an
+unsupported version, it returns `2025-11-25` during initialization.
 
 The six tools are:
 

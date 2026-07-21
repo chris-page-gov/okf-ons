@@ -13,8 +13,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .evaluation import evaluate_rankings, load_gold_suite
 from .model import (
+    BUNDLE_PUBLISHER,
     build_alternatives,
     build_cross_source_reconciliation,
     content_sha256,
@@ -26,6 +28,12 @@ from .search import MISSING_FILTER_VALUE, build_search, filter_values, rank_reco
 PUBLIC_ROOT = "https://chris-page-gov.github.io/okf-ons/"
 EXPLORER_ROOT = "https://chris-page-gov.github.io/okf-explorer/"
 CHUNK_SIZE = 500
+NON_ENDORSEMENT = (
+    "This experimental metadata bundle is independently published by the OKF ONS "
+    "project and is not endorsed by the Office for National Statistics or other "
+    "source producers. Source attribution does not transfer semantic, operational "
+    "or decision authority to the bundle publisher."
+)
 
 
 class BuildError(RuntimeError):
@@ -57,6 +65,19 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
+
+
+def _sha256_json(value: Any) -> str:
+    """Hash source-acquisition content using its canonical digest contract."""
+
+    payload = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return _sha256_bytes(payload.encode("utf-8"))
 
 
 @dataclass
@@ -166,8 +187,41 @@ def load_frozen_corpus(inputs: BuildInputs) -> FrozenCorpus:
         source_records = acquisition.get("records")
         if not isinstance(provenance, Mapping) or not isinstance(source_records, list):
             raise BuildError(f"Malformed acquisition result: {filename}")
+        source_id = str(source_row.get("sourceId") or "").strip()
+        provenance_source = provenance.get("source")
+        provenance_source = provenance_source if isinstance(provenance_source, Mapping) else {}
+        if not source_id or provenance_source.get("id") != source_id:
+            raise BuildError(f"Acquisition source identity mismatch: {filename}")
         if provenance.get("recordCount") != len(source_records):
             raise BuildError(f"Acquisition record count mismatch: {filename}")
+        if source_row.get("recordCount") != len(source_records):
+            raise BuildError(f"Frozen manifest record count mismatch: {filename}")
+
+        record_set_sha256 = _sha256_json(source_records)
+        if provenance.get("recordSetSha256") != record_set_sha256:
+            raise BuildError(f"Acquisition record-set hash mismatch: {filename}")
+        if source_row.get("recordSetSha256") != record_set_sha256:
+            raise BuildError(f"Frozen manifest record-set hash mismatch: {filename}")
+
+        pages = provenance.get("pages")
+        if not isinstance(pages, list):
+            raise BuildError(f"Acquisition page receipts are missing: {filename}")
+        snapshot_receipts: list[dict[str, str]] = []
+        for page in pages:
+            if not isinstance(page, Mapping):
+                raise BuildError(f"Acquisition page receipt is malformed: {filename}")
+            request_url = page.get("requestUrl")
+            content_sha256 = page.get("contentSha256")
+            if not isinstance(request_url, str) or not isinstance(content_sha256, str):
+                raise BuildError(f"Acquisition page receipt is incomplete: {filename}")
+            snapshot_receipts.append(
+                {"requestUrl": request_url, "contentSha256": content_sha256}
+            )
+        snapshot_set_sha256 = _sha256_json(snapshot_receipts)
+        if provenance.get("snapshotSetSha256") != snapshot_set_sha256:
+            raise BuildError(f"Acquisition snapshot-set hash mismatch: {filename}")
+        if source_row.get("snapshotSetSha256") != snapshot_set_sha256:
+            raise BuildError(f"Frozen manifest snapshot-set hash mismatch: {filename}")
         acquisitions.append(acquisition)
         for projected in source_records:
             if not isinstance(projected, Mapping):
@@ -264,6 +318,35 @@ def _source_counts(records: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     )
 
 
+def _source_temporal_evidence(provenance: Mapping[str, Any]) -> dict[str, str]:
+    retrieved_at = max(
+        (
+            str(page.get("retrievedAt"))
+            for page in provenance.get("pages", [])
+            if isinstance(page, Mapping) and page.get("retrievedAt")
+        ),
+        default="",
+    )
+    submodule = provenance.get("submodule")
+    submodule = submodule if isinstance(submodule, Mapping) else {}
+    commit_as_of = str(submodule.get("commitAsOf") or "")
+    if retrieved_at:
+        source_as_of = retrieved_at
+        basis = "acquisition-retrieved-at"
+    elif commit_as_of:
+        source_as_of = commit_as_of
+        basis = "pinned-source-commit-as-of"
+    else:
+        source_as_of = ""
+        basis = "not-evidenced"
+    return {
+        "sourceAsOf": source_as_of,
+        "sourceAsOfBasis": basis,
+        "acquisitionRetrievedAt": retrieved_at,
+        "commitAsOf": commit_as_of,
+    }
+
+
 def _coverage_ledger(corpus: FrozenCorpus) -> dict[str, Any]:
     implemented: list[dict[str, Any]] = []
     for acquisition in corpus.acquisitions:
@@ -284,6 +367,9 @@ def _coverage_ledger(corpus: FrozenCorpus) -> dict[str, Any]:
                 "recordSetSha256": provenance["recordSetSha256"],
                 "snapshotSetSha256": provenance["snapshotSetSha256"],
                 "metadataOnly": provenance["assurance"]["metadataOnly"],
+                **_source_temporal_evidence(provenance),
+                "explainedExclusions": provenance.get("explainedExclusions", []),
+                "freshnessPolicy": {"status": "not-defined", "validThrough": None},
             }
         )
     planned = corpus.source_register.get("reconciliationSourceLedger", {}).get("lanes", [])
@@ -307,6 +393,11 @@ def _coverage_ledger(corpus: FrozenCorpus) -> dict[str, Any]:
             "reportedTotal": reported_total,
             "represented": implemented_total,
             "implementedLaneUnexplainedOmissions": implemented_omissions,
+            "explainedExclusionCount": sum(
+                len(row["explainedExclusions"])
+                for row in implemented
+                if isinstance(row["explainedExclusions"], list)
+            ),
             "coverageComplete": all(row["coverageComplete"] for row in implemented),
             "nonAdditivityWarning": (
                 "Source counts are catalogue representations and can describe the same "
@@ -558,9 +649,58 @@ def _resource_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "source_surface": record.get("source_surface"),
             "selection": record.get("selection", {}),
             "provenance": record.get("provenance", {}),
+            "authority": record.get("authority", {}),
             "metadata_only": True,
         }
         for record in records
+    ]
+
+
+def _publisher_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build source-publisher facets without implying bundle endorsement."""
+
+    counts: Counter[str] = Counter()
+    publishers: dict[str, dict[str, str]] = {}
+    for record in records:
+        parties = record.get("source_publishers")
+        if not isinstance(parties, list) or not parties:
+            parties = [
+                {
+                    "id": record.get("publisher") or "unknown-source-publisher",
+                    "name": record.get("publisher_title") or "Unknown source publisher",
+                    "url": record.get("publisher_uri") or "",
+                }
+            ]
+        seen: set[str] = set()
+        for party in parties:
+            if not isinstance(party, Mapping):
+                continue
+            publisher_id = str(party.get("id") or "").strip()
+            if not publisher_id or publisher_id in seen:
+                continue
+            seen.add(publisher_id)
+            counts[publisher_id] += 1
+            publishers.setdefault(
+                publisher_id,
+                {
+                    "name": publisher_id,
+                    "title": str(party.get("name") or publisher_id),
+                    "url": str(party.get("url") or ""),
+                },
+            )
+    return [
+        {
+            "id": publisher_id,
+            **publishers[publisher_id],
+            "route": f"publisher/{publisher_id}",
+            "dataset_count": counts[publisher_id],
+            "resource_count": counts[publisher_id],
+            "description": (
+                "Source producer attribution carried from frozen metadata. "
+                "It does not imply endorsement of this OKF bundle."
+            ),
+        }
+        for publisher_id in sorted(publishers)
     ]
 
 
@@ -725,7 +865,9 @@ def _demo_projection(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             add(record)
     # Sample each other lane, then deliberately cover high-value discovery
     # concepts rather than taking only an alphabetical prefix.
-    for source in ("nomis", "ons-open-geography"):
+    for source in sorted(
+        {record["source_surface"] for record in records} - {"ons-data-api"}
+    ):
         source_records = [record for record in records if record["source_surface"] == source]
         for record in source_records[:50]:
             add(record)
@@ -867,11 +1009,14 @@ def _baseline_evaluation(
         "queries": ranking_rows,
     }
     report = evaluate_rankings(suite, rankings)
+    unresolved_count = corpus.aliases["resolution"]["missingTargetCount"]
+    implemented_source_count = len(_source_counts(corpus.records))
     report["release_gate"] = {
         "enabled": False,
         "reason": (
-            "The baseline runs all questions, but 18 curated aliases are explicitly "
-            "unresolved by the three implemented source lanes."
+            f"The baseline runs all questions, but {unresolved_count} curated aliases "
+            f"are explicitly unresolved by the {implemented_source_count} implemented "
+            "source lanes."
         ),
     }
     report["alias_resolution"] = corpus.aliases["resolution"]
@@ -922,6 +1067,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     record_type_counts = dict(
         sorted(Counter(record["record_type"] for record in corpus.records).items())
     )
+    publisher_rows = _publisher_rows(corpus.records)
+    rights_not_evaluated_count = sum(
+        record.get("rights_status") == "not-evaluated"
+        or record.get("license_id") == "not-evaluated"
+        for record in corpus.records
+    )
 
     dataset_chunks = _chunks(writer, "datasets", corpus.records)
     resource_chunks = _chunks(writer, "resources", resources)
@@ -929,20 +1080,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     publisher_chunks = _chunks(
         writer,
         "publishers",
-        [
-            {
-                "id": "office-for-national-statistics",
-                "name": "office-for-national-statistics",
-                "title": "Office for National Statistics",
-                "route": "publisher/office-for-national-statistics",
-                "url": "https://www.ons.gov.uk/",
-                "dataset_count": len(corpus.records),
-                "resource_count": len(resources),
-                "description": (
-                    "Publisher aggregation for the three implemented ONS metadata lanes."
-                ),
-            }
-        ],
+        publisher_rows,
     )
     _write_search(writer, search)
 
@@ -961,6 +1099,10 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
                 bool(record.get("alternatives")) for record in corpus.records
             ),
             "sources": len(source_counts),
+            "publishers": len(publisher_rows),
+            "sourcePublisherAttributions": sum(
+                row["dataset_count"] for row in publisher_rows
+            ),
             "standards": standards_evaluation["standardCount"],
         },
         "sourceCounts": source_counts,
@@ -1050,11 +1192,18 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
         "counts": {
             "datasets": len(corpus.records),
-            "publishers": 1,
+            "publishers": len(publisher_rows),
             "resources": len(resources),
             "relationships": len(relationships),
             "records": len(corpus.records),
+            "sourcePublisherAttributions": sum(
+                row["dataset_count"] for row in publisher_rows
+            ),
         },
+        "publisherSemantics": (
+            "Source-producer attributions, not the bundle publisher. Co-produced "
+            "records count once for each attributed producer, so totals are non-additive."
+        ),
         "indexes": {
             "overview": "data/overview.json",
             "analysis": "data/analysis/overview.json",
@@ -1063,6 +1212,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "coverage": "data/coverage/ledger.json",
             "reconciliation": "data/reconciliation/report.json",
             "sdmx": "data/standards/sdmx.json",
+            "governance": "data/governance/release.json",
+            "context_set": "data/governance/context-set.json",
         },
         "performance": {
             "startup_mode": "overview-first",
@@ -1081,12 +1232,14 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
 
     context = {
         "@context": {
+            "okf": f"{PUBLIC_ROOT}vocab/",
             "dcat": "http://www.w3.org/ns/dcat#",
             "dct": "http://purl.org/dc/terms/",
             "dqv": "http://www.w3.org/ns/dqv#",
             "prov": "http://www.w3.org/ns/prov#",
             "qb": "http://purl.org/linked-data/cube#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
+            "Catalog": "dcat:Catalog",
             "Dataset": "dcat:Dataset",
             "title": "dct:title",
             "description": "dct:description",
@@ -1095,18 +1248,119 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "landingPage": {"@id": "dcat:landingPage", "@type": "@id"},
             "conformsTo": {"@id": "dct:conformsTo", "@type": "@id"},
             "wasDerivedFrom": {"@id": "prov:wasDerivedFrom", "@type": "@id"},
+            "wasGeneratedBy": {"@id": "prov:wasGeneratedBy", "@type": "@id"},
+            "wasAttributedTo": {"@id": "prov:wasAttributedTo", "@type": "@id"},
+            "sourcePublisher": {"@id": "okf:sourcePublisher", "@type": "@id"},
+            "bundlePublisher": {"@id": "okf:bundlePublisher", "@type": "@id"},
+            "semanticAuthority": {"@id": "okf:semanticAuthority", "@type": "@id"},
+            "reviewedBy": {"@id": "okf:reviewedBy", "@type": "@id"},
+            "notEndorsedBySource": "okf:notEndorsedBySource",
+            "nonEndorsementStatement": "okf:nonEndorsementStatement",
+            "contextSet": {"@id": "okf:contextSet", "@type": "@id"},
+            "dataset": {"@id": "dcat:dataset", "@type": "@id"},
+            "alignmentClaim": "okf:alignmentClaim",
+            "statisticalAccuracyEvaluated": "okf:statisticalAccuracyEvaluated",
         }
     }
-    writer.write_json("context/okf-ons.jsonld", context)
+    context_text = canonical_json(context)
+    context_sha256 = _sha256_bytes(context_text.encode("utf-8"))
+    writer.write_text("context/okf-ons.jsonld", context_text)
+    context_set = {
+        "schema": "okf-context-set.v1",
+        "snapshotId": corpus.snapshot["snapshotId"],
+        "resolutionPolicy": "local-release-path-only",
+        "networkRetrievalAllowed": False,
+        "contexts": [
+            {
+                "url": f"{PUBLIC_ROOT}context/okf-ons.jsonld",
+                "path": "context/okf-ons.jsonld",
+                "sha256": context_sha256,
+            }
+        ],
+    }
+    writer.write_json("data/governance/context-set.json", context_set)
+    governance = {
+        "schema": "okf-governed-knowledge-contract-release.v1",
+        "releaseVersion": __version__,
+        "pattern": "Governed Knowledge Contract and Evidence-Carriage Plane",
+        "status": "experimental-demonstrator",
+        "snapshotId": corpus.snapshot["snapshotId"],
+        "snapshotSha256": content_sha256(corpus.snapshot),
+        "authority": {
+            "bundlePublisher": BUNDLE_PUBLISHER,
+            "semanticAuthority": {
+                **BUNDLE_PUBLISHER,
+                "scope": "this generated bundle release only",
+            },
+            "reviewedBy": [],
+            "notEndorsedBySource": True,
+            "nonEndorsementStatement": NON_ENDORSEMENT,
+            "operationalAuthority": "external live-data service",
+            "decisionAuthority": "accountable external person or institution",
+        },
+        "canonicality": {
+            "sourceSystems": "source publication state and source data",
+            "frozenSnapshot": "inputs to this deterministic bundle release",
+            "semanticBundle": "semantic claims made by this release publisher",
+            "indexesAndPlans": "replaceable non-authoritative runtime projections",
+        },
+        "sourceEvidence": [
+            {
+                "sourceId": source["sourceId"],
+                "sourceAsOf": source["sourceAsOf"],
+                "sourceAsOfBasis": source["sourceAsOfBasis"],
+                "acquisitionRetrievedAt": source["acquisitionRetrievedAt"],
+                "commitAsOf": source["commitAsOf"],
+                "recordSetSha256": source["recordSetSha256"],
+                "snapshotSetSha256": source["snapshotSetSha256"],
+                "coverageComplete": source["coverageComplete"],
+            }
+            for source in coverage["implementedScope"]["sources"]
+        ],
+        "buildProvenance": {
+            "activity": "deterministic frozen metadata compilation",
+            "software": "okf-ons",
+            "softwareVersion": __version__,
+            "repository": BUNDLE_PUBLISHER["url"],
+            "inputSnapshotSha256": content_sha256(corpus.snapshot),
+            "codeReleasePinned": False,
+            "attested": False,
+        },
+        "integrity": {
+            "checksumsAvailable": True,
+            "authenticatedSignature": False,
+            "status": "checksums-only-not-authenticated",
+            "warning": (
+                "Checksums detect change only when obtained through a trusted channel; "
+                "this release is not cryptographically authenticated."
+            ),
+        },
+        "contextSet": "data/governance/context-set.json",
+        "freshnessPolicy": {
+            "status": "not-defined",
+            "validThrough": None,
+            "liveRevalidationRequiredBeforeExecution": True,
+        },
+        "observationValuesIncluded": False,
+        "liveExecutionAvailable": False,
+    }
+    writer.write_json("data/governance/release.json", governance)
     semantic_bundle = {
         "@context": f"{PUBLIC_ROOT}context/okf-ons.jsonld",
         "@id": f"{PUBLIC_ROOT}okf-bundle.jsonld",
         "@type": "dcat:Catalog",
         "title": "ONS data discovery OKF",
         "description": (
-            "Metadata-only demonstrator built from three official ONS catalogue lanes."
+            "Metadata-only demonstrator built from independently attributed public "
+            "statistical metadata lanes."
         ),
-        "publisher": "https://www.ons.gov.uk/",
+        "publisher": BUNDLE_PUBLISHER["id"],
+        "bundlePublisher": BUNDLE_PUBLISHER["id"],
+        "semanticAuthority": BUNDLE_PUBLISHER["id"],
+        "reviewedBy": [],
+        "notEndorsedBySource": True,
+        "nonEndorsementStatement": NON_ENDORSEMENT,
+        "contextSet": "data/governance/context-set.json",
         "conformsTo": [
             "https://www.w3.org/TR/vocab-dcat-3/",
             "https://www.w3.org/TR/prov-o/",
@@ -1126,6 +1380,18 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
                 "description": record.get("notes", ""),
                 "landingPage": record.get("url", ""),
                 "wasDerivedFrom": record.get("provenance", {}).get("source_url", ""),
+                "wasGeneratedBy": f"{PUBLIC_ROOT}data/governance/release.json",
+                "wasAttributedTo": BUNDLE_PUBLISHER["id"],
+                "sourcePublisher": [
+                    publisher.get("url")
+                    or f"{PUBLIC_ROOT}publisher/{publisher.get('id', 'unknown')}"
+                    for publisher in record.get("source_publishers", [])
+                    if isinstance(publisher, Mapping)
+                ],
+                "bundlePublisher": BUNDLE_PUBLISHER["id"],
+                "semanticAuthority": BUNDLE_PUBLISHER["id"],
+                "reviewedBy": [],
+                "notEndorsedBySource": True,
             }
             for record in corpus.records
         ],
@@ -1146,17 +1412,28 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "Metadata-only ONS discovery demonstrator with explicit coverage, "
             "confusable alternatives, standards evidence and MCP selection bindings."
         ),
-        "version": "0.1.0",
+        "version": __version__,
         "snapshot": corpus.snapshot["snapshotId"],
         "generated_at": generated_at,
         "status": "bounded-demonstrator",
-        "publisher": "https://github.com/chris-page-gov",
-        "license": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+        "publisher": BUNDLE_PUBLISHER["id"],
+        "authority": governance["authority"],
+        "rights": {
+            "status": "mixed-record-level",
+            "recordLevel": True,
+            "notEvaluatedRecordCount": rights_not_evaluated_count,
+            "codeLicense": f"{BUNDLE_PUBLISHER['url']}/blob/v{__version__}/LICENSE",
+            "statement": (
+                "No single licence is asserted for all source metadata. Consult each "
+                "record's license_id, license_source_id and rights_status fields; some "
+                "records remain explicitly not evaluated."
+            ),
+        },
         "semantic_descriptor": f"{PUBLIC_ROOT}okf-bundle.yamlld",
         "counts": {
             "datasets": len(corpus.records),
             "records": len(corpus.records),
-            "publishers": 1,
+            "publishers": len(publisher_rows),
             "resources": len(resources),
             "relationships": len(relationships),
             "sources": len(source_counts),
@@ -1178,6 +1455,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "standards": "data/standards/evaluation.json",
             "sdmx": "data/standards/sdmx.json",
             "evaluation": "data/evaluation/report.json",
+            "governance": "data/governance/release.json",
+            "context_set": "data/governance/context-set.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
             "viewer": EXPLORER_ROOT,
@@ -1188,6 +1467,13 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
                 "all_ons_metadata_claim": False,
                 "compare_alternatives": True,
                 "statistical_accuracy_evaluated": False,
+                "not_endorsed_by_source": True,
+            },
+            "okf-governed-knowledge-contract.v1": {
+                "entrypoint": "governance",
+                "status": "experimental",
+                "evidence_carried_not_certified": True,
+                "authorises_execution": False,
             },
             "okf-mcp-binding.v1": {
                 "entrypoint": "mcp_bindings",

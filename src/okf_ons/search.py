@@ -40,6 +40,9 @@ WEIGHTS = {
     "context": 9,
     "description": 6,
     "topics": 6,
+    "statistical": 6,
+    "geography_time": 5,
+    "producers": 5,
     "record_type": 4,
     "source": 4,
     "standards": 3,
@@ -55,6 +58,9 @@ FIELD_MASKS = {
     "source": 32,
     "standards": 64,
     "identifiers": 128,
+    "statistical": 256,
+    "geography_time": 512,
+    "producers": 1024,
 }
 
 FILTER_FIELDS = (
@@ -64,6 +70,13 @@ FILTER_FIELDS = (
     "state",
     "frequency",
     "population_type",
+    "source_publisher",
+    "subtopic",
+    "unit_of_measure",
+    "geography_level",
+    "geography_vintage",
+    "derivation_mode",
+    "binding_status",
     "metadata_evidence_band",
     "has_methodology",
     "has_quality_documentation",
@@ -127,6 +140,24 @@ def filter_values(record: dict[str, Any], key: str) -> list[str]:
         values = ["yes" if record.get("quality_links") else "no"]
     elif key == "has_alternatives":
         values = ["yes" if record.get("alternatives") else "no"]
+    elif key == "source_publisher":
+        values = [
+            publisher.get("name")
+            for publisher in record.get("source_publishers", [])
+            if isinstance(publisher, dict)
+        ]
+    elif key == "geography_level":
+        geography = record.get("geography_metadata")
+        values = geography.get("levels", []) if isinstance(geography, dict) else []
+    elif key == "derivation_mode":
+        derivation = record.get("metadata_derivation")
+        if isinstance(derivation, dict):
+            values = derivation.get("modes", [])
+        else:
+            values = []
+    elif key == "binding_status":
+        selection = record.get("selection")
+        values = [selection.get("binding_status")] if isinstance(selection, dict) else []
     else:
         raw = record.get(key)
         values = raw if isinstance(raw, list) else [raw]
@@ -153,6 +184,7 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "native_id": record["native_id"],
         "canonical_record_id": record["id"],
         "evaluation_aliases": record.get("evaluation_aliases", []),
+        "native_aliases": record.get("native_aliases", []),
         "notes": record.get("notes", "")[:2_000],
         "context_note": record.get("context_note", "")[:1_000],
         "topics": record.get("topics", []),
@@ -166,6 +198,10 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "publisher_uri": record.get("publisher_uri", ""),
         "portal_owner": record.get("portal_owner", ""),
         "source_organisation": record.get("source_organisation", ""),
+        "source_publishers": record.get("source_publishers", []),
+        "surface_operator": record.get("surface_operator", {}),
+        "authority": record.get("authority", {}),
+        "assertion_provenance": record.get("assertion_provenance", {}),
         "metadata_modified": record.get("metadata_modified", ""),
         "timestamp": record.get("metadata_modified", ""),
         "quality_score": record.get("quality_score", 0),
@@ -175,6 +211,17 @@ def result_document(record: dict[str, Any], ordinal: int) -> dict[str, Any]:
         "alternatives": record.get("alternatives", []),
         "standards_evidence": record.get("standards_evidence", {}),
         "selection": record.get("selection", {}),
+        "measure": record.get("measure", ""),
+        "unit_of_measure": record.get("unit_of_measure", ""),
+        "subtopic": record.get("subtopic", ""),
+        "dataset_family": record.get("dataset_family", ""),
+        "geography": record.get("geography", []),
+        "geography_metadata": record.get("geography_metadata", {}),
+        "geography_vintage": record.get("geography_vintage", ""),
+        "time_coverage": record.get("time_coverage", {}),
+        "caveats": record.get("caveats", []),
+        "statistical_flags": record.get("statistical_flags", {}),
+        "metadata_derivation": record.get("metadata_derivation", {}),
         "license_id": record.get("license_id", ""),
         "license_title": record.get("license_title", ""),
         "license_source_id": record.get("license_source_id", ""),
@@ -205,6 +252,19 @@ def rank_records(
             "context": record.get("context_note", ""),
             "description": record.get("notes", ""),
             "topics": " ".join(record.get("topics", []) + record.get("tags", [])),
+            "statistical": " ".join(
+                str(record.get(key, ""))
+                for key in ("measure", "unit_of_measure", "frequency", "population_type")
+            ),
+            "geography_time": " ".join(
+                str(record.get(key, ""))
+                for key in ("geography", "geography_metadata", "geography_vintage", "time_coverage")
+            ),
+            "producers": " ".join(
+                str(publisher.get("name", ""))
+                for publisher in record.get("source_publishers", [])
+                if isinstance(publisher, dict)
+            ),
             "record_type": record.get("record_type", ""),
             "source": record.get("source_surface", ""),
             "standards": " ".join(record.get("standards_evidence", {})),
@@ -219,6 +279,7 @@ def rank_records(
                     str(record.get("portal_owner", "")),
                     str(record.get("source_organisation", "")),
                     *[str(alias) for alias in record.get("evaluation_aliases", [])],
+                    *[str(alias) for alias in record.get("native_aliases", [])],
                 ]
             ),
         }
@@ -254,6 +315,19 @@ def build_search(records: list[dict[str, Any]], *, snapshot_id: str) -> dict[str
             "context": doc["context_note"],
             "description": doc["notes"],
             "topics": " ".join(doc["topics"] + doc["tags"]),
+            "statistical": " ".join(
+                str(doc.get(key, ""))
+                for key in ("measure", "unit_of_measure", "frequency", "population_type")
+            ),
+            "geography_time": " ".join(
+                str(doc.get(key, ""))
+                for key in ("geography", "geography_metadata", "geography_vintage", "time_coverage")
+            ),
+            "producers": " ".join(
+                str(publisher.get("name", ""))
+                for publisher in doc.get("source_publishers", [])
+                if isinstance(publisher, dict)
+            ),
             "record_type": doc["record_type"],
             "source": doc["source_surface"],
             "standards": " ".join(doc["standards_evidence"]),
@@ -268,6 +342,7 @@ def build_search(records: list[dict[str, Any]], *, snapshot_id: str) -> dict[str
                     str(doc["portal_owner"]),
                     str(doc["source_organisation"]),
                     *[str(alias) for alias in doc["evaluation_aliases"]],
+                    *[str(alias) for alias in doc["native_aliases"]],
                 ]
             ),
         }

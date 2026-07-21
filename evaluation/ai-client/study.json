@@ -14,7 +14,7 @@
     "expected": "evaluation/ai-client/expected.json",
     "expected_sha256": "8c4ae366c85ecdce471da43835a6a3106a7390de9bbd7b004ca43f0d76609e33",
     "client_profiles": "evaluation/ai-client/client-profiles.json",
-    "client_profiles_sha256": "e8e059652e4615fb5b7c4dbeca73c50d1fb46bd073d9f523a15ff63f958f20d1",
+    "client_profiles_sha256": "bc9fb7b0800624031fac2567435620557c269596fab66b4eeff406325433f520",
     "personas_and_journeys": "evaluation/ai-client/personas-and-journeys.json",
     "personas_and_journeys_sha256": "b1101129aeea20567fefd07699849949281609d80571c9a7c50a3ffb8ec9eba7",
     "issue_register": "evaluation/ai-client/issue-register.json",
@@ -82,6 +82,10 @@
         {
           "origin": "https://geoportal.statistics.gov.uk",
           "path_prefixes": ["/api/"]
+        },
+        {
+          "origin": "https://www.ons.gov.uk",
+          "path_prefixes": ["/explore-local-statistics/api/"]
         }
       ],
       "allowed_http_methods": ["GET"],
@@ -108,6 +112,10 @@
         {
           "origin": "https://chris-page-gov.github.io",
           "path_prefixes": ["/okf-ons/"]
+        },
+        {
+          "origin": "https://www.ons.gov.uk",
+          "path_prefixes": ["/explore-local-statistics/api/"]
         }
       ],
       "allowed_http_methods": ["GET"],

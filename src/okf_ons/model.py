@@ -36,6 +36,12 @@ STOP_WORDS = {
 ONS_API_ROOT = "https://api.beta.ons.gov.uk/v1"
 NOMIS_ROOT = "https://www.nomisweb.co.uk/api/v01"
 OGP_ROOT = "https://geoportal.statistics.gov.uk"
+OKF_ONS_REPOSITORY = "https://github.com/chris-page-gov/okf-ons"
+BUNDLE_PUBLISHER = {
+    "id": OKF_ONS_REPOSITORY,
+    "name": "OKF ONS project",
+    "url": OKF_ONS_REPOSITORY,
+}
 _NATIVE_TABLE_CODE_RE = re.compile(r"^[A-Z]{2}\d{3}$", re.IGNORECASE)
 _TITLE_TABLE_CODE_RE = re.compile(
     r"^\s*([A-Z]{2}\d{3}[A-Z]*)\s*(?:[-:–—]|$)",
@@ -74,7 +80,13 @@ def tokenize(*values: Any) -> list[str]:
 def content_sha256(value: Any) -> str:
     import json
 
-    payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -126,7 +138,8 @@ def _quality_evidence(record: dict[str, Any]) -> dict[str, Any]:
         "identity": bool(record.get("native_id") and record.get("source_surface")),
         "description": bool(record.get("notes")),
         "publisher": bool(record.get("publisher_title")),
-        "licence": bool(record.get("license_id")),
+        "licence": bool(record.get("license_id"))
+        and record.get("license_id") != "not-evaluated",
         "contact": bool(record.get("contacts")),
         "release_or_modified": bool(record.get("metadata_modified")),
         "frequency": bool(record.get("frequency")),
@@ -600,6 +613,31 @@ def _reference_links(value: Any) -> list[str]:
     )
 
 
+def _authority_parties(value: Any) -> list[dict[str, str]]:
+    """Return stable public organisation references from projected metadata."""
+
+    rows = value if isinstance(value, list) else [value]
+    parties: dict[tuple[str, str], dict[str, str]] = {}
+    for row in rows:
+        if isinstance(row, Mapping):
+            name = plain_text(row.get("name") or row.get("title"), 500)
+            url = plain_text(row.get("url") or row.get("href"), 2_000)
+            date = plain_text(row.get("date") or row.get("publicationDate"), 100)
+        else:
+            name = plain_text(row, 500)
+            url = ""
+            date = ""
+        if not name:
+            continue
+        party = {"id": slugify(name), "name": name}
+        if url:
+            party["url"] = url
+        if date:
+            party["sourceDate"] = date
+        parties[(name.casefold(), url)] = party
+    return [parties[key] for key in sorted(parties)]
+
+
 def _projected_url(record: Mapping[str, Any], *relations: str) -> str:
     links = record.get("links")
     if not isinstance(links, Mapping):
@@ -636,6 +674,8 @@ def _finalise_projected_record(
 
     source = provenance.get("source")
     source = source if isinstance(source, Mapping) else {}
+    source_publisher = source.get("publisher")
+    source_publisher = source_publisher if isinstance(source_publisher, Mapping) else {}
     native_id = plain_text(projected.get("sourceRecordId"), 500)
     record["source_adapter"] = plain_text(source.get("adapter"), 200) or record["source_surface"]
     record["source_record_kind"] = plain_text(projected.get("recordKind"), 200) or "dataset"
@@ -651,11 +691,91 @@ def _finalise_projected_record(
         or record["provenance"]["source_sha256"],
         "native_id": native_id,
     }
+    submodule = provenance.get("submodule")
+    submodule = submodule if isinstance(submodule, Mapping) else {}
+    source_commit_as_of = plain_text(submodule.get("commitAsOf"), 100)
+    source_commit = plain_text(submodule.get("commit"), 200)
+    retrieved_at = record["provenance"]["retrieved_at"]
+    if source_commit:
+        record["provenance"]["source_commit"] = source_commit
+    if source_commit_as_of:
+        record["provenance"]["source_commit_as_of"] = source_commit_as_of
+        record["provenance"]["source_commit_as_of_verified"] = (
+            submodule.get("commitAsOfVerified") is True
+        )
+    if retrieved_at:
+        record["provenance"]["source_as_of"] = retrieved_at
+        record["provenance"]["source_as_of_basis"] = "provenance.retrieved_at"
+    elif source_commit_as_of:
+        record["provenance"]["source_as_of"] = source_commit_as_of
+        record["provenance"]["source_as_of_basis"] = (
+            "provenance.source_commit_as_of"
+        )
+    else:
+        record["provenance"]["source_as_of"] = ""
+        record["provenance"]["source_as_of_basis"] = "not-evidenced"
+    declared_publishers = (
+        projected.get("sourcePublishers")
+        or projected.get("sourcePublisher")
+        or projected.get("producers")
+    )
+    source_publishers = _authority_parties(declared_publishers)
+    if not source_publishers:
+        source_publishers = _authority_parties(source_publisher)
+    surface_operator = _authority_parties(
+        projected.get("surfaceOperator") or projected.get("operator")
+    )
+    if not surface_operator:
+        surface_operator = _authority_parties(source_publisher)
+    bundle_publisher = dict(BUNDLE_PUBLISHER)
+    record["source_publishers"] = source_publishers
+    record["surface_operator"] = surface_operator[0] if surface_operator else {}
+    record["authority"] = {
+        "schema": "okf-qualified-authority.v1",
+        "sourcePublisher": source_publishers,
+        "surfaceOperator": record["surface_operator"],
+        "bundlePublisher": bundle_publisher,
+        "semanticAuthority": {
+            **bundle_publisher,
+            "scope": "this generated bundle release only",
+            "status": "experimental",
+        },
+        "reviewedBy": [],
+        "notEndorsedBySource": True,
+        "operationalAuthority": "external live-data service",
+        "decisionAuthority": "accountable external person or institution",
+    }
+    record["assertion_provenance"] = {
+        "schema": "okf-qualified-assertion-provenance.v1",
+        "statementClass": "deterministically-normalised",
+        "wasDerivedFrom": record["provenance"]["source_url"],
+        "sourceRecordId": native_id,
+        "sourceRecordSetSha256": record["provenance"]["source_sha256"],
+        "wasGeneratedBy": {
+            "type": "deterministic-metadata-normalisation",
+            "software": "okf-ons",
+            "repository": OKF_ONS_REPOSITORY,
+        },
+        "wasAttributedTo": bundle_publisher,
+        "reviewStatus": "not-reviewed-by-source",
+    }
+    derivation = projected.get("derivation")
+    if isinstance(derivation, Mapping):
+        record["assertion_provenance"]["sourceDerivation"] = dict(derivation)
     record["identity"] = {
         "dataset_id": native_id,
         "edition": record.get("latest_edition") or "",
         "version": record.get("latest_version") or "",
     }
+    if record.get("dataset_family"):
+        record["identity"].update(
+            {
+                "indicator_slug": native_id,
+                "internal_dataset_id": record["dataset_family"],
+                "indicator_code": record.get("indicator_code") or "",
+                "source_edition_version_available": False,
+            }
+        )
     record["publication"] = {
         "release_date": record.get("first_released") or "",
         "revision_status": record.get("revision_status") or "",
@@ -676,6 +796,7 @@ def _finalise_projected_record(
                 *record.get("quality_links", []),
             }
         ),
+        "metadata_derivation": record.get("metadata_derivation") or {},
     }
     record["quality_evidence"] = _quality_evidence(record)
     record["quality"] = {
@@ -685,6 +806,167 @@ def _finalise_projected_record(
     }
     record["quality_score"] = record["quality"]["overall"]
     record["standards_evidence"] = _standards_evidence(record)
+    return record
+
+
+def _normalize_els_indicator(
+    projected: Mapping[str, Any],
+    *,
+    snapshot_id: str,
+    retrieved_at: str,
+    source_sha256: str,
+) -> dict[str, Any] | None:
+    """Normalise a safe, pinned ELS indicator metadata projection."""
+
+    slug = plain_text(projected.get("sourceRecordId"), 300)
+    if not slug:
+        return None
+    taxonomy = projected.get("taxonomy")
+    taxonomy = taxonomy if isinstance(taxonomy, Mapping) else {}
+    geography = projected.get("geography")
+    geography = dict(geography) if isinstance(geography, Mapping) else {}
+    dimensions = projected.get("dimensions")
+    dimensions = list(dimensions) if isinstance(dimensions, list) else []
+    producers = projected.get("producers")
+    producers = list(producers) if isinstance(producers, list) else []
+    aliases = _string_list(projected.get("aliases"))
+    self_url = _projected_url(projected, "self") or (
+        f"https://www.ons.gov.uk/explore-local-statistics/indicators/{slug}"
+    )
+    metadata_url = _projected_url(projected, "metadata") or self_url
+    topic = plain_text(taxonomy.get("topic"), 300)
+    subtopic = plain_text(taxonomy.get("subTopic"), 300)
+    title = plain_text(projected.get("title"), 1_000) or slug
+    description = plain_text(projected.get("description"))
+    record = _base_record(
+        record_id=f"ons-explore-local-statistics:indicator:{slug}",
+        native_id=slug,
+        source_surface="ons-explore-local-statistics",
+        title=title,
+        description=description,
+        url=self_url,
+        record_type="ONS Explore Local Statistics Indicator",
+        snapshot_id=snapshot_id,
+        retrieved_at=retrieved_at,
+        source_url=metadata_url,
+        source_sha256=source_sha256,
+    )
+    source_publishers = _authority_parties(producers)
+    sole_publisher = source_publishers[0] if len(source_publishers) == 1 else {}
+    if len(source_publishers) > 1:
+        publisher_id = "multiple-source-producers"
+        publisher_title = f"{len(source_publishers)} attributed source producers"
+        publisher_uri = ""
+    else:
+        publisher_id = sole_publisher.get("id") or "source-producer-not-evidenced"
+        publisher_title = sole_publisher.get("name") or "Source producer not evidenced"
+        publisher_uri = sole_publisher.get("url") or ""
+    derivation = projected.get("derivation")
+    derivation = dict(derivation) if isinstance(derivation, Mapping) else {}
+    derived_flags = projected.get("derivedMetadataFlags")
+    derived_flags = dict(derived_flags) if isinstance(derived_flags, Mapping) else {}
+    classification = projected.get("classificationAssertions")
+    classification = dict(classification) if isinstance(classification, Mapping) else {}
+    record.update(
+        {
+            "publisher": publisher_id,
+            "publisher_title": publisher_title,
+            "publisher_uri": publisher_uri,
+            "source_publishers": source_publishers,
+            "formats": ["JSON-stat metadata", "REST/HTTP"],
+            "protocol": ["REST/HTTP"],
+            "topics": _string_list([topic, subtopic]),
+            "tags": sorted(
+                {
+                    "explore-local-statistics",
+                    "indicator",
+                    "local-statistics",
+                    *(_string_list([topic, subtopic])),
+                }
+            ),
+            "state": plain_text(projected.get("lifecycleState"), 100) or "published",
+            "metadata_modified": plain_text(
+                projected.get("metadataModified") or projected.get("lastUpdated"), 100
+            ),
+            "data_modified": plain_text(projected.get("dataModified"), 100),
+            "frequency": plain_text(projected.get("releaseFrequency"), 200),
+            "measure": plain_text(projected.get("measure"), 500),
+            "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 500),
+            "dataset_family": plain_text(projected.get("internalDatasetId"), 500),
+            "indicator_code": plain_text(projected.get("indicatorCode"), 1_000),
+            "subtitle": plain_text(projected.get("subtitle"), 2_000),
+            "subtopic": subtopic,
+            "geography": _string_list(geography.get("levels")),
+            "geography_metadata": geography,
+            "geography_vintage": geography.get("vintage") or "",
+            "time_coverage": (
+                dict(projected["timeCoverage"])
+                if isinstance(projected.get("timeCoverage"), Mapping)
+                else {}
+            ),
+            "period_format": plain_text(projected.get("periodFormat"), 100),
+            "dimensions": dimensions,
+            "dimension_count": len(dimensions),
+            "dimension_order": [
+                plain_text(value, 300)
+                for value in projected.get("dimensionOrder", [])
+                if plain_text(value, 300)
+            ]
+            if isinstance(projected.get("dimensionOrder"), list)
+            else [],
+            "caveats": [
+                plain_text(value)
+                for value in projected.get("caveats", [])
+                if plain_text(value)
+            ]
+            if isinstance(projected.get("caveats"), list)
+            else [],
+            "statistical_flags": classification,
+            "metadata_derivation": {
+                **derivation,
+                "modes": sorted(
+                    {
+                        str(mode)
+                        for mode in (
+                            derivation.get("mode"),
+                            derived_flags.get("mode"),
+                            geography.get("derivationMode"),
+                        )
+                        if mode
+                    }
+                ),
+                "structureDerivedFlags": derived_flags,
+            },
+            "presentation": (
+                dict(projected["presentation"])
+                if isinstance(projected.get("presentation"), Mapping)
+                else {}
+            ),
+            "evaluation_aliases": [
+                f"ons-explore-local-statistics:indicator:{alias}" for alias in aliases
+            ],
+            "native_aliases": aliases,
+            "source_tier": "ons-curated-multi-producer-metadata",
+            "confidence": "declared-and-structure-derived",
+            "license_id": "not-evaluated",
+            "license_title": "Rights not evaluated for this multi-producer indicator metadata",
+            "license_source_id": "",
+            "rights_status": "not-evaluated",
+            "selection": {
+                "schema": "okf-ons-selection-binding.v1",
+                "arguments": {"indicator": slug},
+                "mcp_available": False,
+                "binding_status": "planned",
+                "complete": False,
+                "read_only": True,
+                "direct_metadata_url": metadata_url,
+                "reason": (
+                    "The pinned ELS application exposes internal metadata and data routes, "
+                    "but this repository has no reviewed live ELS execution binding."
+                ),
+            },
+        }
+    )
     return record
 
 
@@ -819,6 +1101,15 @@ def normalize_acquisition_record(
                 "temporal_extent": projected.get("temporalExtent", {}),
             }
         )
+    elif source_id == "ons-explore-local-statistics":
+        record = _normalize_els_indicator(
+            projected,
+            snapshot_id=snapshot_id,
+            retrieved_at=retrieved_at,
+            source_sha256=source_sha256,
+        )
+        if record is None:
+            return None
     else:
         raise ValueError(f"Unsupported acquisition source id {source_id!r}")
 
@@ -829,10 +1120,21 @@ def _contrast_values(record: dict[str, Any]) -> dict[str, Any]:
     return {
         "source surface": record.get("source_surface") or "",
         "record type": record.get("record_type") or "",
+        "dataset family": record.get("dataset_family") or "",
+        "topic": record.get("subtopic") or record.get("topics") or [],
+        "measure": record.get("measure") or "",
+        "unit": record.get("unit_of_measure") or "",
         "frequency": record.get("frequency") or "",
         "population": record.get("population_type") or "",
         "geography": record.get("geography") or [],
+        "geography vintage": record.get("geography_vintage") or "",
         "time coverage": record.get("time_coverage") or {},
+        "source producers": [
+            publisher.get("name")
+            for publisher in record.get("source_publishers", [])
+            if isinstance(publisher, Mapping)
+        ],
+        "metadata derivation": record.get("metadata_derivation") or {},
         "edition": record.get("latest_edition") or "",
         "version": record.get("latest_version") or "",
         "release state": record.get("state") or "",

@@ -73,8 +73,10 @@ qualifications:
   not a hash; and
 - a single flat replacement index would itself exceed common response caps.
 
-Every one of the 4,989 current canonical records can, however, be serialized
-individually below 64 KiB:
+At the preserved 4,989-record trial baseline, every canonical record could be
+serialized individually below 64 KiB. The current 5,097-record corpus adds the
+ELS lane; the build test rechecks the same per-record limit rather than
+rewriting this historical measurement:
 
 | Measure | Canonical JSON bytes |
 |---|---:|
@@ -348,7 +350,9 @@ wording:
 2. **Open web** — ordinary search and public pages, denying both OKF-ONS and
    raw catalogue APIs.
 3. **Raw API** — the registered ONS Data API, Nomis and Open Geography API
-   roots, denying OKF and generic search.
+   roots, denying OKF and generic search. The ELS lane is excluded because its
+   frozen input is a pinned local projection and its application routes are not
+   treated as a reviewed public API contract.
 
 Prompt-only restrictions are `self-reported`, never `enforced`, and do not
 enter comparative denominators. Redirects and tool-mediated access must be
