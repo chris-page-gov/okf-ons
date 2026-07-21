@@ -245,14 +245,16 @@ python scripts/acquire_snapshot.py \
   --require-complete
 ```
 
-To refresh the bounded Nomis compact overviews, first acquire them into an
-external replacement envelope, then compose that envelope over r4. The
-acquisition script independently derives its cohort from the frozen Nomis
-source and publishes neither raw responses nor cache paths:
+To reproduce or refresh the bounded Nomis compact overviews, use the validated
+pre-enrichment r3 snapshot as the base: replacement envelopes are digest-bound
+to that exact cohort and enrichment snapshots are not chained as acquisition
+bases. First acquire into an external replacement envelope, then compose that
+envelope over r3. The acquisition script independently derives its cohort from
+the frozen Nomis source and publishes neither raw responses nor cache paths:
 
 ```bash
 python scripts/acquire_nomis_overviews.py \
-  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r3 \
   --cache-dir /path/to/raw-cache \
   --output /path/to/nomis-overviews.json \
   --limit 1617 \
@@ -262,7 +264,7 @@ python scripts/acquire_snapshot.py \
   --cache-dir /path/to/raw-cache \
   --output-dir source \
   --snapshot-id NEW_UNIQUE_SNAPSHOT_ID \
-  --base-snapshot source/metadata-enrichment-2026-07-21-r4 \
+  --base-snapshot source/metadata-enrichment-2026-07-21-r3 \
   --replacement-acquisition /path/to/nomis-overviews.json \
   --require-complete
 ```

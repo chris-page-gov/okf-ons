@@ -15,6 +15,11 @@ source-backed slots: 52,224 of 71,358 populated, or 73.1859% completeness.
 This fixed-denominator measure will be retained throughout the campaign so a
 change in scoring rules cannot masquerade as enrichment.
 
+Each machine profile also contains `halfRemaining*` fields calculated from that
+profile's own point-in-time gap count. Those are local diagnostics, not the
+campaign target. Progress in this report always uses the baseline profile's
+fixed 52,224-cell target.
+
 `Not specified (metadata gap)` is also a generic OKF Explorer display label.
 The profiler separately counts each Explorer view because dataset details,
 resources and search results duplicate records and use different generic
@@ -46,8 +51,8 @@ The applicability-aware companion measure uses four states: `present`,
 `not-applicable`, `not-evidenced`, and `conflicted`. Its first deliberately
 narrow rule excludes only statistical population/universe for the 3,035 Open
 Geography reference assets. It does not assume that missing cadence, vintage,
-methodology or contact evidence is inapplicable. After Batch 06 this measure is
-40,478 of 68,323 applicable slots (59.2451%); 3,035 are not applicable, 27,845
+methodology or contact evidence is inapplicable. After Batch 07 this measure is
+41,131 of 68,323 applicable slots (60.2008%); 3,035 are not applicable, 27,192
 are not evidenced, and none are recorded as conflicted.
 
 ## Stopping rule
@@ -76,6 +81,7 @@ unsupported record-by-record judgement, or lack authoritative public evidence.
 | 04 | Frozen Explore Local Statistics caveats normalised | 14 min 18 sec | 135 | 53.6786% | 566 slots/hour |
 | 05 | Frozen Open Geography utility evidence surfaced | 40 min 37 sec | 325 | 54.1341% | 480 slots/hour |
 | 06 | Live Nomis compact overviews, then frozen | 11 min 11 sec | 1,849 | 56.7252% | 9,920 slots/hour |
+| 07 | Frozen Nomis quality notes normalised | 15 min 56 sec | 653 | 57.6403% | 2,459 slots/hour |
 
 Batch 01 closed 9.4596% of the original 38,268 gaps and completed 18.9192%
 of the 19,134-slot halfway milestone. The evidence gains were population or
@@ -177,6 +183,23 @@ require 11,746 additional source-backed evidence cells; the next-source audit
 therefore tests availability rather than projecting Batch 06's exceptional
 contact yield across unrelated fields.
 
+Batch 07 revisited the frozen Nomis annotations after the full-cohort audit. It
+found 653 records with substantive source notes explicitly labelled or worded
+as statistical disclosure control, uncertainty, data quality or limitations.
+The earlier extractor retained only linked quality documents and required a
+numeric `MetadataTextN` suffix, so it missed both unlinked evidence and the
+valid unsuffixed `MetadataText` form. The revised extractor requires a paired
+quality title or an explicit quality signal in a substantive note; general
+dataset descriptions and unlabelled URLs still do not qualify.
+
+The 15 minute 56 second elapsed time is conservative shared wall time from the
+r4 checkpoint through the remaining-gap audits and implementation; the ONS
+version-resource acquisition was designed in parallel. Batch 07 adds 653
+quality-documentation evidence cells at 2,459 slots/hour. Cumulative raw
+progress is 8,041 cells: 21.0123% of the original gaps and 42.0247% of the fixed
+halfway milestone. Another 11,093 source-backed cells would be needed to reach
+that milestone.
+
 The machine-readable baseline is
 [`evaluation/metadata-completeness/baseline.json`](../evaluation/metadata-completeness/baseline.json).
 Batch 01 has a
@@ -201,14 +224,26 @@ Batch 06 has a
 [`profile`](../evaluation/metadata-completeness/batch-06-live-nomis-overviews.json)
 and
 [`comparison`](../evaluation/metadata-completeness/batch-06-comparison.json).
+Batch 07 has a
+[`profile`](../evaluation/metadata-completeness/batch-07-frozen-nomis-quality-notes.json)
+and
+[`comparison`](../evaluation/metadata-completeness/batch-07-comparison.json).
 Regenerate and compare profiles with:
 
 ```bash
+python scripts/build_bundle.py \
+  --snapshot-dir source/metadata-enrichment-2026-07-21-r4 \
+  --output bundle
 python scripts/profile_metadata_gaps.py \
   --bundle bundle \
-  --output evaluation/metadata-completeness/baseline.json
+  --output /tmp/okf-ons-r4-profile.json
+cmp /tmp/okf-ons-r4-profile.json \
+  evaluation/metadata-completeness/batch-06-live-nomis-overviews.json
 python scripts/compare_metadata_gaps.py \
-  evaluation/metadata-completeness/baseline.json \
-  evaluation/metadata-completeness/batch-01-frozen-nomis.json \
-  --elapsed-seconds 313
+  evaluation/metadata-completeness/batch-05-frozen-ogp-utility.json \
+  /tmp/okf-ons-r4-profile.json \
+  --elapsed-seconds 671 \
+  --output /tmp/okf-ons-batch-06-comparison.json
+cmp /tmp/okf-ons-batch-06-comparison.json \
+  evaluation/metadata-completeness/batch-06-comparison.json
 ```

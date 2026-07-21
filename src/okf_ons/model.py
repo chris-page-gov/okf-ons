@@ -297,6 +297,64 @@ def _version_identity(link: str) -> tuple[str, str, str]:
     return match.groups() if match else ("", "", "")
 
 
+def _ons_version_dimensions(value: Any) -> list[dict[str, Any]]:
+    """Return a bounded projection of source-declared ONS version dimensions."""
+
+    if not isinstance(value, list):
+        return []
+    dimensions: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in value[:100]:
+        if not isinstance(item, Mapping):
+            continue
+        dimension: dict[str, Any] = {}
+        for key, limit in (
+            ("id", 300),
+            ("name", 300),
+            ("label", 500),
+            ("description", 5_000),
+            ("variable", 300),
+            ("quality_statement_text", 5_000),
+        ):
+            if text := plain_text(item.get(key), limit):
+                dimension[key] = text
+        for key in ("href", "quality_statement_url"):
+            if url := _public_url(item.get(key)):
+                dimension[key] = url
+        if isinstance(item.get("is_area_type"), bool):
+            dimension["is_area_type"] = item["is_area_type"]
+        option_count = item.get("number_of_options")
+        if (
+            isinstance(option_count, int)
+            and not isinstance(option_count, bool)
+            and 0 <= option_count <= 100_000_000
+        ):
+            dimension["number_of_options"] = option_count
+        identity = (
+            str(dimension.get("id") or ""),
+            str(dimension.get("name") or ""),
+            str(dimension.get("label") or ""),
+        )
+        if not any(identity) or identity in seen:
+            continue
+        seen.add(identity)
+        dimensions.append(dimension)
+    return dimensions
+
+
+def _ons_geography_dimensions(
+    dimensions: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Select only explicitly declared ONS area dimensions."""
+
+    return [
+        dict(dimension)
+        for dimension in dimensions
+        if dimension.get("is_area_type") is True
+        or plain_text(dimension.get("name"), 300).casefold() == "geography"
+    ]
+
+
 def _nomis_annotation_map(value: Any) -> dict[str, str]:
     """Return text-bearing projected Nomis annotations by their native title."""
 
@@ -353,19 +411,13 @@ def _nomis_quality_documentation_links(
 
     links: set[str] = set()
     for title, note in annotation_map.items():
-        match = re.fullmatch(r"MetadataText(\d+)", title)
+        match = re.fullmatch(r"MetadataText(\d*)", title)
         if not match:
             continue
         companion_title = annotation_map.get(f"MetadataTitle{match.group(1)}", "")
         for url_match in _HTTP_URL_RE.finditer(note):
-            url = url_match.group().rstrip(".,;:!?")
-            parsed = urlparse(url)
-            if (
-                parsed.scheme not in {"http", "https"}
-                or not parsed.hostname
-                or parsed.username
-                or parsed.password
-            ):
+            url = _public_url(url_match.group().rstrip(".,;:!?"))
+            if not url:
                 continue
             context_start = max(0, url_match.start() - 180)
             context_end = min(len(note), url_match.end() + 180)
@@ -375,6 +427,27 @@ def _nomis_quality_documentation_links(
             if _NOMIS_QUALITY_CONTEXT_RE.search(quality_context):
                 links.add(url)
     return sorted(links)
+
+
+def _nomis_quality_documentation_notes(
+    annotation_map: Mapping[str, str],
+) -> list[str]:
+    """Return explicitly labelled or self-describing Nomis quality notes."""
+
+    notes: set[str] = set()
+    for title, note in annotation_map.items():
+        match = re.fullmatch(r"MetadataText(\d*)", title)
+        if not match:
+            continue
+        bounded_note = plain_text(note, 5_000)
+        if len(bounded_note) < 20:
+            continue
+        companion_title = annotation_map.get(f"MetadataTitle{match.group(1)}", "")
+        if _NOMIS_QUALITY_CONTEXT_RE.search(
+            " ".join((companion_title, bounded_note))
+        ):
+            notes.add(bounded_note)
+    return sorted(notes)
 
 
 def _ogp_area_served(keywords: Any) -> list[str]:
@@ -841,6 +914,7 @@ def normalize_ons_dataset(
             "metadata_modified": plain_text(row.get("last_updated"), 100),
             "frequency": plain_text(row.get("release_frequency"), 200),
             "population_type": plain_text(based_on.get("id"), 300),
+            "geography": _string_list(row.get("geography")),
             "state": plain_text(row.get("state"), 100) or "published",
             "canonical_topic": plain_text(row.get("canonical_topic"), 200),
             "latest_edition": edition,
@@ -850,6 +924,7 @@ def normalize_ons_dataset(
             "dimension_count": int(row.get("dimension_count") or 0),
             "methodology_links": _string_list(row.get("methodology_links")),
             "quality_links": _string_list(row.get("quality_links")),
+            "quality_notes": _string_list(row.get("quality_notes")),
             "selection": {
                 "schema": "okf-ons-selection-binding.v1",
                 "tool": selection_tool,
@@ -1595,6 +1670,40 @@ def normalize_acquisition_record(
         )
         contacts = projected.get("contacts")
         contacts = contacts if isinstance(contacts, list) else []
+        dimensions = _ons_version_dimensions(
+            projected.get("versionDimensions", projected.get("dimensions"))
+        )
+        geography_dimensions = _ons_geography_dimensions(dimensions)
+        geography = [
+            plain_text(
+                dimension.get("label")
+                or dimension.get("name")
+                or dimension.get("id"),
+                500,
+            )
+            for dimension in geography_dimensions
+        ]
+        geography = list(dict.fromkeys(value for value in geography if value))
+        dimension_quality_links = sorted(
+            {
+                str(dimension["quality_statement_url"])
+                for dimension in dimensions
+                if dimension.get("quality_statement_url")
+            }
+        )
+        dimension_quality_notes = sorted(
+            {
+                str(dimension["quality_statement_text"])
+                for dimension in dimensions
+                if dimension.get("quality_statement_text")
+            }
+        )
+        quality_links = sorted(
+            {
+                *_reference_links(projected.get("qualityMethodologyInformation")),
+                *dimension_quality_links,
+            }
+        )
         canonical_topic = plain_text(projected.get("canonicalTopic"), 200)
         subtopics = _string_list(projected.get("subtopics"))
         derivation_fields: dict[str, Any] = {}
@@ -1613,6 +1722,31 @@ def normalize_acquisition_record(
                 "mode": "source-declared",
                 "sourceFields": ["canonical_topic", "subtopics"],
             }
+        if dimensions:
+            derivation_fields["dimensions"] = {
+                "mode": "source-declared",
+                "sourceField": "version.metadata.dimensions",
+            }
+        if geography_dimensions:
+            derivation_fields["geography"] = {
+                "mode": "deterministic-extraction",
+                "sourceField": "version.metadata.dimensions",
+                "rule": "is-area-type-or-exact-geography-name-v1",
+            }
+        if dimension_quality_links:
+            derivation_fields["quality_links"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "version.metadata.dimensions[].quality_statement_url"
+                ),
+            }
+        if dimension_quality_notes:
+            derivation_fields["quality_notes"] = {
+                "mode": "source-declared",
+                "sourceField": (
+                    "version.metadata.dimensions[].quality_statement_text"
+                ),
+            }
         raw = {
             "id": native_id,
             "title": title,
@@ -1626,7 +1760,11 @@ def normalize_acquisition_record(
             "is_based_on": based_on,
             "canonical_topic": canonical_topic,
             "methodology_links": _reference_links(projected.get("methodologies")),
-            "quality_links": _reference_links(projected.get("qualityMethodologyInformation")),
+            "quality_links": quality_links,
+            "quality_notes": dimension_quality_notes,
+            "geography": geography,
+            "dimensions": dimensions,
+            "dimension_count": len(dimensions),
         }
         record = normalize_ons_dataset(
             raw,
@@ -1652,6 +1790,14 @@ def normalize_acquisition_record(
                 "survey": plain_text(projected.get("survey"), 200),
                 "source_licence": plain_text(projected.get("licence"), 500),
                 "population_type_metadata": based_on,
+                "geography_metadata": (
+                    {
+                        "dimensions": geography_dimensions,
+                        "derivationMode": "source-declared",
+                    }
+                    if geography_dimensions
+                    else {}
+                ),
                 "taxonomy_metadata": {
                     "canonicalTopicId": canonical_topic,
                     "subtopicIds": subtopics,
@@ -1675,6 +1821,7 @@ def normalize_acquisition_record(
         geography_levels = _nomis_geography_levels(annotation_map)
         population_type = _nomis_population_universe(annotation_map)
         quality_links = _nomis_quality_documentation_links(annotation_map)
+        quality_notes = _nomis_quality_documentation_notes(annotation_map)
         contacts = _contacts(projected.get("contacts"))
         geographic_coverage = plain_text(projected.get("geographicCoverage"), 500)
         area_served = _string_list(geographic_coverage)
@@ -1696,6 +1843,12 @@ def normalize_acquisition_record(
             }
         if quality_links:
             derivation_fields["quality_links"] = {
+                "mode": "deterministic-extraction",
+                "sourceAnnotationPattern": "MetadataTextN",
+                "classifier": "nomis-quality-context-v1",
+            }
+        if quality_notes:
+            derivation_fields["quality_notes"] = {
                 "mode": "deterministic-extraction",
                 "sourceAnnotationPattern": "MetadataTextN",
                 "classifier": "nomis-quality-context-v1",
@@ -1775,6 +1928,7 @@ def normalize_acquisition_record(
                 "geographic_coverage": geographic_coverage,
                 "area_served": area_served,
                 "quality_links": quality_links,
+                "quality_notes": quality_notes,
                 "unit_of_measure": plain_text(projected.get("unitOfMeasure"), 300),
                 "dimensions": sdmx["dimensions"],
                 "dimension_count": len(dimensions),

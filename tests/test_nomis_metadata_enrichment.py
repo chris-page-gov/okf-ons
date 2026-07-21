@@ -62,6 +62,9 @@ def test_nomis_annotations_fill_only_explicit_metadata_evidence() -> None:
     assert record["geography"] == ["oa", "ps"]
     assert record["population_type"] == "Usual residents aged 16 years and over."
     assert record["quality_links"] == [quality_url]
+    assert record["quality_notes"] == [
+        f"Read the {quality_url}[quality guidance] before use."
+    ]
     assert record["revision_status"] == ""
     evidence = record["quality_evidence"]["evidence"]
     assert evidence["release_or_modified"] is True
@@ -82,6 +85,11 @@ def test_nomis_annotations_fill_only_explicit_metadata_evidence() -> None:
                 "sourceAnnotation": "SubDescription",
             },
             "quality_links": {
+                "mode": "deterministic-extraction",
+                "sourceAnnotationPattern": "MetadataTextN",
+                "classifier": "nomis-quality-context-v1",
+            },
+            "quality_notes": {
                 "mode": "deterministic-extraction",
                 "sourceAnnotationPattern": "MetadataTextN",
                 "classifier": "nomis-quality-context-v1",
@@ -110,7 +118,28 @@ def test_nomis_does_not_treat_codes_or_general_urls_as_missing_metadata(
     assert record["population_type"] == ""
     assert record["geography"] == []
     assert record["quality_links"] == []
+    assert record["quality_notes"] == []
     assert record["revision_status"] == ""
     assert record["metadata_derivation"] == {}
     assert record["quality_evidence"]["evidence"]["release_or_modified"] is True
     assert record["quality_evidence"]["evidence"]["population"] is False
+
+
+def test_nomis_unsuffixed_quality_note_is_preserved() -> None:
+    record = _normalise_nomis(
+        [
+            {
+                "title": "MetadataText",
+                "text": (
+                    "Figures have been adjusted to avoid the release of "
+                    "confidential data."
+                ),
+            },
+            {"title": "MetadataTitle", "text": "Statistical Disclosure Control"},
+        ]
+    )
+
+    assert record["quality_notes"] == [
+        "Figures have been adjusted to avoid the release of confidential data."
+    ]
+    assert record["quality_evidence"]["evidence"]["quality_documentation"] is True

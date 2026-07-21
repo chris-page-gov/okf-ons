@@ -1,0 +1,191 @@
+{
+  "applicabilityAwareDelta": {
+    "addedPresent": 653,
+    "baselinePresent": 40478,
+    "currentPresent": 41131,
+    "percentagePointChange": 0.955754,
+    "possible": 68323,
+    "remainingMissing": 27192,
+    "stateChanges": {
+      "conflicted": 0,
+      "not-applicable": 0,
+      "not-evidenced": -653,
+      "present": 653
+    }
+  },
+  "baselineBundle": {
+    "recordCount": 5097,
+    "snapshot": "metadata-enrichment-2026-07-21-r4",
+    "version": "0.2.0"
+  },
+  "currentBundle": {
+    "recordCount": 5097,
+    "snapshot": "metadata-enrichment-2026-07-21-r4",
+    "version": "0.2.0"
+  },
+  "evidenceSlotDelta": {
+    "addedPresent": 653,
+    "baselineMissingClosed": 0.021146,
+    "baselinePresent": 40478,
+    "byField": [
+      {
+        "addedPresent": 0,
+        "field": "identity",
+        "remainingMissing": 0
+      },
+      {
+        "addedPresent": 0,
+        "field": "description",
+        "remainingMissing": 13
+      },
+      {
+        "addedPresent": 0,
+        "field": "publisher",
+        "remainingMissing": 0
+      },
+      {
+        "addedPresent": 0,
+        "field": "licence",
+        "remainingMissing": 108
+      },
+      {
+        "addedPresent": 0,
+        "field": "contact",
+        "remainingMissing": 3143
+      },
+      {
+        "addedPresent": 0,
+        "field": "release_or_modified",
+        "remainingMissing": 311
+      },
+      {
+        "addedPresent": 0,
+        "field": "frequency",
+        "remainingMissing": 4613
+      },
+      {
+        "addedPresent": 0,
+        "field": "population",
+        "remainingMissing": 3350
+      },
+      {
+        "addedPresent": 0,
+        "field": "geography",
+        "remainingMissing": 337
+      },
+      {
+        "addedPresent": 0,
+        "field": "time_coverage",
+        "remainingMissing": 4989
+      },
+      {
+        "addedPresent": 0,
+        "field": "methodology",
+        "remainingMissing": 4887
+      },
+      {
+        "addedPresent": 653,
+        "field": "quality_documentation",
+        "remainingMissing": 3379
+      },
+      {
+        "addedPresent": 0,
+        "field": "revision_status",
+        "remainingMissing": 5097
+      },
+      {
+        "addedPresent": 0,
+        "field": "provenance",
+        "remainingMissing": 0
+      }
+    ],
+    "bySource": [
+      {
+        "addedPresent": 653,
+        "remainingMissing": 7136,
+        "source": "nomis"
+      },
+      {
+        "addedPresent": 0,
+        "remainingMissing": 1966,
+        "source": "ons-data-api"
+      },
+      {
+        "addedPresent": 0,
+        "remainingMissing": 513,
+        "source": "ons-explore-local-statistics"
+      },
+      {
+        "addedPresent": 0,
+        "remainingMissing": 20612,
+        "source": "ons-open-geography"
+      }
+    ],
+    "currentPresent": 41131,
+    "elapsedSeconds": 956.0,
+    "percentagePointChange": 0.915104,
+    "possible": 71358,
+    "remainingMissing": 30227,
+    "slotsPerHour": 2458.996
+  },
+  "explorerMetricDeltas": {
+    "explorerDatasetDisplayMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 111591,
+      "currentPresent": 111591,
+      "percentagePointChange": 0.0,
+      "possible": 178395,
+      "remainingMissing": 66804
+    },
+    "explorerDatasetDynamicProvenanceMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 51186,
+      "currentPresent": 51186,
+      "percentagePointChange": 0.0,
+      "possible": 51294,
+      "remainingMissing": 108
+    },
+    "explorerPublisherDisplayMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 24,
+      "currentPresent": 24,
+      "percentagePointChange": 0.0,
+      "possible": 96,
+      "remainingMissing": 72
+    },
+    "explorerResourceDisplayMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 27898,
+      "currentPresent": 27898,
+      "percentagePointChange": 0.0,
+      "possible": 66261,
+      "remainingMissing": 38363
+    },
+    "explorerResourceDynamicProvenanceMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 51186,
+      "currentPresent": 51186,
+      "percentagePointChange": 0.0,
+      "possible": 51294,
+      "remainingMissing": 108
+    },
+    "explorerSearchFacetMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 67227,
+      "currentPresent": 67227,
+      "percentagePointChange": 0.0,
+      "possible": 86649,
+      "remainingMissing": 19422
+    },
+    "explorerSearchResultDisplayMetric": {
+      "addedPresent": 0,
+      "baselinePresent": 59872,
+      "currentPresent": 59872,
+      "percentagePointChange": 0.0,
+      "possible": 76455,
+      "remainingMissing": 16583
+    }
+  },
+  "recordCount": 5097,
+  "schema": "okf-ons-metadata-gap-comparison.v1"
+}

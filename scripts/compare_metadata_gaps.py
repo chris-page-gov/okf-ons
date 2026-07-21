@@ -5,9 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
-from okf_ons.metadata_gaps import compare_profiles
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from okf_ons.metadata_gaps import compare_profiles  # noqa: E402
 
 
 def _load(path: Path) -> dict:
