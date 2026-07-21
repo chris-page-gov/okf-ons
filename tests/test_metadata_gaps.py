@@ -109,12 +109,12 @@ def test_applicability_metric_excludes_only_explicit_record_class_rules():
 
     assert metric["states"] == {
         "present": 8,
-        "not-applicable": 1,
-        "not-evidenced": 19,
+        "not-applicable": 2,
+        "not-evidenced": 18,
         "conflicted": 0,
     }
-    assert metric["applicablePossible"] == 27
-    assert metric["completeness"] == pytest.approx(8 / 27)
+    assert metric["applicablePossible"] == 26
+    assert metric["completeness"] == pytest.approx(8 / 26)
     population = next(row for row in metric["byField"] if row["field"] == "population")
     assert population == {
         "field": "population",
@@ -124,6 +124,11 @@ def test_applicability_metric_excludes_only_explicit_record_class_rules():
         "conflicted": 0,
         "applicablePossible": 1,
     }
+    time_coverage = next(
+        row for row in metric["byField"] if row["field"] == "time_coverage"
+    )
+    assert time_coverage["not-applicable"] == 1
+    assert time_coverage["not-evidenced"] == 1
 
 
 def test_compare_profiles_reports_fixed_denominator_yield():
@@ -184,3 +189,38 @@ def test_compare_profiles_rejects_denominator_changes():
     )
     with pytest.raises(ValueError, match="different record counts"):
         compare_profiles(baseline, current)
+
+
+def test_compare_profiles_exposes_applicability_denominator_changes():
+    fields = {
+        field: field in {"identity", "description", "publisher", "provenance"}
+        for field in (
+            "identity",
+            "description",
+            "publisher",
+            "licence",
+            "contact",
+            "release_or_modified",
+            "frequency",
+            "population",
+            "geography",
+            "time_coverage",
+            "methodology",
+            "quality_documentation",
+            "revision_status",
+            "provenance",
+        )
+    }
+    baseline = profile_records([_record("one", "alpha", fields)])
+    current = profile_records([_record("one", "alpha", fields)])
+    applicability = current["applicabilityAwareEvidenceMetric"]
+    applicability["applicablePossible"] -= 1
+    applicability["states"]["not-applicable"] += 1
+    applicability["states"]["not-evidenced"] -= 1
+
+    delta = compare_profiles(baseline, current)["applicabilityAwareDelta"]
+    assert delta["baselinePossible"] == 14
+    assert delta["currentPossible"] == 13
+    assert delta["denominatorChange"] == -1
+    assert delta["addedPresent"] == 0
+    assert delta["percentagePointChange"] == pytest.approx(2.197802)

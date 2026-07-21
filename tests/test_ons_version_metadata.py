@@ -158,7 +158,6 @@ def _version_payload(namespace: dict[str, Any], url: str) -> dict[str, Any]:
             {
                 "id": "sex",
                 "name": "Sex",
-                "label": "Sex",
                 "is_area_type": None,
                 "number_of_options": 3,
                 "variable": "sex",
@@ -262,7 +261,7 @@ def test_enrichment_is_ranked_digest_bound_cached_and_projection_only(
     records = {record["sourceRecordId"]: record for record in envelope["records"]}
     selected = records[ranked[0]]["versionDimensions"]
     assert selected == [
-        {"id": "sex", "name": "Sex", "label": "Sex", "isAreaType": False},
+        {"id": "sex", "name": "Sex", "isAreaType": False},
         {
             "id": "geography",
             "name": "Geography",

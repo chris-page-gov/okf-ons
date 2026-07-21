@@ -525,13 +525,18 @@ def _project_dimension(value: Any, *, index: int) -> dict[str, Any]:
             f"ONS dimension {index}.number_of_options is malformed"
         )
     projected: dict[str, Any] = {}
-    for key in ("id", "name", "label"):
+    for key in ("id", "name"):
         if not isinstance(value.get(key), str):
             raise ONSVersionMetadataError(f"ONS dimension {index}.{key} is required")
         text = plain_text(value.get(key), 500)
         if not text:
             raise ONSVersionMetadataError(f"ONS dimension {index}.{key} is required")
         projected[key] = text
+    raw_label = value.get("label")
+    if raw_label is not None and not isinstance(raw_label, str):
+        raise ONSVersionMetadataError(f"ONS dimension {index}.label is malformed")
+    if label := plain_text(raw_label, 500):
+        projected["label"] = label
     is_area_type = value.get("is_area_type")
     if is_area_type is not None and not isinstance(is_area_type, bool):
         raise ONSVersionMetadataError(
@@ -650,16 +655,23 @@ def _validate_projected_payload(payload: Any) -> dict[str, Any]:
         if not isinstance(raw, Mapping):
             raise ONSVersionMetadataError(f"ONS projected dimension {index} is malformed")
         keys = set(raw)
-        required = {"id", "name", "label", "isAreaType"}
+        required = {"id", "name", "isAreaType"}
         if not required.issubset(keys) or not keys.issubset(_PROJECTED_DIMENSION_KEYS):
             raise ONSVersionMetadataError(
                 f"ONS projected dimension {index} has unreviewed or missing fields"
             )
-        for key in ("id", "name", "label"):
+        for key in ("id", "name"):
             if not isinstance(raw.get(key), str) or not plain_text(raw.get(key), 500):
                 raise ONSVersionMetadataError(
                     f"ONS projected dimension {index}.{key} is malformed"
                 )
+        if "label" in raw and (
+            not isinstance(raw["label"], str)
+            or not plain_text(raw["label"], 500)
+        ):
+            raise ONSVersionMetadataError(
+                f"ONS projected dimension {index}.label is malformed"
+            )
         if not isinstance(raw.get("isAreaType"), bool):
             raise ONSVersionMetadataError(
                 f"ONS projected dimension {index}.isAreaType is malformed"

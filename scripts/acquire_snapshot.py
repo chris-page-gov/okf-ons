@@ -52,7 +52,7 @@ _ONS_VERSION_DIMENSION_FIELDS = {
     "qualityStatementText",
     "qualityStatementUrl",
 }
-_ONS_VERSION_DIMENSION_REQUIRED_FIELDS = {"id", "isAreaType", "label", "name"}
+_ONS_VERSION_DIMENSION_REQUIRED_FIELDS = {"id", "isAreaType", "name"}
 _ONS_SOURCE_KEYS = {
     "acquisitionMethod",
     "adapter",
@@ -781,9 +781,15 @@ def _validate_ons_version_dimensions(value: Any, source_id: str) -> list[Any]:
                 f"bounded replacement version dimension has unreviewed or missing "
                 f"fields: {source_id}"
             )
-        for field in ("id", "name", "label"):
+        for field in ("id", "name"):
             item = dimension[field]
             if not isinstance(item, str) or not item.strip() or len(item) > 500:
+                raise SnapshotCompositionError(
+                    f"bounded replacement version dimension is malformed: {source_id}"
+                )
+        if "label" in dimension:
+            label = dimension["label"]
+            if not isinstance(label, str) or not label.strip() or len(label) > 500:
                 raise SnapshotCompositionError(
                     f"bounded replacement version dimension is malformed: {source_id}"
                 )

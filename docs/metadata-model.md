@@ -47,7 +47,7 @@ in a dataset.
 
 The ONS catalogue record supplies the exact latest-version URL. A bounded
 enrichment may follow that URL once per frozen record and project only
-`versionDimensions`: dimension `id`, `name`, `label`, explicit `isAreaType`,
+`versionDimensions`: dimension `id`, `name`, optional `label`, explicit `isAreaType`,
 and explicit `qualityStatementUrl` or `qualityStatementText`. Dimension options,
 codelists, observations, downloads and unknown response fields are excluded.
 

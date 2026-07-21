@@ -128,6 +128,16 @@ EVIDENCE_NOT_APPLICABLE_RULES = (
             "reference product, not a statistical population or universe."
         ),
     },
+    {
+        "ruleId": "geospatial-reference-has-no-statistical-time-coverage",
+        "sourceSurface": "ons-open-geography",
+        "field": "time_coverage",
+        "rationale": (
+            "An Open Geography boundary, code or lookup asset has geography "
+            "reference or effective dates rather than statistical observation "
+            "time coverage."
+        ),
+    },
 )
 
 
@@ -373,6 +383,30 @@ def _metric_delta(
     }
 
 
+def _applicability_metric_delta(
+    baseline: Mapping[str, Any], current: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Compare applicability metrics while making denominator changes explicit."""
+
+    baseline_possible = int(baseline.get("possible") or 0)
+    current_possible = int(current.get("possible") or 0)
+    baseline_present = int(baseline.get("present") or 0)
+    current_present = int(current.get("present") or 0)
+    baseline_rate = baseline_present / baseline_possible if baseline_possible else 0.0
+    current_rate = current_present / current_possible if current_possible else 0.0
+    return {
+        "baselinePresent": baseline_present,
+        "currentPresent": current_present,
+        "possible": current_possible,
+        "baselinePossible": baseline_possible,
+        "currentPossible": current_possible,
+        "denominatorChange": current_possible - baseline_possible,
+        "addedPresent": current_present - baseline_present,
+        "remainingMissing": current_possible - current_present,
+        "percentagePointChange": round(100 * (current_rate - baseline_rate), 6),
+    }
+
+
 def compare_profiles(
     baseline: Mapping[str, Any],
     current: Mapping[str, Any],
@@ -448,7 +482,7 @@ def compare_profiles(
     if isinstance(baseline_applicability, Mapping) and isinstance(
         current_applicability, Mapping
     ):
-        applicability_delta = _metric_delta(
+        applicability_delta = _applicability_metric_delta(
             {
                 "present": baseline_applicability.get("present"),
                 "possible": baseline_applicability.get("applicablePossible"),

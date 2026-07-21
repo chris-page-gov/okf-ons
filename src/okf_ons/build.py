@@ -640,6 +640,7 @@ def _resource_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "dataset_route": record["route"],
             "route": f"resource/{record['name']}-source",
             "url": record.get("url", ""),
+            "host": record.get("host", ""),
             "documentation": record.get("documentation", ""),
             "format": next(iter(record.get("formats", [])), "Metadata"),
             "source_format": next(iter(record.get("formats", [])), ""),
@@ -655,6 +656,21 @@ def _resource_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "provenance": record.get("provenance", {}),
             "authority": record.get("authority", {}),
             "metadata_only": True,
+            "metadata_derivation": (
+                {
+                    "schema": "okf-ons-field-derivation.v1",
+                    "modes": ["deterministic-extraction"],
+                    "fields": {
+                        "host": {
+                            "mode": "deterministic-extraction",
+                            "sourceField": "url",
+                            "rule": "public-url-host-v1",
+                        }
+                    },
+                }
+                if record.get("host")
+                else {}
+            ),
         }
         for record in records
     ]

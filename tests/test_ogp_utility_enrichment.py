@@ -200,5 +200,16 @@ def test_frozen_ogp_r3_has_exact_conservative_whole_snapshot_deltas() -> None:
         assert sum(bool(record.get(field)) for record in normalised) == 0
 
     resource_rows = _resource_rows(normalised)
-    for field in ("source_format", "created", "last_modified", "metadata_modified"):
+    for field in (
+        "source_format",
+        "created",
+        "last_modified",
+        "metadata_modified",
+        "host",
+    ):
         assert sum(bool(resource[field]) for resource in resource_rows) == 3_035
+    assert all(
+        resource["metadata_derivation"]["fields"]["host"]["rule"]
+        == "public-url-host-v1"
+        for resource in resource_rows
+    )
