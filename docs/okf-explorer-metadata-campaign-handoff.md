@@ -296,5 +296,6 @@ in the OKF-ONS
 [`stopping audit`](../evaluation/metadata-completeness/stopping-audit.json).
 
 Register only a deployed immutable OKF-ONS version. The live Pages and Explorer
-URLs currently serve v0.2.0; the campaign successor remains branch-only until
-the governed release and Pages snapshot are deliberately switched.
+URLs currently serve v0.2.0; the checked-in campaign successor remains an
+undeployed release candidate until the governed release and Pages snapshot are
+deliberately switched.

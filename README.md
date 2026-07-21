@@ -238,9 +238,9 @@ python scripts/profile_metadata_gaps.py \
 ```
 
 The live Pages and Explorer URLs above still serve governed release v0.2.0.
-The r6 campaign snapshot is checked in on its working branch but is not deployed
-until the release metadata and Pages-selected snapshot are deliberately
-switched.
+The r6 campaign snapshot is checked in as governed campaign evidence but
+remains an undeployed release candidate until the release metadata and
+Pages-selected snapshot are deliberately switched.
 
 The measured batch history, metric definitions, timings and machine-readable
 profiles are linked from the
