@@ -40,6 +40,8 @@ The comparison uses `evidenceScope: reviewed-record-examples` and
 `exhaustive: false`. A known difference therefore means that at least one
 reviewed example differs. It is not a claim that every selected record was
 compared with the live service or that the listed differences are complete.
+For the bounded record rows, the builder derives exact title, coverage-end and
+modification-date differences rather than accepting authored difference text.
 
 ## Explore Local Statistics pack
 

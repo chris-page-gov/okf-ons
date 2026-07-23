@@ -146,6 +146,24 @@ def test_provider_datapack_cannot_claim_an_exhaustive_live_comparison(
         build_provider_datapacks(_corpus(), directory)
 
 
+def test_provider_datapack_records_reviewed_title_changes(tmp_path: Path) -> None:
+    directory = _copied_pack_directory(tmp_path)
+    path = directory / f"{PACK_ID}.json"
+    source = json.loads(path.read_text(encoding="utf-8"))
+    source["reviewedLiveReference"]["records"][0]["title"] = (
+        "Average house price, reviewed title"
+    )
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    [pack], _ = build_provider_datapacks(_corpus(), directory)
+    [difference] = pack["comparison"]["differences"]
+    assert difference["fields"][0] == {
+        "field": "title",
+        "snapshot": "Average house price",
+        "reviewedLiveReference": "Average house price, reviewed title",
+    }
+
+
 def test_provider_datapack_rejects_unsafe_action_urls_and_identifiers(
     tmp_path: Path,
 ) -> None:

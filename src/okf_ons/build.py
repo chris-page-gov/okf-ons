@@ -404,6 +404,7 @@ _PRESENTATION_KEYS = {
 }
 _ACTION_KEYS = {"id", "label", "kind", "urlTemplate", "network"}
 _COMPARISON_FIELDS = (
+    ("title", "title"),
     ("timeCoverage.end", "timeCoverageEnd"),
     ("metadataModified", "metadataModified"),
     ("dataModified", "dataModified"),

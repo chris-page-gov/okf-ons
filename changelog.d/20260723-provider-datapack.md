@@ -12,3 +12,5 @@
   manifest row with SHA-256 digests.
 - Align producer validation with the Explorer contract for safe identifiers,
   RFC 3339 dates, credential-free HTTPS actions and path-segment templates.
+- Derive reviewed title changes alongside coverage and modification changes so
+  the Explorer cannot mistake a changed paired record for an aligned example.
