@@ -26,6 +26,7 @@ def main() -> int:
     inputs = BuildInputs(
         snapshot_directory=arguments.snapshot_dir,
         source_register=ROOT / "source" / "source-register.json",
+        provider_datapacks=ROOT / "source" / "provider-datapacks",
         standards_register=ROOT / "source" / "standards-register.json",
         ontology_crosswalk=ROOT / "source" / "ontology-crosswalk.json",
         gold_suite=ROOT / "evaluation" / "gold-queries.json",

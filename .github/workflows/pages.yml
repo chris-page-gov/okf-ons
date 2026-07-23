@@ -76,6 +76,8 @@ jobs:
           test -f bundle/data/evaluation/report.json
           test -f bundle/data/ons/mcp-bindings.json
           test -f bundle/data/ons/spatial-index.json
+          test -f bundle/data/providers/manifest.json
+          test -f bundle/data/providers/ons-explore-local-statistics.json
 
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'

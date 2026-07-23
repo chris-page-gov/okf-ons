@@ -185,6 +185,16 @@ a claim that the internal ELS API is a stable public execution contract. Its
 verified Git `commitAsOf` is kept separate from acquisition time; the frozen
 fixture does not invent a retrieval timestamp that was not recorded.
 
+The bundle also publishes a provider datapack that makes the ELS
+snapshot/live distinction visible without weakening reproducibility. The
+governed snapshot remains pinned to `795eaf2` from 17 July 2026. A separately
+reviewed upstream reference at `d5f0ac9` records a known example difference:
+average house price ends in April 2026 in the snapshot and May 2026 in the
+reviewed reference. That reference was last checked on 23 July 2026, is
+explicitly external and is not a live validation. Its comparison is a
+non-exhaustive reviewed example, not a claim that all 108 indicators were
+compared. See the [provider datapack contract](docs/provider-datapacks.md).
+
 This experimental bundle is independently published by the OKF ONS project.
 Source attribution does not imply endorsement by ONS or another producer.
 

@@ -123,6 +123,7 @@ class BundleWriter:
 class BuildInputs:
     snapshot_directory: Path
     source_register: Path
+    provider_datapacks: Path
     standards_register: Path
     ontology_crosswalk: Path
     gold_suite: Path
@@ -144,6 +145,7 @@ def default_inputs(root: Path) -> BuildInputs:
     return BuildInputs(
         snapshot_directory=root / "source" / "demo-snapshot",
         source_register=root / "source" / "source-register.json",
+        provider_datapacks=root / "source" / "provider-datapacks",
         standards_register=root / "source" / "standards-register.json",
         ontology_crosswalk=root / "source" / "ontology-crosswalk.json",
         gold_suite=root / "evaluation" / "gold-queries.json",
@@ -345,6 +347,499 @@ def _source_temporal_evidence(provenance: Mapping[str, Any]) -> dict[str, str]:
         "acquisitionRetrievedAt": retrieved_at,
         "commitAsOf": commit_as_of,
     }
+
+
+_PROVIDER_DATAPACK_SOURCE_SCHEMA = "okf-ons.provider-datapack-source.v1"
+_PROVIDER_DATAPACK_SCHEMA = "okf-explorer-provider-datapack.v1"
+_PROVIDER_DATAPACK_MANIFEST_SCHEMA = "okf-explorer-provider-datapack-manifest.v1"
+_PROVIDER_DATAPACK_ROOT_KEYS = {
+    "schema",
+    "id",
+    "provider",
+    "selector",
+    "snapshotExpectations",
+    "reviewedLiveReference",
+    "comparison",
+    "presentation",
+}
+_PROVIDER_KEYS = {"id", "title", "liveServiceUrl", "repositoryUrl"}
+_SELECTOR_KEYS = {"field", "operator", "value"}
+_SNAPSHOT_EXPECTATION_KEYS = {"sourceCommit", "recordCount", "records"}
+_RECORD_REFERENCE_KEYS = {
+    "recordId",
+    "title",
+    "timeCoverageEnd",
+    "metadataModified",
+    "dataModified",
+}
+_LIVE_REFERENCE_KEYS = {
+    "status",
+    "label",
+    "lastChecked",
+    "network",
+    "liveServiceUrl",
+    "repositoryUrl",
+    "sourceCommit",
+    "sourceCommitAsOf",
+    "metadataInputSha256",
+    "records",
+}
+_COMPARISON_KEYS = {
+    "status",
+    "comparisonAsOf",
+    "evidenceScope",
+    "exhaustive",
+    "summary",
+    "executionRequiresLiveValidation",
+}
+_PRESENTATION_KEYS = {
+    "snapshotLabel",
+    "liveLabel",
+    "lastCheckedWording",
+    "notice",
+    "actions",
+}
+_ACTION_KEYS = {"id", "label", "kind", "urlTemplate", "network"}
+_COMPARISON_FIELDS = (
+    ("timeCoverage.end", "timeCoverageEnd"),
+    ("metadataModified", "metadataModified"),
+    ("dataModified", "dataModified"),
+)
+
+
+def _exact_keys(value: Any, keys: set[str], context: str) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise BuildError(f"{context} must be an object")
+    actual = set(value)
+    if actual != keys:
+        missing = sorted(keys - actual)
+        unexpected = sorted(actual - keys)
+        raise BuildError(f"{context} fields changed (missing={missing}, unexpected={unexpected})")
+    return value
+
+
+def _text(value: Any, context: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise BuildError(f"{context} must be a non-empty string")
+    return value.strip()
+
+
+def _hex_digest(value: Any, length: int, context: str) -> str:
+    text = _text(value, context).casefold()
+    if len(text) != length or any(character not in "0123456789abcdef" for character in text):
+        raise BuildError(f"{context} must be a {length}-character hexadecimal value")
+    return text
+
+
+def _https_url(value: Any, context: str, *, template: bool = False) -> str:
+    text = _text(value, context)
+    comparable = text.replace("{native_id}", "record") if template else text
+    if not comparable.startswith("https://") or " " in comparable:
+        raise BuildError(f"{context} must be an HTTPS URL")
+    if template and ("{" in comparable or "}" in comparable):
+        raise BuildError(f"{context} contains an unsupported template placeholder")
+    return text
+
+
+def _record_reference(value: Any, context: str) -> dict[str, str]:
+    row = _exact_keys(value, _RECORD_REFERENCE_KEYS, context)
+    return {
+        key: _text(row.get(key), f"{context}.{key}")
+        for key in (
+            "recordId",
+            "title",
+            "timeCoverageEnd",
+            "metadataModified",
+            "dataModified",
+        )
+    }
+
+
+def _snapshot_record_reference(
+    expected: Mapping[str, str],
+    records_by_id: Mapping[str, Mapping[str, Any]],
+    *,
+    selector: Mapping[str, str],
+) -> dict[str, str]:
+    record_id = expected["recordId"]
+    actual = records_by_id.get(record_id)
+    if actual is None:
+        raise BuildError(f"provider datapack snapshot record is absent: {record_id}")
+    if actual.get(selector["field"]) != selector["value"]:
+        raise BuildError(
+            f"provider datapack snapshot record does not match its selector: {record_id}"
+        )
+    actual_reference = {
+        "recordId": record_id,
+        "title": str(actual.get("title") or ""),
+        "timeCoverageEnd": str(
+            (actual.get("time_coverage") or {}).get("end")
+            if isinstance(actual.get("time_coverage"), Mapping)
+            else ""
+        ),
+        "metadataModified": str(actual.get("metadata_modified") or ""),
+        "dataModified": str(actual.get("data_modified") or ""),
+    }
+    for reference_field, expected_value in expected.items():
+        if actual_reference.get(reference_field) != expected_value:
+            raise BuildError(
+                f"provider datapack frozen {record_id} {reference_field} changed: "
+                f"expected {expected_value!r}, "
+                f"found {actual_reference.get(reference_field)!r}"
+            )
+    return actual_reference
+
+
+def _provider_datapack(
+    source: Mapping[str, Any],
+    corpus: FrozenCorpus,
+    *,
+    path: Path,
+) -> dict[str, Any]:
+    root = _exact_keys(source, _PROVIDER_DATAPACK_ROOT_KEYS, f"provider datapack {path.name}")
+    if root.get("schema") != _PROVIDER_DATAPACK_SOURCE_SCHEMA:
+        raise BuildError(f"unsupported provider datapack source schema: {path.name}")
+    pack_id = _text(root.get("id"), f"provider datapack {path.name}.id")
+    if path.stem != pack_id:
+        raise BuildError(f"provider datapack filename does not match id: {path.name}")
+
+    provider_source = _exact_keys(
+        root.get("provider"), _PROVIDER_KEYS, f"provider datapack {pack_id}.provider"
+    )
+    provider = {
+        "id": _text(provider_source.get("id"), f"provider datapack {pack_id}.provider.id"),
+        "title": _text(provider_source.get("title"), f"provider datapack {pack_id}.provider.title"),
+        "liveServiceUrl": _https_url(
+            provider_source.get("liveServiceUrl"),
+            f"provider datapack {pack_id}.provider.liveServiceUrl",
+        ),
+        "repositoryUrl": _https_url(
+            provider_source.get("repositoryUrl"),
+            f"provider datapack {pack_id}.provider.repositoryUrl",
+        ),
+    }
+    if provider["id"] != pack_id:
+        raise BuildError(f"provider datapack provider id differs from pack id: {pack_id}")
+
+    selector_source = _exact_keys(
+        root.get("selector"), _SELECTOR_KEYS, f"provider datapack {pack_id}.selector"
+    )
+    selector = {
+        "field": _text(selector_source.get("field"), f"provider datapack {pack_id}.selector.field"),
+        "operator": _text(
+            selector_source.get("operator"), f"provider datapack {pack_id}.selector.operator"
+        ),
+        "value": _text(selector_source.get("value"), f"provider datapack {pack_id}.selector.value"),
+    }
+    if selector["operator"] != "equals":
+        raise BuildError(f"provider datapack {pack_id} supports only the equals selector")
+    selected = [
+        record for record in corpus.records if record.get(selector["field"]) == selector["value"]
+    ]
+    if not selected:
+        raise BuildError(f"provider datapack selector matches no records: {pack_id}")
+
+    expectations = _exact_keys(
+        root.get("snapshotExpectations"),
+        _SNAPSHOT_EXPECTATION_KEYS,
+        f"provider datapack {pack_id}.snapshotExpectations",
+    )
+    expected_commit = _hex_digest(
+        expectations.get("sourceCommit"),
+        40,
+        f"provider datapack {pack_id}.snapshotExpectations.sourceCommit",
+    )
+    expected_count = expectations.get("recordCount")
+    if (
+        not isinstance(expected_count, int)
+        or isinstance(expected_count, bool)
+        or expected_count < 1
+    ):
+        raise BuildError(
+            f"provider datapack {pack_id}.snapshotExpectations.recordCount must be positive"
+        )
+    if len(selected) != expected_count:
+        raise BuildError(
+            f"provider datapack {pack_id} frozen record count changed: "
+            f"expected {expected_count}, found {len(selected)}"
+        )
+    source_commits = {
+        str((record.get("provenance") or {}).get("source_commit") or "")
+        for record in selected
+        if isinstance(record.get("provenance"), Mapping)
+    }
+    if source_commits != {expected_commit}:
+        raise BuildError(
+            f"provider datapack {pack_id} frozen source commit changed: "
+            f"expected {expected_commit}, found {sorted(source_commits)}"
+        )
+    expected_records_source = expectations.get("records")
+    if not isinstance(expected_records_source, list) or not expected_records_source:
+        raise BuildError(
+            f"provider datapack {pack_id}.snapshotExpectations.records must be non-empty"
+        )
+    expected_records = [
+        _record_reference(row, f"provider datapack {pack_id}.snapshotExpectations.records[{index}]")
+        for index, row in enumerate(expected_records_source)
+    ]
+    expected_ids = [row["recordId"] for row in expected_records]
+    if len(expected_ids) != len(set(expected_ids)):
+        raise BuildError(f"provider datapack {pack_id} has duplicate snapshot record ids")
+    records_by_id = {str(record["id"]): record for record in corpus.records}
+    snapshot_records = [
+        _snapshot_record_reference(row, records_by_id, selector=selector)
+        for row in expected_records
+    ]
+
+    live_source = _exact_keys(
+        root.get("reviewedLiveReference"),
+        _LIVE_REFERENCE_KEYS,
+        f"provider datapack {pack_id}.reviewedLiveReference",
+    )
+    if live_source.get("status") != "reviewed-reference-not-live-validated":
+        raise BuildError(
+            f"provider datapack {pack_id} live reference must be "
+            "reviewed-reference-not-live-validated"
+        )
+    if live_source.get("network") != "external":
+        raise BuildError(f"provider datapack {pack_id} live reference must be external")
+    live_records_source = live_source.get("records")
+    if not isinstance(live_records_source, list) or not live_records_source:
+        raise BuildError(f"provider datapack {pack_id} live records must be non-empty")
+    live_records = [
+        _record_reference(
+            row, f"provider datapack {pack_id}.reviewedLiveReference.records[{index}]"
+        )
+        for index, row in enumerate(live_records_source)
+    ]
+    if [row["recordId"] for row in live_records] != expected_ids:
+        raise BuildError(
+            f"provider datapack {pack_id} live record ids must match snapshot examples"
+        )
+    reviewed_live_reference = {
+        "status": "reviewed-reference-not-live-validated",
+        "label": _text(
+            live_source.get("label"),
+            f"provider datapack {pack_id}.reviewedLiveReference.label",
+        ),
+        "lastChecked": _text(
+            live_source.get("lastChecked"),
+            f"provider datapack {pack_id}.reviewedLiveReference.lastChecked",
+        ),
+        "network": "external",
+        "liveServiceUrl": _https_url(
+            live_source.get("liveServiceUrl"),
+            f"provider datapack {pack_id}.reviewedLiveReference.liveServiceUrl",
+        ),
+        "repositoryUrl": _https_url(
+            live_source.get("repositoryUrl"),
+            f"provider datapack {pack_id}.reviewedLiveReference.repositoryUrl",
+        ),
+        "sourceCommit": _hex_digest(
+            live_source.get("sourceCommit"),
+            40,
+            f"provider datapack {pack_id}.reviewedLiveReference.sourceCommit",
+        ),
+        "sourceCommitAsOf": _text(
+            live_source.get("sourceCommitAsOf"),
+            f"provider datapack {pack_id}.reviewedLiveReference.sourceCommitAsOf",
+        ),
+        "metadataInputSha256": _hex_digest(
+            live_source.get("metadataInputSha256"),
+            64,
+            f"provider datapack {pack_id}.reviewedLiveReference.metadataInputSha256",
+        ),
+        "records": live_records,
+    }
+    reviewed_live_reference["sourceCommitShort"] = reviewed_live_reference["sourceCommit"][:7]
+    if reviewed_live_reference["liveServiceUrl"] != provider["liveServiceUrl"]:
+        raise BuildError(f"provider datapack {pack_id} live service URLs disagree")
+    if reviewed_live_reference["repositoryUrl"] != provider["repositoryUrl"]:
+        raise BuildError(f"provider datapack {pack_id} repository URLs disagree")
+
+    comparison_source = _exact_keys(
+        root.get("comparison"),
+        _COMPARISON_KEYS,
+        f"provider datapack {pack_id}.comparison",
+    )
+    if comparison_source.get("status") != "known-drift":
+        raise BuildError(f"provider datapack {pack_id} comparison must be known-drift")
+    if comparison_source.get("evidenceScope") != "reviewed-record-examples":
+        raise BuildError(
+            f"provider datapack {pack_id} comparison evidence scope must be "
+            "reviewed-record-examples"
+        )
+    if comparison_source.get("exhaustive") is not False:
+        raise BuildError(
+            f"provider datapack {pack_id} comparison must be explicitly non-exhaustive"
+        )
+    if comparison_source.get("executionRequiresLiveValidation") is not True:
+        raise BuildError(f"provider datapack {pack_id} execution must require live validation")
+    comparison_as_of = _text(
+        comparison_source.get("comparisonAsOf"),
+        f"provider datapack {pack_id}.comparison.comparisonAsOf",
+    )
+    if comparison_as_of != reviewed_live_reference["lastChecked"]:
+        raise BuildError(
+            f"provider datapack {pack_id} comparison date must equal last checked date"
+        )
+    live_by_id = {row["recordId"]: row for row in live_records}
+    differences: list[dict[str, Any]] = []
+    for snapshot_record in snapshot_records:
+        live_record = live_by_id[snapshot_record["recordId"]]
+        fields = [
+            {
+                "field": public_field,
+                "snapshot": snapshot_record[source_field],
+                "reviewedLiveReference": live_record[source_field],
+            }
+            for public_field, source_field in _COMPARISON_FIELDS
+            if snapshot_record[source_field] != live_record[source_field]
+        ]
+        if fields:
+            differences.append(
+                {
+                    "recordId": snapshot_record["recordId"],
+                    "title": snapshot_record["title"],
+                    "fields": fields,
+                }
+            )
+    if not differences:
+        raise BuildError(f"provider datapack {pack_id} declares known-drift without a difference")
+    if reviewed_live_reference["sourceCommit"] == expected_commit:
+        raise BuildError(f"provider datapack {pack_id} known-drift commits must be different")
+
+    presentation_source = _exact_keys(
+        root.get("presentation"),
+        _PRESENTATION_KEYS,
+        f"provider datapack {pack_id}.presentation",
+    )
+    actions_source = presentation_source.get("actions")
+    if not isinstance(actions_source, list) or not actions_source:
+        raise BuildError(f"provider datapack {pack_id} must declare presentation actions")
+    actions: list[dict[str, str]] = []
+    for index, action_source in enumerate(actions_source):
+        context = f"provider datapack {pack_id}.presentation.actions[{index}]"
+        action_row = _exact_keys(action_source, _ACTION_KEYS, context)
+        if action_row.get("kind") != "external-link" or action_row.get("network") != "external":
+            raise BuildError(f"{context} must be an external-link on the external network")
+        actions.append(
+            {
+                "id": _text(action_row.get("id"), f"{context}.id"),
+                "label": _text(action_row.get("label"), f"{context}.label"),
+                "kind": "external-link",
+                "urlTemplate": _https_url(
+                    action_row.get("urlTemplate"), f"{context}.urlTemplate", template=True
+                ),
+                "network": "external",
+            }
+        )
+    if len({action["id"] for action in actions}) != len(actions):
+        raise BuildError(f"provider datapack {pack_id} presentation action ids repeat")
+    presentation = {
+        "snapshotLabel": _text(
+            presentation_source.get("snapshotLabel"),
+            f"provider datapack {pack_id}.presentation.snapshotLabel",
+        ),
+        "liveLabel": _text(
+            presentation_source.get("liveLabel"),
+            f"provider datapack {pack_id}.presentation.liveLabel",
+        ),
+        "lastCheckedWording": _text(
+            presentation_source.get("lastCheckedWording"),
+            f"provider datapack {pack_id}.presentation.lastCheckedWording",
+        ),
+        "notice": _text(
+            presentation_source.get("notice"),
+            f"provider datapack {pack_id}.presentation.notice",
+        ),
+        "actions": actions,
+    }
+    if (
+        not presentation["lastCheckedWording"].startswith("Live reference last checked ")
+        or "not live-validated" not in presentation["lastCheckedWording"]
+    ):
+        raise BuildError(
+            f"provider datapack {pack_id} last-checked wording must state that the "
+            "reference is not live-validated"
+        )
+
+    provenance = selected[0].get("provenance")
+    provenance = provenance if isinstance(provenance, Mapping) else {}
+    source_as_of = _text(
+        provenance.get("source_as_of"), f"provider datapack {pack_id} source_as_of"
+    )
+    source_as_of_basis = _text(
+        provenance.get("source_as_of_basis"),
+        f"provider datapack {pack_id} source_as_of_basis",
+    )
+    return {
+        "schema": _PROVIDER_DATAPACK_SCHEMA,
+        "snapshot": corpus.snapshot["snapshotId"],
+        "id": pack_id,
+        "provider": provider,
+        "selector": selector,
+        "governedSnapshot": {
+            "status": "governed-pinned-snapshot",
+            "label": presentation["snapshotLabel"],
+            "snapshotId": corpus.snapshot["snapshotId"],
+            "recordCount": len(selected),
+            "sourceCommit": expected_commit,
+            "sourceCommitShort": expected_commit[:7],
+            "sourceAsOf": source_as_of,
+            "sourceAsOfBasis": source_as_of_basis,
+            "metadataOnly": True,
+            "observationsIncluded": False,
+            "records": snapshot_records,
+        },
+        "reviewedLiveReference": reviewed_live_reference,
+        "comparison": {
+            "status": "known-drift",
+            "comparisonAsOf": comparison_as_of,
+            "evidenceScope": "reviewed-record-examples",
+            "exhaustive": False,
+            "summary": _text(
+                comparison_source.get("summary"),
+                f"provider datapack {pack_id}.comparison.summary",
+            ),
+            "executionRequiresLiveValidation": True,
+            "differences": differences,
+        },
+        "presentation": presentation,
+    }
+
+
+def build_provider_datapacks(
+    corpus: FrozenCorpus,
+    source_directory: Path,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Validate provider source declarations and derive snapshot-bound public packs."""
+
+    if not source_directory.is_dir():
+        raise BuildError(f"provider datapack source directory is missing: {source_directory}")
+    paths = sorted(source_directory.glob("*.json"))
+    if not paths:
+        raise BuildError("provider datapack source directory contains no JSON packs")
+    packs = [_provider_datapack(_read_json(path), corpus, path=path) for path in paths]
+    ids = [pack["id"] for pack in packs]
+    if len(ids) != len(set(ids)):
+        raise BuildError("provider datapack ids must be unique")
+    manifest = {
+        "schema": _PROVIDER_DATAPACK_MANIFEST_SCHEMA,
+        "snapshot": corpus.snapshot["snapshotId"],
+        "packCount": len(packs),
+        "packs": [
+            {
+                "id": pack["id"],
+                "selector": pack["selector"],
+                "path": f"data/providers/{pack['id']}.json",
+                "status": pack["comparison"]["status"],
+                "lastChecked": pack["reviewedLiveReference"]["lastChecked"],
+            }
+            for pack in packs
+        ],
+    }
+    return packs, manifest
 
 
 def _coverage_ledger(corpus: FrozenCorpus) -> dict[str, Any]:
@@ -1065,6 +1560,9 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     writer = BundleWriter(output)
 
+    provider_datapacks, provider_datapack_manifest = build_provider_datapacks(
+        corpus, inputs.provider_datapacks
+    )
     reconciliation_relationships, reconciliation = build_cross_source_reconciliation(corpus.records)
     alternative_relationships = build_alternatives(corpus.records)
     _materialize_explorer_fields(corpus.records)
@@ -1120,6 +1618,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             ),
             "sources": len(source_counts),
             "publishers": len(publisher_rows),
+            "providerDatapacks": len(provider_datapacks),
             "sourcePublisherAttributions": sum(
                 row["dataset_count"] for row in publisher_rows
             ),
@@ -1146,6 +1645,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             },
             "evaluationMetrics": evaluation_report["metrics"],
             "statisticalAccuracyEvaluated": False,
+            "providerDatapacks": {
+                "count": len(provider_datapacks),
+                "knownDrift": sum(
+                    pack["comparison"]["status"] == "known-drift" for pack in provider_datapacks
+                ),
+            },
         },
     )
     writer.write_json("data/coverage/ledger.json", coverage)
@@ -1165,6 +1670,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "data/ons/spatial-index.json",
         _spatial_index(corpus.records, corpus.snapshot["snapshotId"]),
     )
+    for provider_datapack in provider_datapacks:
+        writer.write_json(
+            f"data/providers/{provider_datapack['id']}.json",
+            provider_datapack,
+        )
+    writer.write_json("data/providers/manifest.json", provider_datapack_manifest)
     demo_projection = _demo_projection(corpus.records)
     writer.write_json(
         "data/demo/contrast-records.json",
@@ -1234,6 +1745,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "sdmx": "data/standards/sdmx.json",
             "governance": "data/governance/release.json",
             "context_set": "data/governance/context-set.json",
+            "provider_datapacks": "data/providers/manifest.json",
         },
         "performance": {
             "startup_mode": "overview-first",
@@ -1458,6 +1970,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "relationships": len(relationships),
             "sources": len(source_counts),
             "standards": standards_evaluation["standardCount"],
+            "providerDatapacks": len(provider_datapacks),
         },
         "scope": {
             "kind": "metadata-only-ons-discovery-demonstrator",
@@ -1477,6 +1990,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "evaluation": "data/evaluation/report.json",
             "governance": "data/governance/release.json",
             "context_set": "data/governance/context-set.json",
+            "provider_datapacks": "data/providers/manifest.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
             "viewer": EXPLORER_ROOT,
@@ -1513,6 +2027,13 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "okf-ons-geography.v1": {
                 "entrypoint": "spatial_index",
                 "geometry_included": False,
+            },
+            "okf-explorer-provider-datapacks.v1": {
+                "entrypoint": "provider_datapacks",
+                "pack_count": len(provider_datapacks),
+                "snapshot_state_derived_from_frozen_bundle": True,
+                "reviewed_live_references_are_external": True,
+                "live_validation_performed": False,
             },
         },
         "performance": {

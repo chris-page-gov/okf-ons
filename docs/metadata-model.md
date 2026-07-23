@@ -134,3 +134,20 @@ shadow another identity or map to more than one record. Fields inferred by the
 application from observation structure are explicitly labelled with their
 derivation mode. Observation values, statuses, value domains, high-volume
 area/time members, binaries and geometry are not projected.
+
+### Snapshot and reviewed-live state
+
+The ELS provider datapack keeps two evidence scopes separate. Its
+`governedSnapshot` is derived from the frozen bundle and identifies the pinned
+source commit, source-as-of basis, 108 selected records and metadata-only
+boundary. Its `reviewedLiveReference` is dated evidence about an external
+upstream commit; the required status
+`reviewed-reference-not-live-validated` prevents that evidence from being
+presented as a current network result.
+
+The public pack and provider manifest both carry the bundle's top-level
+`snapshot` string. A consumer must reject inconsistent sidecars. A
+`known-drift` comparison uses only `reviewed-record-examples`, is explicitly
+non-exhaustive and still requires live validation before execution or a
+current-value claim. See [Provider datapacks](provider-datapacks.md) for the
+published contract and update procedure.

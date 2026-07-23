@@ -67,6 +67,8 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/evaluation/report.json",
         "data/ons/mcp-bindings.json",
         "data/ons/spatial-index.json",
+        "data/providers/manifest.json",
+        "data/providers/ons-explore-local-statistics.json",
         "checksums.json",
     )
     assert all((output / path).is_file() for path in required)
@@ -87,6 +89,30 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert data_manifest["snapshot"] == descriptor["snapshot"]
     assert overview["snapshot"] == descriptor["snapshot"]
     assert analysis["snapshot"] == descriptor["snapshot"]
+    assert descriptor["entrypoints"]["provider_datapacks"] == (
+        "data/providers/manifest.json"
+    )
+    assert data_manifest["indexes"]["provider_datapacks"] == (
+        descriptor["entrypoints"]["provider_datapacks"]
+    )
+    provider_manifest = json.loads(
+        (output / descriptor["entrypoints"]["provider_datapacks"]).read_text()
+    )
+    assert provider_manifest["snapshot"] == descriptor["snapshot"]
+    assert provider_manifest["packCount"] == 1
+    provider_pack = json.loads(
+        (output / provider_manifest["packs"][0]["path"]).read_text()
+    )
+    assert provider_pack["snapshot"] == descriptor["snapshot"]
+    assert provider_pack["governedSnapshot"]["sourceCommitShort"] == "795eaf2"
+    assert provider_pack["reviewedLiveReference"]["status"] == (
+        "reviewed-reference-not-live-validated"
+    )
+    assert provider_pack["comparison"]["status"] == "known-drift"
+    assert provider_pack["comparison"]["evidenceScope"] == (
+        "reviewed-record-examples"
+    )
+    assert provider_pack["comparison"]["exhaustive"] is False
     dataset_rows = [
         row
         for path in data_manifest["chunks"]["datasets"]
