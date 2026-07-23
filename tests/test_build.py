@@ -67,6 +67,8 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/evaluation/report.json",
         "data/ons/mcp-bindings.json",
         "data/ons/spatial-index.json",
+        "data/providers/manifest.json",
+        "data/providers/ons-explore-local-statistics.json",
         "checksums.json",
     )
     assert all((output / path).is_file() for path in required)
@@ -87,6 +89,44 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert data_manifest["snapshot"] == descriptor["snapshot"]
     assert overview["snapshot"] == descriptor["snapshot"]
     assert analysis["snapshot"] == descriptor["snapshot"]
+    assert descriptor["entrypoints"]["provider_datapacks"] == (
+        "data/providers/manifest.json"
+    )
+    assert data_manifest["indexes"]["provider_datapacks"] == (
+        descriptor["entrypoints"]["provider_datapacks"]
+    )
+    provider_manifest = json.loads(
+        (output / descriptor["entrypoints"]["provider_datapacks"]).read_text()
+    )
+    provider_manifest_bytes = (
+        output / descriptor["entrypoints"]["provider_datapacks"]
+    ).read_bytes()
+    provider_manifest_integrity = descriptor["entrypoint_integrity"][
+        "provider_datapacks"
+    ]
+    assert provider_manifest_integrity["path"] == (
+        descriptor["entrypoints"]["provider_datapacks"]
+    )
+    assert provider_manifest_integrity["sha256"] == hashlib.sha256(
+        provider_manifest_bytes
+    ).hexdigest()
+    assert provider_manifest["snapshot"] == descriptor["snapshot"]
+    assert provider_manifest["packCount"] == 1
+    provider_pack_path = output / provider_manifest["packs"][0]["path"]
+    provider_pack = json.loads(provider_pack_path.read_text())
+    assert provider_manifest["packs"][0]["sha256"] == hashlib.sha256(
+        provider_pack_path.read_bytes()
+    ).hexdigest()
+    assert provider_pack["snapshot"] == descriptor["snapshot"]
+    assert provider_pack["governedSnapshot"]["sourceCommitShort"] == "795eaf2"
+    assert provider_pack["reviewedLiveReference"]["status"] == (
+        "reviewed-reference-not-live-validated"
+    )
+    assert provider_pack["comparison"]["status"] == "known-drift"
+    assert provider_pack["comparison"]["evidenceScope"] == (
+        "reviewed-record-examples"
+    )
+    assert provider_pack["comparison"]["exhaustive"] is False
     dataset_rows = [
         row
         for path in data_manifest["chunks"]["datasets"]

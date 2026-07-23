@@ -51,6 +51,21 @@ comparability, coherence, geography, time coverage and known limitations.
 The bundle evaluates whether this evidence is present and internally
 consistent. It does **not** certify the accuracy of observations.
 
+## Snapshot and provider-state contract
+
+The Explorer must label governed snapshot evidence separately from dated
+references to an external provider. A provider datapack is accepted only when
+its manifest, pack and bundle declare the same snapshot identity and its
+manifest and pack bytes satisfy their SHA-256 bindings. Snapshot facts are
+derived from the frozen corpus; a reviewed live reference remains
+`reviewed-reference-not-live-validated`, identifies its last-checked date and
+external network boundary, and never authorises execution.
+
+A `known-drift` statement is scoped to its reviewed examples. Unless an
+evidenced full comparison says otherwise, it remains explicitly
+non-exhaustive and requires live validation before a current-value or
+execution claim. See the [provider datapack contract](provider-datapacks.md).
+
 ## Agent contract
 
 Agents receive stable identifiers, typed relationships, field-level

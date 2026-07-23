@@ -234,4 +234,9 @@ def test_pages_workflow_validates_prs_and_deploys_only_main() -> None:
         assert re.search(rf"uses: {re.escape(action)}@[0-9a-f]{{40}} # {version}", text_value)
     assert "source/demo-snapshot" in text_value
     assert "python scripts/build_bundle.py" in text_value
+    for public_entrypoint in (
+        "data/providers/manifest.json",
+        "data/providers/ons-explore-local-statistics.json",
+    ):
+        assert f"test -f bundle/{public_entrypoint}" in text_value
     assert "secrets." not in text_value

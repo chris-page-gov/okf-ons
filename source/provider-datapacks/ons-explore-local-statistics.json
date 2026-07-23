@@ -1,0 +1,85 @@
+{
+  "comparison": {
+    "comparisonAsOf": "2026-07-23",
+    "evidenceScope": "reviewed-record-examples",
+    "executionRequiresLiveValidation": true,
+    "exhaustive": false,
+    "status": "known-drift",
+    "summary": "The reviewed upstream reference is newer than the governed metadata snapshot. Average house price extends to May 2026 in the reviewed reference and to April 2026 in the snapshot."
+  },
+  "id": "ons-explore-local-statistics",
+  "presentation": {
+    "actions": [
+      {
+        "id": "open-live-indicator",
+        "kind": "external-link",
+        "label": "Open live indicator",
+        "network": "external",
+        "urlTemplate": "https://www.ons.gov.uk/explore-local-statistics/indicators/{native_id}"
+      },
+      {
+        "id": "open-live-service",
+        "kind": "external-link",
+        "label": "Open live service",
+        "network": "external",
+        "urlTemplate": "https://www.ons.gov.uk/explore-local-statistics/"
+      },
+      {
+        "id": "review-upstream-reference",
+        "kind": "external-link",
+        "label": "Review checked upstream version",
+        "network": "external",
+        "urlTemplate": "https://github.com/ONSdigital/explore-local-statistics-app/tree/d5f0ac948f8f2f5da2dacd0011ef4e4778918b01"
+      }
+    ],
+    "lastCheckedWording": "Live reference last checked 23 July 2026; this page has not live-validated the provider.",
+    "liveLabel": "Reviewed live reference",
+    "notice": "Discovery uses a governed, reproducible metadata snapshot. The ONS service is external and may have changed since the reviewed live reference.",
+    "snapshotLabel": "Governed snapshot"
+  },
+  "provider": {
+    "id": "ons-explore-local-statistics",
+    "liveServiceUrl": "https://www.ons.gov.uk/explore-local-statistics/",
+    "repositoryUrl": "https://github.com/ONSdigital/explore-local-statistics-app",
+    "title": "ONS Explore Local Statistics"
+  },
+  "reviewedLiveReference": {
+    "label": "Reviewed upstream state on 23 July 2026",
+    "lastChecked": "2026-07-23",
+    "liveServiceUrl": "https://www.ons.gov.uk/explore-local-statistics/",
+    "metadataInputSha256": "25543faaa4484258fb86b7dba7808556b0ac42234f1697ecdbe7c9a464388087",
+    "network": "external",
+    "records": [
+      {
+        "dataModified": "2026-07-22",
+        "metadataModified": "2026-07-22",
+        "recordId": "ons-explore-local-statistics:indicator:average-house-price",
+        "timeCoverageEnd": "2026-05-01/P1M",
+        "title": "Average house price"
+      }
+    ],
+    "repositoryUrl": "https://github.com/ONSdigital/explore-local-statistics-app",
+    "sourceCommit": "d5f0ac948f8f2f5da2dacd0011ef4e4778918b01",
+    "sourceCommitAsOf": "2026-07-22T13:44:20Z",
+    "status": "reviewed-reference-not-live-validated"
+  },
+  "schema": "okf-ons.provider-datapack-source.v1",
+  "selector": {
+    "field": "source_surface",
+    "operator": "equals",
+    "value": "ons-explore-local-statistics"
+  },
+  "snapshotExpectations": {
+    "recordCount": 108,
+    "records": [
+      {
+        "dataModified": "2026-06-18",
+        "metadataModified": "2026-06-18",
+        "recordId": "ons-explore-local-statistics:indicator:average-house-price",
+        "timeCoverageEnd": "2026-04-01/P1M",
+        "title": "Average house price"
+      }
+    ],
+    "sourceCommit": "795eaf204f47986f6be248a63f857a42afe4fdf2"
+  }
+}
