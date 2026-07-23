@@ -146,8 +146,10 @@ upstream commit; the required status
 presented as a current network result.
 
 The public pack and provider manifest both carry the bundle's top-level
-`snapshot` string. A consumer must reject inconsistent sidecars. A
-`known-drift` comparison uses only `reviewed-record-examples`, is explicitly
+`snapshot` string. A consumer must reject sidecars from a different governed
+snapshot. SHA-256 bindings from descriptor to manifest and from manifest to
+pack additionally bind the exact dated review evidence within that snapshot.
+A `known-drift` comparison uses only `reviewed-record-examples`, is explicitly
 non-exhaustive and still requires live validation before execution or a
 current-value claim. See [Provider datapacks](provider-datapacks.md) for the
 published contract and update procedure.

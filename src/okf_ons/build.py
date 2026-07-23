@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import shutil
 import tempfile
 from collections import Counter
@@ -12,6 +13,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from . import __version__
 from .evaluation import evaluate_rankings, load_gold_suite
@@ -405,6 +407,8 @@ _COMPARISON_FIELDS = (
     ("metadataModified", "metadataModified"),
     ("dataModified", "dataModified"),
 )
+_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9._-]*$")
+_SELECTOR_FIELD_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 
 
 def _exact_keys(value: Any, keys: set[str], context: str) -> Mapping[str, Any]:
@@ -424,6 +428,20 @@ def _text(value: Any, context: str) -> str:
     return value.strip()
 
 
+def _identifier(value: Any, context: str) -> str:
+    text = _text(value, context)
+    if not _IDENTIFIER_PATTERN.fullmatch(text):
+        raise BuildError(f"{context} must be a safe identifier")
+    return text
+
+
+def _selector_field(value: Any, context: str) -> str:
+    text = _text(value, context)
+    if not _SELECTOR_FIELD_PATTERN.fullmatch(text):
+        raise BuildError(f"{context} must be a safe record field")
+    return text
+
+
 def _hex_digest(value: Any, length: int, context: str) -> str:
     text = _text(value, context).casefold()
     if len(text) != length or any(character not in "0123456789abcdef" for character in text):
@@ -434,10 +452,26 @@ def _hex_digest(value: Any, length: int, context: str) -> str:
 def _https_url(value: Any, context: str, *, template: bool = False) -> str:
     text = _text(value, context)
     comparable = text.replace("{native_id}", "record") if template else text
-    if not comparable.startswith("https://") or " " in comparable:
-        raise BuildError(f"{context} must be an HTTPS URL")
     if template and ("{" in comparable or "}" in comparable):
         raise BuildError(f"{context} contains an unsupported template placeholder")
+    if "\\" in comparable or any(character.isspace() for character in comparable):
+        raise BuildError(f"{context} must be an absolute HTTPS URL without credentials")
+    try:
+        parsed = urlsplit(comparable)
+        hostname = parsed.hostname
+        _ = parsed.port
+    except ValueError as exc:
+        raise BuildError(
+            f"{context} must be an absolute HTTPS URL without credentials"
+        ) from exc
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        raise BuildError(f"{context} must be an absolute HTTPS URL without credentials")
     return text
 
 
@@ -499,7 +533,7 @@ def _provider_datapack(
     root = _exact_keys(source, _PROVIDER_DATAPACK_ROOT_KEYS, f"provider datapack {path.name}")
     if root.get("schema") != _PROVIDER_DATAPACK_SOURCE_SCHEMA:
         raise BuildError(f"unsupported provider datapack source schema: {path.name}")
-    pack_id = _text(root.get("id"), f"provider datapack {path.name}.id")
+    pack_id = _identifier(root.get("id"), f"provider datapack {path.name}.id")
     if path.stem != pack_id:
         raise BuildError(f"provider datapack filename does not match id: {path.name}")
 
@@ -507,7 +541,9 @@ def _provider_datapack(
         root.get("provider"), _PROVIDER_KEYS, f"provider datapack {pack_id}.provider"
     )
     provider = {
-        "id": _text(provider_source.get("id"), f"provider datapack {pack_id}.provider.id"),
+        "id": _identifier(
+            provider_source.get("id"), f"provider datapack {pack_id}.provider.id"
+        ),
         "title": _text(provider_source.get("title"), f"provider datapack {pack_id}.provider.title"),
         "liveServiceUrl": _https_url(
             provider_source.get("liveServiceUrl"),
@@ -525,7 +561,9 @@ def _provider_datapack(
         root.get("selector"), _SELECTOR_KEYS, f"provider datapack {pack_id}.selector"
     )
     selector = {
-        "field": _text(selector_source.get("field"), f"provider datapack {pack_id}.selector.field"),
+        "field": _selector_field(
+            selector_source.get("field"), f"provider datapack {pack_id}.selector.field"
+        ),
         "operator": _text(
             selector_source.get("operator"), f"provider datapack {pack_id}.selector.operator"
         ),
@@ -725,7 +763,7 @@ def _provider_datapack(
             raise BuildError(f"{context} must be an external-link on the external network")
         actions.append(
             {
-                "id": _text(action_row.get("id"), f"{context}.id"),
+                "id": _identifier(action_row.get("id"), f"{context}.id"),
                 "label": _text(action_row.get("label"), f"{context}.label"),
                 "kind": "external-link",
                 "urlTemplate": _https_url(
@@ -764,15 +802,23 @@ def _provider_datapack(
             "reference is not live-validated"
         )
 
-    provenance = selected[0].get("provenance")
-    provenance = provenance if isinstance(provenance, Mapping) else {}
-    source_as_of = _text(
-        provenance.get("source_as_of"), f"provider datapack {pack_id} source_as_of"
-    )
-    source_as_of_basis = _text(
-        provenance.get("source_as_of_basis"),
-        f"provider datapack {pack_id} source_as_of_basis",
-    )
+    source_provenance = {
+        (
+            str(provenance.get("source_as_of") or ""),
+            str(provenance.get("source_as_of_basis") or ""),
+        )
+        for record in selected
+        for provenance in [
+            record.get("provenance")
+            if isinstance(record.get("provenance"), Mapping)
+            else {}
+        ]
+    }
+    if len(source_provenance) != 1 or any(not value for value in next(iter(source_provenance), ())):
+        raise BuildError(
+            f"provider datapack {pack_id} source provenance differs across selected records"
+        )
+    source_as_of, source_as_of_basis = next(iter(source_provenance))
     return {
         "schema": _PROVIDER_DATAPACK_SCHEMA,
         "snapshot": corpus.snapshot["snapshotId"],
@@ -833,6 +879,7 @@ def build_provider_datapacks(
                 "id": pack["id"],
                 "selector": pack["selector"],
                 "path": f"data/providers/{pack['id']}.json",
+                "sha256": _sha256_bytes(canonical_json(pack).encode("utf-8")),
                 "status": pack["comparison"]["status"],
                 "lastChecked": pack["reviewedLiveReference"]["lastChecked"],
             }
@@ -1563,6 +1610,9 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     provider_datapacks, provider_datapack_manifest = build_provider_datapacks(
         corpus, inputs.provider_datapacks
     )
+    provider_datapack_manifest_sha256 = _sha256_bytes(
+        canonical_json(provider_datapack_manifest).encode("utf-8")
+    )
     reconciliation_relationships, reconciliation = build_cross_source_reconciliation(corpus.records)
     alternative_relationships = build_alternatives(corpus.records)
     _materialize_explorer_fields(corpus.records)
@@ -1994,6 +2044,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
             "viewer": EXPLORER_ROOT,
+        },
+        "entrypoint_integrity": {
+            "provider_datapacks": {
+                "path": "data/providers/manifest.json",
+                "sha256": provider_datapack_manifest_sha256,
+            }
         },
         "extensions": {
             "okf-ons-discovery.v1": {

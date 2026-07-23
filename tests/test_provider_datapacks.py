@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -9,6 +10,7 @@ import pytest
 from okf_ons.build import (
     BuildError,
     build_provider_datapacks,
+    canonical_json,
     default_inputs,
     load_frozen_corpus,
 )
@@ -31,6 +33,8 @@ def _copied_pack_directory(tmp_path: Path) -> Path:
 def test_els_provider_datapack_separates_governed_snapshot_and_live_reference() -> None:
     corpus = _corpus()
     packs, manifest = build_provider_datapacks(corpus, ROOT / "source" / "provider-datapacks")
+    [pack] = packs
+    pack_sha256 = hashlib.sha256(canonical_json(pack).encode("utf-8")).hexdigest()
 
     assert manifest == {
         "schema": "okf-explorer-provider-datapack-manifest.v1",
@@ -45,13 +49,13 @@ def test_els_provider_datapack_separates_governed_snapshot_and_live_reference() 
                     "value": PACK_ID,
                 },
                 "path": f"data/providers/{PACK_ID}.json",
+                "sha256": pack_sha256,
                 "status": "known-drift",
                 "lastChecked": "2026-07-23",
             }
         ],
     }
 
-    [pack] = packs
     assert pack["schema"] == "okf-explorer-provider-datapack.v1"
     assert pack["snapshot"] == manifest["snapshot"]
     assert pack["selector"] == manifest["packs"][0]["selector"]
@@ -140,3 +144,52 @@ def test_provider_datapack_cannot_claim_an_exhaustive_live_comparison(
 
     with pytest.raises(BuildError, match="must be explicitly non-exhaustive"):
         build_provider_datapacks(_corpus(), directory)
+
+
+def test_provider_datapack_rejects_unsafe_action_urls_and_identifiers(
+    tmp_path: Path,
+) -> None:
+    directory = _copied_pack_directory(tmp_path)
+    path = directory / f"{PACK_ID}.json"
+    source = json.loads(path.read_text(encoding="utf-8"))
+    source["presentation"]["actions"][0]["urlTemplate"] = (
+        "https://user:secret@example.com/indicators/{native_id}"
+    )
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="absolute HTTPS URL without credentials"):
+        build_provider_datapacks(_corpus(), directory)
+
+    source["presentation"]["actions"][0]["urlTemplate"] = (
+        "https://www.ons.gov.uk/explore-local-statistics/indicators/{native_id}"
+    )
+    source["presentation"]["actions"][0]["id"] = "open live indicator"
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="must be a safe identifier"):
+        build_provider_datapacks(_corpus(), directory)
+
+
+def test_provider_datapack_rejects_unsafe_selector_fields(tmp_path: Path) -> None:
+    directory = _copied_pack_directory(tmp_path)
+    path = directory / f"{PACK_ID}.json"
+    source = json.loads(path.read_text(encoding="utf-8"))
+    source["selector"]["field"] = "source.surface"
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="must be a safe record field"):
+        build_provider_datapacks(_corpus(), directory)
+
+
+def test_provider_datapack_requires_consistent_selected_source_provenance() -> None:
+    corpus = _corpus()
+    selected = next(
+        record for record in corpus.records if record.get("source_surface") == PACK_ID
+    )
+    selected["provenance"]["source_as_of"] = "2026-07-18T00:00:00Z"
+
+    with pytest.raises(
+        BuildError,
+        match="source provenance differs across selected records",
+    ):
+        build_provider_datapacks(corpus, ROOT / "source" / "provider-datapacks")

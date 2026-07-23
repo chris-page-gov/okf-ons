@@ -193,7 +193,10 @@ average house price ends in April 2026 in the snapshot and May 2026 in the
 reviewed reference. That reference was last checked on 23 July 2026, is
 explicitly external and is not a live validation. Its comparison is a
 non-exhaustive reviewed example, not a claim that all 108 indicators were
-compared. See the [provider datapack contract](docs/provider-datapacks.md).
+compared. The descriptor hashes the provider manifest and the manifest hashes
+the pack, so the dated review cannot be replaced under the same snapshot ID
+without failing Explorer's integrity checks. See the
+[provider datapack contract](docs/provider-datapacks.md).
 
 This experimental bundle is independently published by the OKF ONS project.
 Source attribution does not imply endorsement by ONS or another producer.

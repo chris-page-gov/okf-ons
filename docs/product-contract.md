@@ -55,8 +55,9 @@ consistent. It does **not** certify the accuracy of observations.
 
 The Explorer must label governed snapshot evidence separately from dated
 references to an external provider. A provider datapack is accepted only when
-its manifest, pack and bundle declare the same snapshot identity. Snapshot
-facts are derived from the frozen corpus; a reviewed live reference remains
+its manifest, pack and bundle declare the same snapshot identity and its
+manifest and pack bytes satisfy their SHA-256 bindings. Snapshot facts are
+derived from the frozen corpus; a reviewed live reference remains
 `reviewed-reference-not-live-validated`, identifies its last-checked date and
 external network boundary, and never authorises execution.
 

@@ -8,3 +8,5 @@
   requiring live validation before execution or current-value claims.
 - Validate source expectations fail-closed and expose snapshot-consistent
   provider manifest and pack entrypoints to OKF Explorer.
+- Bind the provider manifest from the descriptor and each public pack from its
+  manifest row with SHA-256 digests.

@@ -14,7 +14,10 @@ whose schema is
 `okf-explorer-provider-datapack-manifest.v1`. The manifest carries the same
 top-level `snapshot` string as the bundle and lists selector-scoped packs.
 Every listed pack also carries that top-level `snapshot` string, allowing a
-consumer to reject a sidecar from another bundle release.
+consumer to reject a sidecar from another governed snapshot. The descriptor's
+`entrypoint_integrity.provider_datapacks.sha256` binds the manifest bytes, and
+each manifest row's `sha256` binds the exact canonical pack bytes. This keeps
+dated review evidence from being replaced under an unchanged snapshot ID.
 
 Each `okf-explorer-provider-datapack.v1` pack has:
 
@@ -78,7 +81,9 @@ never confused with the dated source evidence.
 5. If the governed snapshot itself changes, use a new immutable snapshot
    identity and update its expectations rather than overwriting an old
    snapshot.
-6. Run the provider-datapack tests, the full test suite and deterministic
+6. Rebuild so the pack, manifest-row and descriptor-entrypoint digests change
+   together.
+7. Run the provider-datapack tests, the full test suite and deterministic
    bundle verification.
 
 A normal page load must not silently turn this dated review into a live check.
