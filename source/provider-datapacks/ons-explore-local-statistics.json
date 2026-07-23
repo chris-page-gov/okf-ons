@@ -18,6 +18,13 @@
         "urlTemplate": "https://www.ons.gov.uk/explore-local-statistics/indicators/{native_id}"
       },
       {
+        "id": "open-live-service",
+        "kind": "external-link",
+        "label": "Open live service",
+        "network": "external",
+        "urlTemplate": "https://www.ons.gov.uk/explore-local-statistics/"
+      },
+      {
         "id": "review-upstream-reference",
         "kind": "external-link",
         "label": "Review checked upstream version",

@@ -101,6 +101,13 @@ def test_els_provider_datapack_separates_governed_snapshot_and_live_reference() 
         "urlTemplate": ("https://www.ons.gov.uk/explore-local-statistics/indicators/{native_id}"),
         "network": "external",
     }
+    assert presentation["actions"][1] == {
+        "id": "open-live-service",
+        "label": "Open live service",
+        "kind": "external-link",
+        "urlTemplate": "https://www.ons.gov.uk/explore-local-statistics/",
+        "network": "external",
+    }
 
 
 def test_provider_datapack_fails_closed_if_frozen_example_no_longer_matches(

@@ -65,6 +65,10 @@ URL-encode it as one path segment, reject unresolved placeholders and present
 the navigation as external. Loading the provider service may disclose the
 user's network request to that service.
 
+The pack also supplies an `Open live service` action for bundle-level use and
+a separate reviewed-commit action, so the current external destination is
+never confused with the dated source evidence.
+
 ## Updating a reviewed reference
 
 1. Review a named upstream commit and record its commit time.
