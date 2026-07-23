@@ -32,6 +32,10 @@ Each `okf-explorer-provider-datapack.v1` pack has:
 - `presentation`: provider labels, last-checked wording, a user notice and
   explicitly external link actions.
 
+Review and comparison dates use RFC 3339 full-date values; source revision
+times use RFC 3339 date-times. Provider, pack and action IDs use the v1 safe
+identifier syntax, and selectors use a bounded normalized record-field name.
+
 The comparison uses `evidenceScope: reviewed-record-examples` and
 `exhaustive: false`. A known difference therefore means that at least one
 reviewed example differs. It is not a claim that every selected record was
@@ -64,9 +68,10 @@ https://www.ons.gov.uk/explore-local-statistics/indicators/{native_id}
 ```
 
 Consumers must replace only the documented flat `{native_id}` placeholder,
-URL-encode it as one path segment, reject unresolved placeholders and present
-the navigation as external. Loading the provider service may disclose the
-user's network request to that service.
+which must occupy a complete path segment. They must URL-encode the replacement
+as one path segment, reject unresolved placeholders and present the navigation
+as external. Loading the provider service may disclose the user's network
+request to that service.
 
 The pack also supplies an `Open live service` action for bundle-level use and
 a separate reviewed-commit action, so the current external destination is

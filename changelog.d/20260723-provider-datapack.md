@@ -10,3 +10,5 @@
   provider manifest and pack entrypoints to OKF Explorer.
 - Bind the provider manifest from the descriptor and each public pack from its
   manifest row with SHA-256 digests.
+- Align producer validation with the Explorer contract for safe identifiers,
+  RFC 3339 dates, credential-free HTTPS actions and path-segment templates.

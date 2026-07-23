@@ -181,6 +181,46 @@ def test_provider_datapack_rejects_unsafe_selector_fields(tmp_path: Path) -> Non
         build_provider_datapacks(_corpus(), directory)
 
 
+@pytest.mark.parametrize(
+    "template",
+    [
+        "https://{native_id}.example.test/indicator",
+        "https://example.test/indicator/prefix-{native_id}",
+        "https://example.test/indicator?id={native_id}",
+    ],
+)
+def test_provider_datapack_requires_native_id_as_a_path_segment(
+    tmp_path: Path,
+    template: str,
+) -> None:
+    directory = _copied_pack_directory(tmp_path)
+    path = directory / f"{PACK_ID}.json"
+    source = json.loads(path.read_text(encoding="utf-8"))
+    source["presentation"]["actions"][0]["urlTemplate"] = template
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="complete pathname segment"):
+        build_provider_datapacks(_corpus(), directory)
+
+
+def test_provider_datapack_requires_rfc3339_review_dates(tmp_path: Path) -> None:
+    directory = _copied_pack_directory(tmp_path)
+    path = directory / f"{PACK_ID}.json"
+    source = json.loads(path.read_text(encoding="utf-8"))
+    source["reviewedLiveReference"]["lastChecked"] = "23 July 2026"
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="RFC 3339 full-date"):
+        build_provider_datapacks(_corpus(), directory)
+
+    source["reviewedLiveReference"]["lastChecked"] = "2026-07-23"
+    source["reviewedLiveReference"]["sourceCommitAsOf"] = "22 July 2026"
+    path.write_text(json.dumps(source), encoding="utf-8")
+
+    with pytest.raises(BuildError, match="RFC 3339 date-time"):
+        build_provider_datapacks(_corpus(), directory)
+
+
 def test_provider_datapack_requires_consistent_selected_source_provenance() -> None:
     corpus = _corpus()
     selected = next(

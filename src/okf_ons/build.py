@@ -11,9 +11,10 @@ import tempfile
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from . import __version__
 from .evaluation import evaluate_rankings, load_gold_suite
@@ -409,6 +410,10 @@ _COMPARISON_FIELDS = (
 )
 _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9._-]*$")
 _SELECTOR_FIELD_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
+_DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_DATE_TIME_PATTERN = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 def _exact_keys(value: Any, keys: set[str], context: str) -> Mapping[str, Any]:
@@ -442,6 +447,28 @@ def _selector_field(value: Any, context: str) -> str:
     return text
 
 
+def _date(value: Any, context: str) -> str:
+    text = _text(value, context)
+    try:
+        parsed = date.fromisoformat(text)
+    except ValueError as exc:
+        raise BuildError(f"{context} must be an RFC 3339 full-date") from exc
+    if not _DATE_PATTERN.fullmatch(text) or parsed.isoformat() != text:
+        raise BuildError(f"{context} must be an RFC 3339 full-date")
+    return text
+
+
+def _date_time(value: Any, context: str) -> str:
+    text = _text(value, context)
+    if not _DATE_TIME_PATTERN.fullmatch(text):
+        raise BuildError(f"{context} must be an RFC 3339 date-time")
+    try:
+        datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BuildError(f"{context} must be an RFC 3339 date-time") from exc
+    return text
+
+
 def _hex_digest(value: Any, length: int, context: str) -> str:
     text = _text(value, context).casefold()
     if len(text) != length or any(character not in "0123456789abcdef" for character in text):
@@ -472,6 +499,15 @@ def _https_url(value: Any, context: str, *, template: bool = False) -> str:
         or parsed.password is not None
     ):
         raise BuildError(f"{context} must be an absolute HTTPS URL without credentials")
+    if template:
+        token_count = text.count("{native_id}")
+        path_token_count = sum(
+            unquote(segment) == "{native_id}" for segment in urlsplit(text).path.split("/")
+        )
+        if path_token_count != token_count:
+            raise BuildError(
+                f"{context} must use {{native_id}} as a complete pathname segment"
+            )
     return text
 
 
@@ -660,7 +696,7 @@ def _provider_datapack(
             live_source.get("label"),
             f"provider datapack {pack_id}.reviewedLiveReference.label",
         ),
-        "lastChecked": _text(
+        "lastChecked": _date(
             live_source.get("lastChecked"),
             f"provider datapack {pack_id}.reviewedLiveReference.lastChecked",
         ),
@@ -678,7 +714,7 @@ def _provider_datapack(
             40,
             f"provider datapack {pack_id}.reviewedLiveReference.sourceCommit",
         ),
-        "sourceCommitAsOf": _text(
+        "sourceCommitAsOf": _date_time(
             live_source.get("sourceCommitAsOf"),
             f"provider datapack {pack_id}.reviewedLiveReference.sourceCommitAsOf",
         ),
@@ -713,7 +749,7 @@ def _provider_datapack(
         )
     if comparison_source.get("executionRequiresLiveValidation") is not True:
         raise BuildError(f"provider datapack {pack_id} execution must require live validation")
-    comparison_as_of = _text(
+    comparison_as_of = _date(
         comparison_source.get("comparisonAsOf"),
         f"provider datapack {pack_id}.comparison.comparisonAsOf",
     )
@@ -819,6 +855,9 @@ def _provider_datapack(
             f"provider datapack {pack_id} source provenance differs across selected records"
         )
     source_as_of, source_as_of_basis = next(iter(source_provenance))
+    source_as_of = _date_time(
+        source_as_of, f"provider datapack {pack_id} source_as_of"
+    )
     return {
         "schema": _PROVIDER_DATAPACK_SCHEMA,
         "snapshot": corpus.snapshot["snapshotId"],
