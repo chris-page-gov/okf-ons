@@ -7,7 +7,8 @@ easier to find, compare and use. The machine-readable register is
 field-level semantic mapping is
 [`source/ontology-crosswalk.json`](../source/ontology-crosswalk.json).
 
-The register is current to **17 July 2026**. It is an implementation and
+The register is current to **24 July 2026**. Existing entries retain their own
+earlier review dates when they were not re-reviewed. It is an implementation and
 evaluation contract, not a certification scheme.
 
 ## Assurance boundary
@@ -34,6 +35,25 @@ There are consequently two deliberately separate status vocabularies:
 
 `aligned` applies only to the bundle mapping. It must never be presented as
 accreditation, producer compliance or statistical-quality certification.
+
+## Open Knowledge Format 0.2
+
+The portable knowledge layer conforms structurally to
+[OKF 0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md).
+The root `index.md` declares the version, every non-reserved Markdown document
+has parseable frontmatter and a non-empty `type`, and generated concepts use
+the v0.2 `generated` and `sources` families.
+
+The migration keeps `timestamp` and `# Citations` as additive v0.1 fallbacks.
+Unknown concept types and fields remain permitted, which is how the Explorer
+large-corpus profile, YAML-LD, federation, facets, integrity catalogues and
+provider datapacks stay available without becoming core OKF requirements.
+
+No `verified` event or `stale_after` value is emitted without governed
+evidence. The generated
+[`data/standards/okf-v0.2.json`](../bundle/data/standards/okf-v0.2.json)
+report records structural conformance, concept counts, derived trust tiers and
+lifecycle counts. It does not certify upstream source statistics.
 
 Every requirement-evidence claim has:
 

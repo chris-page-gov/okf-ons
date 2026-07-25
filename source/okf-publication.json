@@ -1,0 +1,26 @@
+{
+  "schema": "okf-ons.okf-publication.v1",
+  "okfVersion": "0.2",
+  "specification": {
+    "resource": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md",
+    "version": "0.2"
+  },
+  "generated": {
+    "at": "2026-07-25T11:08:21Z",
+    "by": "process:okf-ons-bundle-builder"
+  },
+  "status": "draft",
+  "freshnessPolicy": {
+    "staleAfter": null,
+    "status": "not-defined"
+  },
+  "trustBoundary": {
+    "humanVerificationRecorded": false,
+    "statement": "No human verification event is claimed. Deterministic checks establish structural conformance and frozen-input integrity only."
+  },
+  "legacyCompatibility": {
+    "citationsSection": true,
+    "timestamp": true
+  },
+  "claimBoundary": "The OKF Markdown layer describes a bounded, metadata-only governed snapshot and its discovery extensions. It contains no statistical observation values and does not certify upstream statistical accuracy."
+}

@@ -1,3 +1,15 @@
+---
+type: "Reference"
+title: "OKF ONS accessibility statement"
+description: "Accessibility scope, status, known limitations and contact route for the public demonstrator."
+resource: "https://chris-page-gov.github.io/okf-ons/accessibility.html"
+tags: ["accessibility","wcag-2.2","public-service"]
+generated: {"by":"process:okf-ons-bundle-builder","at":"2026-07-25T11:08:21Z"}
+timestamp: "2026-07-25T11:08:21Z"
+status: "draft"
+sources: [{"id":"wcag-22","resource":"https://www.w3.org/TR/WCAG22/","title":"Web Content Accessibility Guidelines 2.2"},{"id":"uk-accessibility-regulations","resource":"https://www.legislation.gov.uk/uksi/2018/952/contents","title":"Public Sector Bodies Accessibility Regulations 2018"}]
+---
+
 # Accessibility statement
 
 Last reviewed: 17 July 2026.
@@ -63,3 +75,8 @@ Open an issue at <https://github.com/chris-page-gov/okf-ons/issues> and include:
 - steps to reproduce.
 
 Do not include personal information, confidential data or API credentials.
+
+# Citations
+
+- [Web Content Accessibility Guidelines 2.2](https://www.w3.org/TR/WCAG22/)
+- [Public Sector Bodies Accessibility Regulations 2018](https://www.legislation.gov.uk/uksi/2018/952/contents)

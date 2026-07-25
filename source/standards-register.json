@@ -1,7 +1,7 @@
 {
   "schemaVersion": "okf-ons.standards-register.v1",
   "title": "Standards and assurance register for the OKF ONS metadata bundle",
-  "asOf": "2026-07-17",
+  "asOf": "2026-07-24",
   "assuranceBoundary": {
     "metadataOnly": true,
     "certifiesStatisticalAccuracy": false,
@@ -1781,6 +1781,85 @@
       ],
       "automatedChecks": [
         "Do not use DCAT-AP alignment as a statistical-quality claim."
+      ]
+    },
+    {
+      "id": "okf-0-2",
+      "title": "Open Knowledge Format specification 0.2",
+      "category": "technical-recommendation",
+      "authority": "GoogleCloudPlatform knowledge-catalog project",
+      "canonicalUri": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md",
+      "currentVersion": "0.2",
+      "currentAsOf": "2026-07-24",
+      "normativeStatus": "Open Knowledge Format specification",
+      "applicability": {
+        "scope": "The portable Markdown knowledge layer rooted at index.md",
+        "conditions": "Apply structural conformance to Markdown concepts independently of Explorer profile extensions.",
+        "exclusions": "OKF conformance does not certify source statistics, legal compliance, JSON-LD alignment, an MCP implementation or runtime attestation."
+      },
+      "requirements": [
+        {
+          "id": "okf02-concept-structure",
+          "theme": "Concept and reserved-file structure",
+          "requirementLevel": "mandatory",
+          "statement": "Every non-reserved Markdown concept has parseable YAML frontmatter and a non-empty type; index.md and log.md follow their reserved structures.",
+          "applicability": "Every Markdown document in the public bundle.",
+          "evidenceFields": [
+            "okfVersion",
+            "conceptPath",
+            "frontmatter",
+            "type"
+          ],
+          "evaluation": "Run the dependency-free OKF v0.2 producer checker over the complete publication tree."
+        },
+        {
+          "id": "okf02-provenance-trust-lifecycle",
+          "theme": "Provenance, trust and lifecycle",
+          "requirementLevel": "conditional",
+          "statement": "When sources, generated, verified, status or stale_after are present, preserve their specified shapes and derive trust and staleness without inventing evidence.",
+          "applicability": "Concept documents using an optional OKF v0.2 family.",
+          "evidenceFields": [
+            "sources",
+            "generated",
+            "verified",
+            "status",
+            "staleAfter"
+          ],
+          "evaluation": "Validate every used optional family, require source resources and actor/timestamp pairs, and omit verification or expiry claims when no governed evidence exists."
+        },
+        {
+          "id": "okf02-compatibility-and-extensions",
+          "theme": "v0.1 migration and producer extensions",
+          "requirementLevel": "mandatory",
+          "statement": "Prefer generated.at and sources while retaining documented v0.1 fallbacks and allowing unknown additive extension fields.",
+          "applicability": "The OKF core and all Explorer-specific publication projections.",
+          "evidenceFields": [
+            "generated",
+            "sources",
+            "timestamp",
+            "citations",
+            "extensions"
+          ],
+          "evaluation": "Require generated and sources in new concepts, retain timestamp and Citations for the compatibility path, and keep Explorer extensions outside the core conformance gate."
+        }
+      ],
+      "recordEvidenceFields": [
+        "type",
+        "sources",
+        "generated",
+        "verified",
+        "status",
+        "staleAfter"
+      ],
+      "uiTreatments": [
+        "Surface source, generator, derived trust tier, lifecycle status and staleness separately.",
+        "Treat unknown concept types and fields as generic additive metadata.",
+        "Do not present deterministic build validation as human verification or runtime attestation."
+      ],
+      "automatedChecks": [
+        "Validate every public Markdown file after Pages assets are assembled.",
+        "Require the root index.md to declare okf_version 0.2.",
+        "Confirm the Markdown layer contains no statistical observation values."
       ]
     }
   ]

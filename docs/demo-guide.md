@@ -1,3 +1,15 @@
+---
+type: "Playbook"
+title: "ONS OKF demonstrator guide"
+description: "A bounded route for demonstrating metadata discovery, comparison and safe MCP hand-off."
+resource: "https://chris-page-gov.github.io/okf-ons/demo-guide.html"
+tags: ["ons","demonstrator","discovery","mcp"]
+generated: {"by":"process:okf-ons-bundle-builder","at":"2026-07-25T11:08:21Z"}
+timestamp: "2026-07-25T11:08:21Z"
+status: "draft"
+sources: [{"id":"okf-ons-bundle","resource":"https://chris-page-gov.github.io/okf-ons/okf-explorer.json","title":"OKF ONS bundle descriptor"},{"id":"product-contract","resource":"https://github.com/chris-page-gov/okf-ons/blob/main/docs/product-contract.md","title":"OKF ONS product contract"}]
+---
+
 # ONS OKF Monday demonstrator
 
 ## Shareable surfaces
@@ -56,10 +68,13 @@ accuracy, methodological fitness or comparability for a specific analysis.
 
 | Purpose | Path |
 | --- | --- |
+| OKF 0.2 root index | `index.md` |
+| OKF concepts | `concepts/index.md` |
 | Bundle descriptor | `okf-explorer.json` |
 | Bounded comparison records | `data/demo/contrast-records.json` |
 | Coverage ledger | `data/coverage/ledger.json` |
 | Standards evaluation | `data/standards/evaluation.json` |
+| OKF 0.2 conformance | `data/standards/okf-v0.2.json` |
 | Discovery evaluation | `data/evaluation/report.json` |
 | MCP bindings | `data/ons/mcp-bindings.json` |
 | Spatial metadata index | `data/ons/spatial-index.json` |
@@ -109,3 +124,8 @@ hand-off and is not needed to demonstrate discovery.
   SDMX and Open Geography records?
 - Which gold discovery queries and alternatives should an ONS subject expert
   curate first?
+
+# Citations
+
+- [OKF ONS bundle descriptor](https://chris-page-gov.github.io/okf-ons/okf-explorer.json)
+- [OKF ONS product contract](https://github.com/chris-page-gov/okf-ons/blob/main/docs/product-contract.md)

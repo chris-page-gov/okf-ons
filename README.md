@@ -22,17 +22,42 @@ The local broker is not the downstream live-data server: it makes no network
 calls and returns no observation values. No observations, API keys, or private
 data are stored in the bundle.
 
+## OKF 0.2 core and Explorer extensions
+
+The checked-in bundle targets
+[Open Knowledge Format 0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md).
+Its generated portable core starts at
+[`index.md`](https://chris-page-gov.github.io/okf-ons/index.md), which declares
+`okf_version: "0.2"` and progressively links to typed concepts for the
+catalogue, frozen snapshot, four source lanes, provider state, governance,
+standards and MCP selection.
+
+Every concept uses `generated` and `sources`. No `verified` event is claimed:
+the automated checks prove structural conformance and frozen-input integrity,
+not human review or statistical truth. No `stale_after` value is invented
+while the governed freshness policy remains undefined. Lifecycle status is
+therefore explicit and live execution continues to require provider
+revalidation.
+
+The large-corpus descriptor, JSON/YAML-LD, static search, facets,
+relationships, federation, integrity catalogues and provider datapacks remain
+additive Explorer extensions. New concepts also retain the v0.1 `timestamp`
+and `# Citations` fallbacks so older consumers can continue best-effort
+discovery while v0.2 consumers prefer `generated` and `sources`.
+
 ## Access and documentation
 
-These are the canonical entry points for release `v0.2.0`. The Pages site
-tracks the most recently deployed `main`; use the tagged release downloads when
-an immutable copy is required.
+These are the canonical entry points for the Pages deployment from `main`.
+The immutable application release `v0.2.0` predates the OKF specification 0.2
+migration and remains available as historical release evidence.
 
 ### Live and machine-readable access
 
 | Resource | URL |
 | --- | --- |
 | Human discovery UI | <https://chris-page-gov.github.io/okf-ons/> |
+| OKF 0.2 root index | <https://chris-page-gov.github.io/okf-ons/index.md> |
+| OKF concepts index | <https://chris-page-gov.github.io/okf-ons/concepts/> |
 | Open this bundle directly in OKF Explorer | <https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json> |
 | OKF Explorer without a preloaded bundle | <https://chris-page-gov.github.io/okf-explorer/> |
 | OKF bundle descriptor | <https://chris-page-gov.github.io/okf-ons/okf-explorer.json> |
@@ -49,6 +74,7 @@ an immutable copy is required.
 | Checksums | <https://chris-page-gov.github.io/okf-ons/checksums.json> |
 | Search manifest | <https://chris-page-gov.github.io/okf-ons/data/search/manifest.json> |
 | Standards evaluation | <https://chris-page-gov.github.io/okf-ons/data/standards/evaluation.json> |
+| OKF 0.2 conformance report | <https://chris-page-gov.github.io/okf-ons/data/standards/okf-v0.2.json> |
 | SDMX evidence | <https://chris-page-gov.github.io/okf-ons/data/standards/sdmx.json> |
 | Evaluation report | <https://chris-page-gov.github.io/okf-ons/data/evaluation/report.json> |
 | MCP binding index | <https://chris-page-gov.github.io/okf-ons/data/ons/mcp-bindings.json> |
@@ -71,6 +97,7 @@ independent stable entry points.
 - [OKF Explorer repository](https://github.com/chris-page-gov/okf-explorer)
 - [Pinned ONSdigital Explore Local Statistics commit](https://github.com/ONSdigital/explore-local-statistics-app/commit/795eaf204f47986f6be248a63f857a42afe4fdf2)
 - [Source register](source/source-register.json),
+  [OKF publication metadata](source/okf-publication.json),
   [release snapshot manifest](source/demo-snapshot/snapshot.json),
   [current enrichment snapshot manifest](source/metadata-enrichment-2026-07-21-r6/snapshot.json), and
   [release changelog](CHANGELOG.md)
@@ -225,6 +252,7 @@ python scripts/build_bundle.py \
   --snapshot-dir source/demo-snapshot \
   --output bundle \
   --check
+python scripts/check_okf_v02.py bundle
 ```
 
 The metadata-enrichment campaign also includes immutable successor snapshot

@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from okf_ons import __version__  # noqa: E402
 from okf_ons.build import canonical_json, check_bundle, compile_bundle, default_inputs  # noqa: E402
+from okf_ons.okf import OKF_SPECIFICATION, OKF_VERSION, validate_okf_bundle  # noqa: E402
 
 
 def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
@@ -26,10 +27,13 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     evaluation = result["evaluation"]
 
     assert descriptor["schema"] == "okf-explorer-large-corpus.v1"
+    assert descriptor["okf_version"] == OKF_VERSION
+    assert descriptor["core_conformance"] == "OKF v0.2 Markdown concept layer"
     assert descriptor["version"] == __version__
     assert descriptor["counts"]["records"] == 5_097
     assert descriptor["counts"]["sources"] == 4
     assert descriptor["counts"]["publishers"] == 24
+    assert descriptor["counts"]["okfConcepts"] == 12
     assert descriptor["scope"]["complete_ons_corpus"] is False
     assert "license" not in descriptor
     assert descriptor["rights"]["status"] == "mixed-record-level"
@@ -54,6 +58,11 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
 
     required = (
         "okf-explorer.json",
+        "index.md",
+        "concepts/index.md",
+        "concepts/catalogue.md",
+        "concepts/snapshot.md",
+        "concepts/provider-datapack.md",
         "okf-bundle.jsonld",
         "okf-bundle.yamlld",
         "data/manifest.json",
@@ -63,6 +72,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/governance/context-set.json",
         "data/governance/release.json",
         "data/standards/evaluation.json",
+        "data/standards/okf-v0.2.json",
         "data/standards/sdmx.json",
         "data/evaluation/report.json",
         "data/ons/mcp-bindings.json",
@@ -86,6 +96,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     overview = json.loads((output / "data/overview.json").read_text())
     analysis = json.loads((output / "data/analysis/overview.json").read_text())
     assert data_manifest["title"] == descriptor["title"]
+    assert data_manifest["okf_version"] == OKF_VERSION
     assert data_manifest["snapshot"] == descriptor["snapshot"]
     assert overview["snapshot"] == descriptor["snapshot"]
     assert analysis["snapshot"] == descriptor["snapshot"]
@@ -296,6 +307,9 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert multi_producer["publisher_title"].endswith("attributed source producers")
 
     semantic_bundle = json.loads((output / "okf-bundle.jsonld").read_text())
+    assert semantic_bundle["okfVersion"] == OKF_VERSION
+    assert semantic_bundle["okfEntrypoint"].endswith("/index.md")
+    assert OKF_SPECIFICATION in semantic_bundle["conformsTo"]
     assert semantic_bundle["publisher"] == canonical_bundle_publisher_id
     assert semantic_bundle["bundlePublisher"] == canonical_bundle_publisher_id
     assert semantic_bundle["semanticAuthority"] == canonical_bundle_publisher_id
@@ -319,6 +333,15 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert context_set["networkRetrievalAllowed"] is False
     assert context_set["contexts"][0]["sha256"] == hashlib.sha256(context_bytes).hexdigest()
     governance = json.loads((output / "data/governance/release.json").read_text())
+    assert governance["okfVersion"] == OKF_VERSION
+    assert governance["okfEntrypoint"] == "index.md"
+    assert governance["buildProvenance"]["generated"] == {
+        "at": "2026-07-25T11:08:21Z",
+        "by": "process:okf-ons-bundle-builder",
+    }
+    assert governance["trust"]["humanVerificationRecorded"] is False
+    assert governance["freshnessPolicy"]["status"] == "not-defined"
+    assert governance["freshnessPolicy"]["validThrough"] is None
     assert governance["integrity"]["authenticatedSignature"] is False
     assert governance["releaseVersion"] == __version__
     assert governance["buildProvenance"]["softwareVersion"] == __version__
@@ -359,6 +382,37 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     }
     assert sdmx["serializationBoundary"]["serializedAsSdmx"] is False
     assert sdmx["serializationBoundary"]["sdmxNamespacePresent"] is False
+
+    okf_report = validate_okf_bundle(output)
+    assert okf_report == json.loads(
+        (output / "data/standards/okf-v0.2.json").read_text()
+    )
+    assert okf_report["status"] == "aligned"
+    assert okf_report["conceptCount"] == 12
+    assert okf_report["legacyV01FallbackCount"] == okf_report["conceptCount"]
+    assert okf_report["trustTiers"] == {
+        "humanReviewed": 0,
+        "machineConfirmed": 0,
+        "unverified": 12,
+    }
+    assert okf_report["lifecycle"] == {
+        "deprecated": 0,
+        "draft": 12,
+        "stable": 0,
+    }
+    assert descriptor["entrypoints"]["okf_index"] == "index.md"
+    assert descriptor["entrypoints"]["okf_conformance"] == (
+        "data/standards/okf-v0.2.json"
+    )
+    assert descriptor["extensions"]["okf-core.v0.2"] == {
+        "entrypoint": "okf_index",
+        "conformance": "okf_conformance",
+        "status": "aligned",
+        "unknown_fields_allowed": True,
+        "legacy_v0_1_timestamp_fallback": True,
+        "legacy_v0_1_citations_fallback": True,
+        "human_verification_recorded": False,
+    }
 
     checksums = json.loads((output / "checksums.json").read_text())
     for row in checksums["files"]:

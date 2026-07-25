@@ -26,6 +26,14 @@ from .model import (
     normalize_acquisition_record,
     unique_records,
 )
+from .okf import (
+    OKF_SPECIFICATION,
+    OKF_VERSION,
+    OKFConformanceError,
+    render_concept,
+    render_frontmatter,
+    validate_okf_bundle,
+)
 from .search import MISSING_FILTER_VALUE, build_search, filter_values, rank_records, result_document
 
 PUBLIC_ROOT = "https://chris-page-gov.github.io/okf-ons/"
@@ -131,6 +139,9 @@ class BuildInputs:
     ontology_crosswalk: Path
     gold_suite: Path
     evaluation_aliases: Path
+    okf_publication: Path
+    demo_guide: Path
+    accessibility_statement: Path
 
 
 @dataclass
@@ -142,6 +153,7 @@ class FrozenCorpus:
     standards_register: dict[str, Any]
     ontology_crosswalk: dict[str, Any]
     aliases: dict[str, Any]
+    okf_publication: dict[str, Any]
 
 
 def default_inputs(root: Path) -> BuildInputs:
@@ -153,6 +165,9 @@ def default_inputs(root: Path) -> BuildInputs:
         ontology_crosswalk=root / "source" / "ontology-crosswalk.json",
         gold_suite=root / "evaluation" / "gold-queries.json",
         evaluation_aliases=root / "source" / "evaluation-aliases.json",
+        okf_publication=root / "source" / "okf-publication.json",
+        demo_guide=root / "docs" / "demo-guide.md",
+        accessibility_statement=root / "accessibility.md",
     )
 
 
@@ -275,6 +290,23 @@ def load_frozen_corpus(inputs: BuildInputs) -> FrozenCorpus:
         "baselineStatus": "partial-source-coverage",
     }
 
+    okf_publication = _read_json(inputs.okf_publication)
+    if okf_publication.get("schema") != "okf-ons.okf-publication.v1":
+        raise BuildError("Unsupported OKF publication metadata schema")
+    if okf_publication.get("okfVersion") != OKF_VERSION:
+        raise BuildError(f"OKF publication metadata must target {OKF_VERSION}")
+    specification = okf_publication.get("specification")
+    if not isinstance(specification, Mapping) or specification != {
+        "resource": OKF_SPECIFICATION,
+        "version": OKF_VERSION,
+    }:
+        raise BuildError("OKF publication metadata must pin the reviewed v0.2 specification")
+    generated = okf_publication.get("generated")
+    if not isinstance(generated, Mapping) or not generated.get("by") or not generated.get("at"):
+        raise BuildError("OKF publication metadata requires generated.by and generated.at")
+    if okf_publication.get("status") not in {"draft", "stable", "deprecated"}:
+        raise BuildError("OKF publication metadata has an unsupported lifecycle status")
+
     return FrozenCorpus(
         snapshot=snapshot,
         acquisitions=acquisitions,
@@ -283,6 +315,7 @@ def load_frozen_corpus(inputs: BuildInputs) -> FrozenCorpus:
         standards_register=_read_json(inputs.standards_register),
         ontology_crosswalk=_read_json(inputs.ontology_crosswalk),
         aliases=aliases,
+        okf_publication=okf_publication,
     )
 
 
@@ -306,13 +339,14 @@ def _chunks(
 
 
 def _generated_at(corpus: FrozenCorpus) -> str:
-    values = [
-        str(page.get("retrievedAt"))
-        for acquisition in corpus.acquisitions
-        for page in acquisition["provenance"].get("pages", [])
-        if isinstance(page, Mapping) and page.get("retrievedAt")
-    ]
-    return max(values) if values else f"{corpus.snapshot['snapshotId']}T00:00:00Z"
+    """Return the governed last meaningful publication change.
+
+    Source retrieval and commit times remain separately available in the
+    coverage ledger. Using the checked-in publication event keeps generation
+    deterministic without misrepresenting source-as-of as document authorship.
+    """
+
+    return str(corpus.okf_publication["generated"]["at"])
 
 
 def _source_counts(records: Iterable[Mapping[str, Any]]) -> dict[str, int]:
@@ -1642,6 +1676,480 @@ def _write_search(writer: BundleWriter, search: dict[str, Any]) -> None:
     writer.write_json("data/facets.json", search["facets"])
 
 
+def _markdown_list(values: Iterable[str]) -> str:
+    rows = [f"- {value}" for value in values if value]
+    return "\n".join(rows) if rows else "- Not evidenced."
+
+
+def _legacy_citations(sources: list[dict[str, Any]]) -> str:
+    rows = []
+    for source in sources:
+        title = str(source.get("title") or source["resource"])
+        rows.append(f"- [{title}]({source['resource']})")
+    return "\n".join(rows)
+
+
+def _okf_concept_fields(
+    corpus: FrozenCorpus,
+    *,
+    concept_type: str,
+    title: str,
+    description: str,
+    resource: str,
+    tags: list[str],
+    sources: list[dict[str, Any]],
+    extensions: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    publication = corpus.okf_publication
+    generated = dict(publication["generated"])
+    fields: dict[str, Any] = {
+        "type": concept_type,
+        "title": title,
+        "description": description,
+        "resource": resource,
+        "tags": tags,
+        "generated": generated,
+        # Retained as an unknown extension so a v0.1 consumer can use its
+        # historical timestamp fallback while v0.2 consumers prefer generated.at.
+        "timestamp": generated["at"],
+        "status": publication["status"],
+        "sources": sources,
+    }
+    if extensions:
+        fields.update(extensions)
+    return fields
+
+
+def _okf_markdown_documents(
+    corpus: FrozenCorpus,
+    *,
+    coverage: Mapping[str, Any],
+    provider_datapacks: list[dict[str, Any]],
+    record_count: int,
+    standard_count: int,
+    demo_guide: Path,
+    accessibility_statement: Path,
+) -> dict[str, str]:
+    """Build the canonical OKF v0.2 Markdown layer over Explorer extensions."""
+
+    documents: dict[str, str] = {}
+    coverage_sources = {
+        str(source["sourceId"]): source
+        for source in coverage["implementedScope"]["sources"]
+        if isinstance(source, Mapping)
+    }
+    registered_sources = [
+        source
+        for source in corpus.source_register.get("sources", [])
+        if isinstance(source, Mapping)
+        and str(source.get("id") or "") in coverage_sources
+    ]
+    source_citations = [
+        {
+            "id": str(source["id"]),
+            "resource": str(source["endpoint"]),
+            "title": str(source["title"]),
+        }
+        for source in registered_sources
+    ]
+    publication = corpus.okf_publication
+    generated_at = str(publication["generated"]["at"])
+    snapshot_id = str(corpus.snapshot["snapshotId"])
+
+    root_body = (
+        "# ONS data discovery OKF\n\n"
+        "This is the canonical OKF v0.2 entrypoint for a bounded, metadata-only "
+        "ONS discovery snapshot. It contains no statistical observation values.\n\n"
+        "# Knowledge concepts\n\n"
+        "* [Catalogue and extension entrypoints](concepts/catalogue.md) - the "
+        "metadata catalogue and its large-corpus Explorer projection.\n"
+        "* [Governed frozen snapshot](concepts/snapshot.md) - snapshot identity, "
+        "coverage and freshness boundary.\n"
+        "* [Source lanes](concepts/sources/) - the four bounded metadata sources.\n"
+        "* [Provider snapshot/live datapack](concepts/provider-datapack.md) - the "
+        "dated reviewed-live distinction.\n"
+        "* [Governance](concepts/governance.md) - authority, integrity and "
+        "non-endorsement boundaries.\n"
+        "* [Standards evidence](concepts/standards.md) - structural OKF v0.2 "
+        "conformance and other evidence mappings.\n"
+        "* [MCP selection contract](concepts/mcp-selection.md) - non-executing "
+        "selection metadata.\n\n"
+        "# Compatibility and extensions\n\n"
+        "The Markdown concepts are the portable OKF core. "
+        "[`okf-explorer.json`](okf-explorer.json), YAML-LD, JSON-LD, static "
+        "search, facets, federation, integrity files and provider datapacks are "
+        "additive extensions. Concept documents retain the legacy `timestamp` "
+        "and `# Citations` forms for best-effort v0.1 consumers; v0.2 consumers "
+        "must prefer `generated` and `sources`.\n"
+    )
+    documents["index.md"] = render_frontmatter({"okf_version": OKF_VERSION}) + "\n" + root_body
+
+    catalogue_sources = source_citations + [
+        {
+            "id": "okf-v02-spec",
+            "resource": OKF_SPECIFICATION,
+            "title": "Open Knowledge Format specification v0.2",
+            "last_modified": "2026-07-24",
+        }
+    ]
+    catalogue_fields = _okf_concept_fields(
+        corpus,
+        concept_type="Dataset Catalogue",
+        title="ONS data discovery catalogue",
+        description=(
+            "A bounded metadata-only catalogue for finding and distinguishing ONS data."
+        ),
+        resource="../okf-explorer.json",
+        tags=["ons", "discovery", "metadata-only", "okf-0.2"],
+        sources=catalogue_sources,
+        extensions={
+            "snapshot_id": snapshot_id,
+            "metadata_only": True,
+            "observation_values_included": False,
+            "explorer_profile": (
+                "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/"
+            ),
+        },
+    )
+    documents["concepts/catalogue.md"] = render_concept(
+        catalogue_fields,
+        (
+            "# Scope\n\n"
+            f"The governed snapshot exposes {record_count:,} source-qualified metadata "
+            "records through the large-corpus Explorer profile. The profile adds "
+            "bounded shards, search, facets, relationships, JSON-LD, YAML-LD and "
+            "federation without replacing this OKF Markdown layer.\n\n"
+            "# Entry points\n\n"
+            "- [Explorer descriptor](../okf-explorer.json)\n"
+            "- [Data manifest](../data/manifest.json)\n"
+            "- [OKF v0.2 conformance report](../data/standards/okf-v0.2.json)\n\n"
+            "# Claim boundary\n\n"
+            f"{publication['claimBoundary']}\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(catalogue_sources)}"
+        ),
+    )
+
+    snapshot_fields = _okf_concept_fields(
+        corpus,
+        concept_type="Frozen Metadata Snapshot",
+        title=f"Governed ONS metadata snapshot {snapshot_id}",
+        description=(
+            "The immutable metadata input boundary used for this deterministic bundle."
+        ),
+        resource="../data/governance/release.json",
+        tags=["snapshot", "provenance", "metadata-only", "governance"],
+        sources=source_citations,
+        extensions={
+            "snapshot_id": snapshot_id,
+            "snapshot_sha256": content_sha256(corpus.snapshot),
+            "metadata_only": True,
+            "observation_values_included": False,
+            "freshness_policy": publication["freshnessPolicy"],
+        },
+    )
+    documents["concepts/snapshot.md"] = render_concept(
+        snapshot_fields,
+        (
+            "# Snapshot boundary\n\n"
+            f"The snapshot contains {record_count:,} metadata records across "
+            f"{len(registered_sources)} bounded source lanes. It does not contain "
+            "statistical observation values. Source retrieval or commit times are "
+            "preserved separately from this concept's generation time.\n\n"
+            "# Freshness\n\n"
+            "No governed `stale_after` date is currently defined, so none is "
+            "invented in frontmatter. Live execution and current-value claims require "
+            "revalidation against the relevant provider.\n\n"
+            "# Evidence\n\n"
+            "- [Coverage ledger](../data/coverage/ledger.json)\n"
+            "- [Governed release metadata](../data/governance/release.json)\n"
+            "- [Integrity catalogue](../checksums.json)\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(source_citations)}"
+        ),
+    )
+
+    governance_sources = [
+        {
+            "id": "coverage-ledger",
+            "resource": "../data/coverage/ledger.json",
+            "title": "Bounded source coverage ledger",
+        },
+        {
+            "id": "integrity-catalogue",
+            "resource": "../checksums.json",
+            "title": "Generated bundle checksum catalogue",
+        },
+    ]
+    governance_fields = _okf_concept_fields(
+        corpus,
+        concept_type="Governance Profile",
+        title="OKF ONS governed publication boundary",
+        description=(
+            "Authority, integrity, non-endorsement and execution boundaries for the bundle."
+        ),
+        resource="../data/governance/release.json",
+        tags=["governance", "authority", "integrity", "provenance"],
+        sources=governance_sources,
+        extensions={
+            "human_verification_recorded": False,
+            "authenticated_signature": False,
+            "authorises_execution": False,
+        },
+    )
+    documents["concepts/governance.md"] = render_concept(
+        governance_fields,
+        (
+            "# Authority\n\n"
+            "Source producers retain authority for their source publications. The "
+            "OKF ONS project is bundle publisher and semantic authority only for "
+            "this transformation. Source attribution is not endorsement.\n\n"
+            "# Trust\n\n"
+            "No `verified` event is emitted because no evidenced human or independent "
+            "verification event is recorded. Deterministic validation establishes "
+            "structural conformance and frozen-input integrity, not statistical truth.\n\n"
+            "# Integrity\n\n"
+            "Checksums detect changes when obtained through a trusted channel; they "
+            "are not an authenticated signature.\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(governance_sources)}"
+        ),
+    )
+
+    provider_pack = provider_datapacks[0]
+    reviewed = provider_pack["reviewedLiveReference"]
+    provider_sources = [
+        {
+            "id": "governed-provider-pack",
+            "resource": "../data/providers/ons-explore-local-statistics.json",
+            "title": "Governed ONS Explore Local Statistics provider datapack",
+        },
+        {
+            "id": "reviewed-upstream-commit",
+            "resource": (
+                "https://github.com/ONSdigital/explore-local-statistics-app/tree/"
+                f"{reviewed['sourceCommit']}"
+            ),
+            "title": "Reviewed upstream source revision",
+            "last_modified": reviewed["sourceCommitAsOf"][:10],
+        },
+    ]
+    provider_fields = _okf_concept_fields(
+        corpus,
+        concept_type="Provider Datapack",
+        title="ONS Explore Local Statistics snapshot and reviewed-live state",
+        description=(
+            "A governed snapshot/live distinction for the ONS Explore Local Statistics lane."
+        ),
+        resource="../data/providers/ons-explore-local-statistics.json",
+        tags=["provider", "snapshot", "live-reference", "drift"],
+        sources=provider_sources,
+        extensions={
+            "snapshot_id": snapshot_id,
+            "comparison_status": provider_pack["comparison"]["status"],
+            "reviewed_live_status": reviewed["status"],
+            "last_checked": reviewed["lastChecked"],
+            "live_validation_performed": False,
+        },
+    )
+    documents["concepts/provider-datapack.md"] = render_concept(
+        provider_fields,
+        (
+            "# Governed snapshot\n\n"
+            f"The reproducible bundle remains pinned to "
+            f"`{provider_pack['governedSnapshot']['sourceCommitShort']}`. The "
+            "provider datapack is bound to the same snapshot and checksum catalogue.\n\n"
+            "# Reviewed live reference\n\n"
+            f"The later upstream revision `{reviewed['sourceCommit'][:7]}` was last "
+            f"checked on {reviewed['lastChecked']}. This is dated review evidence, "
+            "not a network result or a claim about the provider's present state.\n\n"
+            "# Known example drift\n\n"
+            f"{provider_pack['comparison']['summary']} The comparison is explicitly "
+            "non-exhaustive and execution still requires live validation.\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(provider_sources)}"
+        ),
+    )
+
+    mcp_sources = [
+        {
+            "id": "mcp-bindings",
+            "resource": "../data/ons/mcp-bindings.json",
+            "title": "Bounded MCP selection bindings",
+        },
+        {
+            "id": "governed-release",
+            "resource": "../data/governance/release.json",
+            "title": "Governed bundle release",
+        },
+    ]
+    mcp_fields = _okf_concept_fields(
+        corpus,
+        concept_type="MCP Selection Contract",
+        title="Metadata-only ONS MCP selection contract",
+        description=(
+            "A non-executing contract for selecting exact datasets and required parameters."
+        ),
+        resource="../data/ons/mcp-bindings.json",
+        tags=["mcp", "selection", "metadata-only", "non-executing"],
+        sources=mcp_sources,
+        extensions={
+            "read_only": True,
+            "live_execution_available": False,
+            "observation_values_included": False,
+        },
+    )
+    documents["concepts/mcp-selection.md"] = render_concept(
+        mcp_fields,
+        (
+            "# Contract boundary\n\n"
+            "The local broker and public binding index produce candidate selection "
+            "plans only. They make no network request, store no credential and return "
+            "no statistical observation value.\n\n"
+            "# Execution\n\n"
+            "A downstream trusted service must validate all required dimensions, "
+            "authorisation and live provider state before execution. This document is "
+            "not an Attested Computation and does not sanction a computation.\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(mcp_sources)}"
+        ),
+    )
+
+    standards_sources = [
+        {
+            "id": "okf-v02-spec",
+            "resource": OKF_SPECIFICATION,
+            "title": "Open Knowledge Format specification v0.2",
+            "last_modified": "2026-07-24",
+        },
+        {
+            "id": "standards-register",
+            "resource": "../data/standards/register.json",
+            "title": "OKF ONS standards register",
+        },
+        {
+            "id": "okf-conformance",
+            "resource": "../data/standards/okf-v0.2.json",
+            "title": "Generated OKF v0.2 conformance report",
+        },
+    ]
+    standards_fields = _okf_concept_fields(
+        corpus,
+        concept_type="Standards Evidence",
+        title="OKF ONS standards and conformance evidence",
+        description=(
+            "Structural OKF v0.2 conformance plus bounded evidence mappings to other standards."
+        ),
+        resource="../data/standards/evaluation.json",
+        tags=["okf-0.2", "standards", "conformance", "evidence"],
+        sources=standards_sources,
+        extensions={
+            "okf_conformance_status": "aligned",
+            "registered_standard_count": standard_count,
+            "statistical_accuracy_evaluated": False,
+        },
+    )
+    documents["concepts/standards.md"] = render_concept(
+        standards_fields,
+        (
+            "# OKF v0.2\n\n"
+            "The generated producer check enforces parseable frontmatter, a non-empty "
+            "`type` on every concept, reserved-file rules, and the optional family "
+            "shapes this bundle uses. Unknown extension fields remain permitted.\n\n"
+            "# Assurance boundary\n\n"
+            "Structural conformance is evaluated independently of statistical "
+            "accuracy, legal compliance or certification of an upstream product.\n\n"
+            "# Citations\n\n"
+            f"{_legacy_citations(standards_sources)}"
+        ),
+    )
+
+    source_links: list[str] = []
+    for source in registered_sources:
+        source_id = str(source["id"])
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", source_id):
+            raise BuildError(f"source id is unsafe for an OKF concept path: {source_id}")
+        evidence = coverage_sources[source_id]
+        source_sources = [
+            {
+                "id": source_id,
+                "resource": str(source["endpoint"]),
+                "title": str(source["title"]),
+            }
+        ]
+        fields = _okf_concept_fields(
+            corpus,
+            concept_type="Metadata Source",
+            title=str(source["title"]),
+            description=(
+                f"Bounded metadata source lane represented by {evidence['represented']:,} "
+                "records in the governed snapshot."
+            ),
+            resource=str(source["endpoint"]),
+            tags=["source", "metadata-only", str(source["adapter"])],
+            sources=source_sources,
+            extensions={
+                "source_id": source_id,
+                "source_as_of": evidence["sourceAsOf"],
+                "source_as_of_basis": evidence["sourceAsOfBasis"],
+                "record_count": evidence["represented"],
+                "coverage_complete": evidence["coverageComplete"],
+                "metadata_only": evidence["metadataOnly"],
+            },
+        )
+        includes = source.get("scope", {}).get("includes", [])
+        excludes = source.get("scope", {}).get("excludes", [])
+        documents[f"concepts/sources/{source_id}.md"] = render_concept(
+            fields,
+            (
+                "# Included metadata\n\n"
+                f"{_markdown_list(str(value) for value in includes)}\n\n"
+                "# Explicitly excluded\n\n"
+                f"{_markdown_list(str(value) for value in excludes)}\n\n"
+                "# Temporal evidence\n\n"
+                f"Source state is recorded as `{evidence['sourceAsOf']}` using "
+                f"`{evidence['sourceAsOfBasis']}`. This does not define a general "
+                "`stale_after` policy.\n\n"
+                "# Citations\n\n"
+                f"{_legacy_citations(source_sources)}"
+            ),
+        )
+        source_links.append(
+            f"* [{source['title']}]({source_id}.md) - "
+            f"{evidence['represented']:,} frozen metadata records."
+        )
+
+    documents["concepts/index.md"] = (
+        "# OKF ONS concepts\n\n"
+        "* [Catalogue](catalogue.md) - canonical catalogue and Explorer extensions.\n"
+        "* [Snapshot](snapshot.md) - frozen metadata and freshness boundary.\n"
+        "* [Sources](sources/) - bounded source lanes.\n"
+        "* [Provider datapack](provider-datapack.md) - snapshot/reviewed-live state.\n"
+        "* [Governance](governance.md) - authority, integrity and trust boundary.\n"
+        "* [Standards](standards.md) - conformance and standards evidence.\n"
+        "* [MCP selection](mcp-selection.md) - non-executing selection contract.\n"
+    )
+    documents["concepts/sources/index.md"] = (
+        "# Bounded metadata sources\n\n" + "\n".join(source_links) + "\n"
+    )
+
+    for destination, source_path in (
+        ("demo-guide.md", demo_guide),
+        ("accessibility.md", accessibility_statement),
+    ):
+        documents[destination] = source_path.read_text(encoding="utf-8")
+
+    # Keep the source document generation time auditable without allowing
+    # transient build time to make output nondeterministic.
+    if any(
+        generated_at not in value
+        for key, value in documents.items()
+        if Path(key).name != "index.md"
+    ):
+        raise BuildError("Every OKF concept must carry the governed generation time")
+    return documents
+
+
 def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     corpus = load_frozen_corpus(inputs)
     output.mkdir(parents=True, exist_ok=True)
@@ -1681,6 +2189,36 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         or record.get("license_id") == "not-evaluated"
         for record in corpus.records
     )
+    okf_documents = _okf_markdown_documents(
+        corpus,
+        coverage=coverage,
+        provider_datapacks=provider_datapacks,
+        record_count=len(corpus.records),
+        standard_count=standards_evaluation["standardCount"],
+        demo_guide=inputs.demo_guide,
+        accessibility_statement=inputs.accessibility_statement,
+    )
+    for path, document in okf_documents.items():
+        writer.write_text(path, document)
+    try:
+        okf_conformance = validate_okf_bundle(output)
+    except (OSError, OKFConformanceError) as exc:
+        raise BuildError(f"Generated OKF v0.2 Markdown is not conformant: {exc}") from exc
+    if okf_conformance["legacyV01FallbackCount"] != okf_conformance["conceptCount"]:
+        raise BuildError("Every public concept must retain the v0.1 compatibility fallbacks")
+    standards_evaluation["okfConformance"] = {
+        "status": okf_conformance["status"],
+        "version": OKF_VERSION,
+        "entrypoint": okf_conformance["entrypoint"],
+        "report": "data/standards/okf-v0.2.json",
+        "conceptCount": okf_conformance["conceptCount"],
+        "humanReviewed": okf_conformance["trustTiers"]["humanReviewed"],
+        "claim": (
+            "Structural OKF conformance only; this is not statistical accuracy, "
+            "source endorsement or legal certification."
+        ),
+    }
+    writer.write_json("data/standards/okf-v0.2.json", okf_conformance)
 
     dataset_chunks = _chunks(writer, "datasets", corpus.records)
     resource_chunks = _chunks(writer, "resources", resources)
@@ -1709,6 +2247,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "sources": len(source_counts),
             "publishers": len(publisher_rows),
             "providerDatapacks": len(provider_datapacks),
+            "okfConcepts": okf_conformance["conceptCount"],
             "sourcePublisherAttributions": sum(
                 row["dataset_count"] for row in publisher_rows
             ),
@@ -1802,6 +2341,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
 
     data_manifest = {
         "schema": "okf-explorer-data-manifest.v1",
+        "okf_version": OKF_VERSION,
         "title": "ONS data discovery OKF",
         "generated_at": generated_at,
         "snapshot": corpus.snapshot["snapshotId"],
@@ -1836,6 +2376,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "governance": "data/governance/release.json",
             "context_set": "data/governance/context-set.json",
             "provider_datapacks": "data/providers/manifest.json",
+            "okf_conformance": "data/standards/okf-v0.2.json",
         },
         "performance": {
             "startup_mode": "overview-first",
@@ -1903,6 +2444,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     writer.write_json("data/governance/context-set.json", context_set)
     governance = {
         "schema": "okf-governed-knowledge-contract-release.v1",
+        "okfVersion": OKF_VERSION,
+        "okfEntrypoint": "index.md",
         "releaseVersion": __version__,
         "pattern": "Governed Knowledge Contract and Evidence-Carriage Plane",
         "status": "experimental-demonstrator",
@@ -1945,6 +2488,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "softwareVersion": __version__,
             "repository": BUNDLE_PUBLISHER["url"],
             "inputSnapshotSha256": content_sha256(corpus.snapshot),
+            "generated": corpus.okf_publication["generated"],
             "codeReleasePinned": False,
             "attested": False,
         },
@@ -1959,10 +2503,11 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
         "contextSet": "data/governance/context-set.json",
         "freshnessPolicy": {
-            "status": "not-defined",
-            "validThrough": None,
+            "status": corpus.okf_publication["freshnessPolicy"]["status"],
+            "validThrough": corpus.okf_publication["freshnessPolicy"]["staleAfter"],
             "liveRevalidationRequiredBeforeExecution": True,
         },
+        "trust": corpus.okf_publication["trustBoundary"],
         "observationValuesIncluded": False,
         "liveExecutionAvailable": False,
     }
@@ -1977,6 +2522,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "statistical metadata lanes."
         ),
         "publisher": BUNDLE_PUBLISHER["id"],
+        "okfVersion": OKF_VERSION,
+        "okfEntrypoint": f"{PUBLIC_ROOT}index.md",
         "bundlePublisher": BUNDLE_PUBLISHER["id"],
         "semanticAuthority": BUNDLE_PUBLISHER["id"],
         "reviewedBy": [],
@@ -1984,6 +2531,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "nonEndorsementStatement": NON_ENDORSEMENT,
         "contextSet": "data/governance/context-set.json",
         "conformsTo": [
+            OKF_SPECIFICATION,
             "https://www.w3.org/TR/vocab-dcat-3/",
             "https://www.w3.org/TR/prov-o/",
             "https://www.w3.org/TR/skos-reference/",
@@ -2037,6 +2585,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "version": __version__,
         "snapshot": corpus.snapshot["snapshotId"],
         "generated_at": generated_at,
+        "okf_version": OKF_VERSION,
+        "core_conformance": "OKF v0.2 Markdown concept layer",
         "status": "bounded-demonstrator",
         "publisher": BUNDLE_PUBLISHER["id"],
         "authority": governance["authority"],
@@ -2061,6 +2611,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "sources": len(source_counts),
             "standards": standards_evaluation["standardCount"],
             "providerDatapacks": len(provider_datapacks),
+            "okfConcepts": okf_conformance["conceptCount"],
         },
         "scope": {
             "kind": "metadata-only-ons-discovery-demonstrator",
@@ -2081,6 +2632,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "governance": "data/governance/release.json",
             "context_set": "data/governance/context-set.json",
             "provider_datapacks": "data/providers/manifest.json",
+            "okf_index": "index.md",
+            "okf_conformance": "data/standards/okf-v0.2.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
             "viewer": EXPLORER_ROOT,
@@ -2092,6 +2645,15 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             }
         },
         "extensions": {
+            "okf-core.v0.2": {
+                "entrypoint": "okf_index",
+                "conformance": "okf_conformance",
+                "status": okf_conformance["status"],
+                "unknown_fields_allowed": True,
+                "legacy_v0_1_timestamp_fallback": True,
+                "legacy_v0_1_citations_fallback": True,
+                "human_verification_recorded": False,
+            },
             "okf-ons-discovery.v1": {
                 "mode": "metadata-only-demonstrator",
                 "all_ons_metadata_claim": False,
@@ -2156,12 +2718,6 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
     }
     writer.write_json("okf-explorer.json", descriptor)
-    writer.write_text(
-        "index.md",
-        "# ONS data discovery OKF\n\n"
-        "Metadata-only demonstrator. Open `okf-explorer.json` in OKF Explorer or "
-        "use the GitHub Pages discovery interface.\n",
-    )
     checksums = writer.checksums()
     writer.write_json("checksums.json", checksums)
     return {

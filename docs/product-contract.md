@@ -1,5 +1,19 @@
 # Product contract
 
+## Format contract
+
+The public bundle has a canonical OKF 0.2 Markdown entrypoint at `index.md`.
+The typed concepts carry structured provenance, generation and lifecycle
+metadata while the large-corpus descriptor, shards, YAML-LD, federation,
+facets, checksums and provider datapacks remain additive Explorer extensions.
+Consumers must tolerate unknown types and fields.
+
+The producer preserves the v0.1 `timestamp` and `# Citations` fallbacks during
+migration. It does not emit `verified` or `stale_after` without an evidenced
+verification event or governed freshness date. Structural conformance and
+checksum validation are not human review, statistical assurance or runtime
+attestation.
+
 ## Outcome
 
 A user should be able to start with an intent such as “local authority
