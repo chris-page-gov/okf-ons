@@ -4,6 +4,28 @@ All notable release changes are recorded here. This project follows semantic
 versioning while it remains experimental; before `1.0.0`, a minor version may
 include consumer migrations that would be breaking in a stable release.
 
+## Unreleased
+
+### Added
+
+- Add a canonical OKF 0.2 Markdown layer rooted at `index.md`, with typed
+  concepts for the catalogue, governed snapshot, source lanes, provider state,
+  governance, standards and non-executing MCP selection.
+- Add a dependency-free producer conformance checker and a machine-readable
+  conformance report with concept, lifecycle and derived trust-tier counts.
+- Register the pinned OKF 0.2 specification as a separately evaluated
+  technical recommendation.
+
+### Changed
+
+- Preserve the large-corpus Explorer profile, YAML-LD, JSON-LD, federation,
+  facets, provider datapacks and integrity metadata as additive extensions.
+- Emit `generated` and `sources` while retaining legacy `timestamp` and
+  `# Citations` fallbacks for v0.1 consumers.
+- Keep verification and freshness honest: no human `verified` event and no
+  `stale_after` date are emitted without governed evidence.
+- Validate the fully assembled Pages Markdown tree before publication.
+
 ## [0.2.0] - 2026-07-21
 
 First tagged OKF-ONS release and the second public bundle identity.

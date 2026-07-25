@@ -31,6 +31,9 @@ def main() -> int:
         ontology_crosswalk=ROOT / "source" / "ontology-crosswalk.json",
         gold_suite=ROOT / "evaluation" / "gold-queries.json",
         evaluation_aliases=ROOT / "source" / "evaluation-aliases.json",
+        okf_publication=ROOT / "source" / "okf-publication.json",
+        demo_guide=ROOT / "docs" / "demo-guide.md",
+        accessibility_statement=ROOT / "accessibility.md",
     )
     try:
         if arguments.check:

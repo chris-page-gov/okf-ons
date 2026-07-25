@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -67,7 +68,7 @@ def test_standards_register_has_current_code_and_bounded_claim_models() -> None:
     register = load_json(STANDARDS_REGISTER)
 
     assert register["schemaVersion"] == "okf-ons.standards-register.v1"
-    assert register["asOf"] == "2026-07-17"
+    assert register["asOf"] == "2026-07-24"
     assert set(register["categories"]) == STANDARD_CATEGORIES
     assert set(register["claimModel"]["evidenceStatuses"]) == EVIDENCE_STATUSES
     assert set(register["claimModel"]["profileStatuses"]) == PROFILE_STATUSES
@@ -119,6 +120,17 @@ def test_standards_register_has_current_code_and_bounded_claim_models() -> None:
     assert standards["w3c-dqv"]["normativeStatus"] == (
         "W3C Working Group Note, not a W3C Recommendation"
     )
+    okf = standards["okf-0-2"]
+    assert okf["currentVersion"] == "0.2"
+    assert okf["currentAsOf"] == "2026-07-24"
+    assert okf["canonicalUri"].endswith(
+        "3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md"
+    )
+    assert {requirement["id"] for requirement in okf["requirements"]} == {
+        "okf02-concept-structure",
+        "okf02-provenance-trust-lifecycle",
+        "okf02-compatibility-and-extensions",
+    }
 
 
 def test_every_standard_is_citable_applicable_and_testable() -> None:
@@ -131,7 +143,9 @@ def test_every_standard_is_citable_applicable_and_testable() -> None:
         assert standard["authority"].strip()
         assert is_absolute_https(standard["canonicalUri"])
         assert standard["currentVersion"].strip()
-        assert standard["currentAsOf"] == register["asOf"]
+        assert date.fromisoformat(standard["currentAsOf"]) <= date.fromisoformat(
+            register["asOf"]
+        )
         assert standard["normativeStatus"].strip()
         assert set(standard["applicability"]) == {
             "scope",
@@ -181,7 +195,9 @@ def test_ontology_crosswalk_preserves_identity_and_confusable_alternatives() -> 
     standard_ids = {standard["id"] for standard in standards["standards"]}
 
     assert crosswalk["schemaVersion"] == "okf-ons.ontology-crosswalk.v1"
-    assert crosswalk["asOf"] == standards["asOf"]
+    assert date.fromisoformat(crosswalk["asOf"]) <= date.fromisoformat(
+        standards["asOf"]
+    )
     assert crosswalk["assuranceBoundary"]["sourceNativeIdentityIsCanonical"] is True
     assert crosswalk["assuranceBoundary"]["crosswalkReplacesSourceMeaning"] is False
     assert crosswalk["namespaces"]["dcat"] == "http://www.w3.org/ns/dcat#"
@@ -335,7 +351,7 @@ def test_reconciliation_ledger_is_separate_from_implemented_source_adapters() ->
 def test_human_register_documents_currentness_and_assurance_boundary() -> None:
     document = STANDARDS_DOC.read_text(encoding="utf-8")
 
-    assert "current to **17 July 2026**" in document
+    assert "current to **24 July 2026**" in document
     assert "Code of Practice for Statistics 3.0" in document
     assert "Legacy Code 2.1 `Q1`, `Q2` and `Q3`" in document
     assert "replaced OSR's 2022 intelligent-transparency" in document

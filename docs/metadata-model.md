@@ -1,5 +1,28 @@
 # Metadata model
 
+## Portable OKF 0.2 layer
+
+The canonical portable layer starts at `bundle/index.md` with
+`okf_version: "0.2"`. It contains typed Markdown concepts for the catalogue,
+frozen snapshot, bounded sources, governance, standards, provider state and
+non-executing MCP selection. Each concept carries:
+
+- `generated.by` and the checked-in last meaningful publication change in
+  `generated.at`;
+- `sources` with concrete external or bundle-relative resources;
+- an explicit lifecycle `status`; and
+- additive v0.1 `timestamp` and `# Citations` fallbacks.
+
+`verified` is absent because no evidenced verification event has been
+recorded. `stale_after` is absent because the governed freshness policy is
+currently undefined. Consumers derive these states from absence rather than
+turning deterministic compilation into a human review claim.
+
+Dataset shards, resources, relationships, static search, facets, JSON-LD,
+YAML-LD, federation, checksums and provider datapacks are large-corpus
+Explorer extensions. They preserve every subsequent project capability while
+remaining outside the permissive OKF core conformance gate.
+
 ## Stable identity
 
 Identifiers are source-qualified and never inferred from display titles:

@@ -5,6 +5,14 @@ contains from a separately reviewed external service state. They are
 presentation and evidence sidecars: they do not replace record metadata, fetch
 live data or authorise execution.
 
+The OKF 0.2 Markdown projection at
+[`concepts/provider-datapack.md`](https://chris-page-gov.github.io/okf-ons/concepts/provider-datapack.md)
+surfaces the same governed snapshot, reviewed source revision, comparison
+status and last-checked date. Its `sources` point to the digest-bound pack and
+reviewed upstream commit. It deliberately has no `verified` or `stale_after`
+claim: dated review evidence is neither human verification nor a current live
+check.
+
 ## Published contract
 
 The bundle descriptor exposes `entrypoints.provider_datapacks`, while
