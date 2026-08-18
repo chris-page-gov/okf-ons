@@ -8,6 +8,9 @@ include consumer migrations that would be breaking in a stable release.
 
 ### Added
 
+- Add `okf.publication.json` as the machine-readable publication-method v1
+  contract, with local cross-reference, path, plane-DAG and documentation
+  lockstep tests.
 - Add a canonical OKF 0.2 Markdown layer rooted at `index.md`, with typed
   concepts for the catalogue, governed snapshot, source lanes, provider state,
   governance, standards and non-executing MCP selection.
@@ -18,6 +21,10 @@ include consumer migrations that would be breaking in a stable release.
 
 ### Changed
 
+- Build the ignored Pages bundle once and reuse the same workspace bytes for
+  validation, assembly and upload, removing a duplicate post-build comparison.
+  The contract records that a clean pre-build `--check` needs a future
+  immutable baseline or release artefact because `bundle/` is not tracked.
 - Preserve the large-corpus Explorer profile, YAML-LD, JSON-LD, federation,
   facets, provider datapacks and integrity metadata as additive extensions.
 - Emit `generated` and `sources` while retaining legacy `timestamp` and

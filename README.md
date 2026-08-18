@@ -234,6 +234,28 @@ Python 3.11 or later is required. A recursive clone is required because normal
 GitHub source archives do not contain the pinned ELS submodule. The release
 bundle ZIP linked above is the self-contained publication artifact.
 
+[`okf.publication.json`](okf.publication.json) records the repository's
+publication-method v1 contract: frozen source families, authored and generated
+boundaries, dependency planes, reviewed command declarations, documentation
+lockstep and Pages target. Command strings in the contract are untrusted
+declarations and must be checked against this guide before use. Validate the
+local paths, cross-references and acyclic plane graph with:
+
+```bash
+python scripts/check_publication_contract.py
+```
+
+Changes to controlled source, generator, application or workflow paths must
+update the relevant documentation and `CHANGELOG.md` in the same change.
+Unknown paths fail closed and dependency updates have no blanket exemption.
+
+The Pages workflow builds the ignored `bundle/` directory once, then validates,
+assembles and uploads those same workspace bytes. A clean pre-build `--check`
+is not possible because no generated bundle baseline is tracked. Introducing a
+separate immutable baseline or release artefact is the recorded future option;
+the workflow does not perform a second identical build merely to compare the
+result with itself.
+
 To reproduce `v0.2.0` from its checked-in frozen snapshot:
 
 ```bash

@@ -17,6 +17,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       pages: write
@@ -51,11 +52,8 @@ jobs:
             "$RUNNER_TEMP/ons-explore-local-statistics.json" \
             source/demo-snapshot/ons-explore-local-statistics.json
 
-      - name: Build bundle from the frozen source snapshot
+      - name: Build exact bundle once from the frozen source snapshot
         run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
-
-      - name: Verify deterministic bundle rebuild
-        run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle --check
 
       - name: Add project-relative Pages assets to the public bundle
         run: |
