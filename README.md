@@ -260,7 +260,7 @@ declarations and must be checked against this guide before use. Validate the
 local paths, cross-references and acyclic plane graph with:
 
 ```bash
-python scripts/check_publication_contract.py
+.venv/bin/python scripts/check_publication_contract.py
 ```
 
 Changes to controlled source, generator, application or workflow paths must

@@ -73,7 +73,8 @@
       "Similarity assertions are inferred discovery aids and never assert statistical identity or equivalence.",
       "Cross-source representation assertions normalise shared declared table-code evidence without asserting statistical equivalence.",
       "Rights remain mixed at record level; records whose source rights have not been evaluated remain explicitly not-evaluated.",
-      "The root YAML-LD and JSON-LD documents are compact semantic descriptors; the complete graph is carried by digest-bound gzip JSON-LD entity and assertion shards."
+      "The root YAML-LD and JSON-LD documents are compact semantic descriptors; the complete graph is carried by digest-bound gzip JSON-LD entity and assertion shards.",
+      "Compatibility chunks are retained; the separate bounded rich Reader runtime and SHA-256 route locator are not yet published. This release does not claim bounded rich browser hydration."
     ],
     "outputs": [
       {

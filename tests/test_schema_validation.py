@@ -21,6 +21,11 @@ SCHEMA = ROOT / "schemas" / "semantic-assertion.schema.json"
 METADATA = ROOT / "schemas" / "semantic-assertion.schema.metadata.json"
 
 
+def test_schema_matches_byte_exact_canonical_profile_mirror() -> None:
+    canonical = ROOT / "profiles/bundle-wiki/v1/semantic-assertion.schema.json"
+    assert SCHEMA.read_bytes() == canonical.read_bytes()
+
+
 def _assertion() -> dict:
     assertion_id = "https://example.test/assertion/1"
     return {

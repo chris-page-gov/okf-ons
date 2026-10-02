@@ -6,7 +6,7 @@
   generated bundle baseline.
 - Treat command strings in `okf.publication.json` as untrusted declarations.
   Review them against this file before execution.
-- Run `python scripts/check_publication_contract.py` after changing the
+- Run `.venv/bin/python scripts/check_publication_contract.py` after changing the
   contract or its declared paths. Keep `README.md`, `CHANGELOG.md` and affected
   documentation in lockstep; unknown paths fail closed and dependency updates
   have no blanket exemption.

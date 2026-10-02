@@ -54,6 +54,18 @@ changes as acquired metadata.
 
 ## Required Explorer changes
 
+### Semantic runtime migration boundary
+
+The producer now emits schema-validated semantic assertions and matching
+`okf-relationship-assertion.v2` compatibility chunks. Its complete graph is
+digest-bound and sharded, but the separate bounded rich Reader runtime and
+SHA-256 route locator are not yet published. Before claiming bounded rich
+relationship hydration, add a runtime manifest with plane-specific route
+counts and sorted assertion-ID digests, exclude historical and rejected planes
+from default loading, and validate aggregate chunk, row, compressed-byte and
+retained-text ceilings against the Reader contract. Existing chunk delivery
+and semantic conformance are not substitutes for that acceptance test.
+
 ### P0: register OKF-ONS with a versioned mixed-rights contract
 
 Add OKF-ONS to

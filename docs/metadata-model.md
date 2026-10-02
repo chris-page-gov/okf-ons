@@ -73,6 +73,12 @@ endpoints back to semantic IRIs. The digest-bound result is published as
 Semantic gzip shards use a canonical RFC 1952 mtime-zero, OS-255 header rather
 than Python's platform-sensitive `gzip.compress` fast path.
 
+This release retains the existing compatibility relationship chunks. It does
+not yet provide the Reader's separate bounded rich-relationship runtime and
+SHA-256 route locator, so semantic conformance must not be presented as proof
+of bounded browser hydration or first-class rich relationship presentation.
+That consumer migration is tracked in the Explorer handoff.
+
 `alternative` and `cross-source-alternative` are inferred, discovery-only
 relationships. Their scores help rank candidates but never increase authority
 or assert statistical equivalence. `cross-source-representation` is normalised
