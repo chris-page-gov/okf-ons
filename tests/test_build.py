@@ -357,7 +357,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "validationFailures": 0,
     }
     assert semantic_validation["schemaBinding"]["sha256"] == (
-        "307e59c5a3b1f502d50c7d82233a330e6919634b7b57fbdaed96a6a6a290af52"
+        "f69480328db4b64d678d9c50b6534d808000f7fb50a30e8cc9e3bf2facbcb8bc"
     )
     assert semantic_bundle["semanticGraph"]["manifestSha256"] == hashlib.sha256(
         semantic_manifest_bytes
