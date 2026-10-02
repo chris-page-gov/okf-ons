@@ -1,6 +1,6 @@
 {
   "schema": "okf-repository-publication-contract.v1",
-  "modified": "2026-08-18",
+  "modified": "2026-10-02",
   "locale": "en-GB",
   "time_zone": "Europe/London",
   "repository": {
@@ -11,7 +11,7 @@
     "lifecycle": "active"
   },
   "semantic_contract": {
-    "path": "source/ontology-crosswalk.json",
+    "path": "okf.semantic.json",
     "profile": "https://chris-page-gov.github.io/okf-ons/okf-bundle.yamlld"
   },
   "source_families": [
@@ -101,6 +101,9 @@
       {"path": "AGENTS.md", "role": "policy"},
       {"path": "CHANGELOG.md", "role": "changelog"},
       {"path": "okf.publication.json", "role": "publication-contract", "source_family_id": "ons-publication-controls"},
+      {"path": "okf.semantic.json", "role": "semantic-contract", "source_family_id": "ons-publication-controls"},
+      {"path": "schemas/**", "role": "policy", "source_family_id": "ons-publication-controls"},
+      {"path": "profiles/**", "role": "policy", "source_family_id": "ons-publication-controls"},
       {"path": ".github/workflows/**", "role": "workflow"}
     ],
     "generated": [
@@ -113,7 +116,7 @@
     ]
   },
   "planes": [
-    {"id": "source", "depends_on": [], "paths": ["okf.publication.json", "source/**", "evaluation/**", "src/**", "scripts/**", "tests/**"], "command_ids": ["acquire-snapshot", "check-publication-contract"]},
+    {"id": "source", "depends_on": [], "paths": ["okf.publication.json", "okf.semantic.json", "schemas/**", "profiles/**", "source/**", "evaluation/**", "src/**", "scripts/**", "tests/**"], "command_ids": ["acquire-snapshot", "check-publication-contract"]},
     {"id": "semantic", "depends_on": ["source"], "paths": ["source/ontology-crosswalk.json", "bundle/okf-bundle.yamlld", "bundle/okf-bundle.jsonld"], "command_ids": ["build-bundle", "check-bundle"]},
     {"id": "runtime", "depends_on": ["semantic"], "paths": ["bundle/data/**", "bundle/concepts/**", "bundle/index.md"], "command_ids": ["build-bundle", "check-bundle", "check-okf"]},
     {"id": "documentation", "depends_on": ["source"], "paths": ["README.md", "AGENTS.md", "CHANGELOG.md", "docs/**", "accessibility.md"], "command_ids": ["check-publication-contract"]},
@@ -136,7 +139,7 @@
     ]
   },
   "lockstep": {
-    "controlled_paths": ["okf.publication.json", "source/**", "evaluation/**", "src/**", "scripts/**", "pages/**", ".github/workflows/**"],
+    "controlled_paths": ["okf.publication.json", "okf.semantic.json", "schemas/**", "profiles/**", "source/**", "evaluation/**", "src/**", "scripts/**", "pages/**", ".github/workflows/**"],
     "documentation_paths": ["README.md", "AGENTS.md", "docs/**", "accessibility.md"],
     "changelog_path": "CHANGELOG.md",
     "check_command_id": "check-publication-contract",

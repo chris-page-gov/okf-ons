@@ -8,9 +8,27 @@ include consumer migrations that would be breaking in a stable release.
 
 ### Added
 
+- Mirror the canonical Explorer v0.6.0 Bundle Wiki v1 profile byte for byte
+  with its vendor lock and refresh the semantic schema pins to that release.
 - Add `okf.publication.json` as the machine-readable publication-method v1
   contract, with local cross-reference, path, plane-DAG and documentation
   lockstep tests.
+- Vendor and SHA-256 pin the exact Explorer Draft 2020-12 semantic-assertion
+  schema, exhaustively validate every semantic assertion and semantic-mapped
+  runtime row offline, and publish a digest-bound conformance receipt.
+- Add negative schema-conformance fixtures and a cross-version canonical gzip
+  regression vector.
+
+- Add one deterministic relationship compiler that emits absolute semantic
+  identities and predicates, local Explorer routes, matching direct triples,
+  evidence-bearing `rdf:Statement`/`okf:RelationshipAssertion` nodes and rich
+  `okf-relationship-assertion.v2` runtime rows.
+- Add fail-closed parity checks across the semantic and runtime relationship
+  planes, including stable assertion identities, authority, derivation,
+  source-specific evidence, observation time and mixed record-level rights.
+- Publish the complete semantic graph as digest-bound gzip JSON-LD entity and
+  assertion shards behind compact YAML-LD/JSON-LD descriptors, with a
+  whole-manifest triple-set reconciliation digest and a per-file size gate.
 - Add a canonical OKF 0.2 Markdown layer rooted at `index.md`, with typed
   concepts for the catalogue, governed snapshot, source lanes, provider state,
   governance, standards and non-executing MCP selection.
@@ -21,10 +39,19 @@ include consumer migrations that would be breaking in a stable release.
 
 ### Changed
 
+- Ignore local Obsidian settings without deleting them.
 - Build the ignored Pages bundle once and reuse the same workspace bytes for
   validation, assembly and upload, removing a duplicate post-build comparison.
   The contract records that a clean pre-build `--check` needs a future
   immutable baseline or release artefact because `bundle/` is not tracked.
+- Make semantic gzip shards byte-identical across supported Python versions by
+  fixing the full RFC 1952 header, including mtime and OS bytes.
+- Standardise local, contract and CI commands on `uv sync --locked --extra test`
+  followed by the repository `.venv/bin/python` interpreter.
+
+- Classify deterministic similarity as an inferred, discovery-only
+  relationship rather than equivalence, while keeping shared-table-code
+  reconciliation normalised and explicitly non-equivalent.
 - Preserve the large-corpus Explorer profile, YAML-LD, JSON-LD, federation,
   facets, provider datapacks and integrity metadata as additive extensions.
 - Emit `generated` and `sources` while retaining legacy `timestamp` and

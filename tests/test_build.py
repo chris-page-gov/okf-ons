@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import sys
@@ -9,8 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from okf_ons import __version__  # noqa: E402
-from okf_ons.build import canonical_json, check_bundle, compile_bundle, default_inputs  # noqa: E402
+from okf_ons.build import (  # noqa: E402
+    MAX_PUBLIC_FILE_BYTES,
+    canonical_json,
+    check_bundle,
+    compile_bundle,
+    default_inputs,
+)
 from okf_ons.okf import OKF_SPECIFICATION, OKF_VERSION, validate_okf_bundle  # noqa: E402
+from okf_ons.semantic import RELATIONSHIP_ASSERTION  # noqa: E402
 
 
 def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
@@ -66,6 +74,8 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "okf-bundle.jsonld",
         "okf-bundle.yamlld",
         "data/manifest.json",
+        "data/semantic/manifest.json",
+        "data/semantic/validation.json",
         "data/search/manifest.json",
         "data/demo/contrast-records.json",
         "data/coverage/ledger.json",
@@ -100,6 +110,19 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert data_manifest["snapshot"] == descriptor["snapshot"]
     assert overview["snapshot"] == descriptor["snapshot"]
     assert analysis["snapshot"] == descriptor["snapshot"]
+    relationship_semantics = data_manifest["relationshipSemantics"]
+    expected_relationship_semantics = {
+        "schema": "okf-relationship-assertion.v2",
+        "authoritativeProjection": "okf-bundle.yamlld",
+        "directTriplePolicy": "generated-from-one-assertion-source",
+        "predicatePolicy": "absolute-iri",
+        "assertionCount": descriptor["counts"]["relationships"],
+        "similarityPolicy": "inferred-discovery-only-not-equivalence",
+    }
+    assert all(
+        relationship_semantics[key] == value
+        for key, value in expected_relationship_semantics.items()
+    )
     assert descriptor["entrypoints"]["provider_datapacks"] == (
         "data/providers/manifest.json"
     )
@@ -313,18 +336,130 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert semantic_bundle["publisher"] == canonical_bundle_publisher_id
     assert semantic_bundle["bundlePublisher"] == canonical_bundle_publisher_id
     assert semantic_bundle["semanticAuthority"] == canonical_bundle_publisher_id
-    assert {
-        row["bundlePublisher"] for row in semantic_bundle["dataset"]
-    } == {canonical_bundle_publisher_id}
-    assert {
-        row["semanticAuthority"] for row in semantic_bundle["dataset"]
-    } == {canonical_bundle_publisher_id}
+    assert "@graph" not in semantic_bundle
+    assert len(semantic_bundle["dataset"]) == descriptor["counts"]["records"]
+    semantic_manifest_path = output / "data/semantic/manifest.json"
+    semantic_manifest_bytes = semantic_manifest_path.read_bytes()
+    semantic_manifest = json.loads(semantic_manifest_bytes)
+    semantic_validation_path = output / semantic_manifest["validation"]["path"]
+    semantic_validation_bytes = semantic_validation_path.read_bytes()
+    semantic_validation = json.loads(semantic_validation_bytes)
+    assert semantic_manifest["compression"] == (
+        "gzip-rfc1952-canonical-mtime-zero-os-255"
+    )
+    assert semantic_manifest["validation"]["status"] == "conformant"
+    assert semantic_manifest["validation"]["sha256"] == hashlib.sha256(
+        semantic_validation_bytes
+    ).hexdigest()
+    assert semantic_validation["counts"] == {
+        "semanticAssertionsValidated": descriptor["counts"]["relationships"],
+        "runtimeRowsMappedAndValidated": descriptor["counts"]["relationships"],
+        "validationFailures": 0,
+    }
+    assert semantic_validation["schemaBinding"]["sha256"] == (
+        "307e59c5a3b1f502d50c7d82233a330e6919634b7b57fbdaed96a6a6a290af52"
+    )
+    assert semantic_bundle["semanticGraph"]["manifestSha256"] == hashlib.sha256(
+        semantic_manifest_bytes
+    ).hexdigest()
+    assert semantic_bundle["semanticGraph"]["tripleSetSha256"] == (
+        semantic_manifest["reconciliation"]["tripleSetSha256"]
+    )
+
+    semantic_shard_nodes: dict[str, list[dict]] = {}
+    for family in ("entities", "assertions"):
+        nodes: list[dict] = []
+        for shard in semantic_manifest["shards"][family]:
+            compressed = (output / shard["path"]).read_bytes()
+            assert compressed[:10] == b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff"
+            assert hashlib.sha256(compressed).hexdigest() == shard["sha256"]
+            uncompressed = gzip.decompress(compressed)
+            assert hashlib.sha256(uncompressed).hexdigest() == shard["uncompressedSha256"]
+            document = json.loads(uncompressed)
+            assert document["snapshotId"] == descriptor["snapshot"]
+            assert len(document["@graph"]) == shard["nodeCount"]
+            nodes.extend(document["@graph"])
+        semantic_shard_nodes[family] = nodes
+    semantic_datasets = semantic_shard_nodes["entities"]
+    semantic_assertions = [
+        row
+        for row in semantic_shard_nodes["assertions"]
+        if RELATIONSHIP_ASSERTION in row.get("@type", [])
+    ]
+    assert len(semantic_datasets) == descriptor["counts"]["records"]
+    assert len(semantic_assertions) == descriptor["counts"]["relationships"]
+    assert semantic_bundle["relationshipAssertionCount"] == len(semantic_assertions)
+    assert semantic_bundle["directRelationshipTripleCount"] == len(semantic_assertions)
+    assert {row["bundlePublisher"] for row in semantic_datasets} == {
+        canonical_bundle_publisher_id
+    }
+    assert {row["semanticAuthority"] for row in semantic_datasets} == {
+        canonical_bundle_publisher_id
+    }
     assert semantic_bundle["notEndorsedBySource"] is True
     assert semantic_bundle["conformsTo"]
     assert "do not assert" in semantic_bundle["alignmentClaim"]
-    assert all("conformsTo" not in row for row in semantic_bundle["dataset"])
+    assert all("conformsTo" not in row for row in semantic_datasets)
+    relationship_rows = [
+        row
+        for path in data_manifest["chunks"]["relationships"]
+        for row in json.loads((output / path).read_text())
+    ]
+    assert len(relationship_rows) == len(semantic_assertions)
+    required_relationship_fields = {
+        "id",
+        "source",
+        "target",
+        "source_iri",
+        "target_iri",
+        "predicate",
+        "kind",
+        "label",
+        "inverse_label",
+        "assertion_status",
+        "assertion_scope",
+        "authority",
+        "derivation",
+        "observed_at",
+        "evidence",
+        "rights",
+    }
+    assert all(required_relationship_fields <= set(row) for row in relationship_rows)
+    assert {row["schema"] for row in relationship_rows} == {
+        "okf-relationship-assertion.v2"
+    }
+    assert all(row["statistical_equivalence_asserted"] is False for row in relationship_rows)
+    assertion_triples = {
+        (row["source"], row["predicate"], row["target"])
+        for row in semantic_assertions
+    }
+    runtime_triples = {
+        (row["source_iri"], row["predicate"], row["target_iri"])
+        for row in relationship_rows
+    }
+    assert assertion_triples == runtime_triples
+    direct_triples = {
+        (row["@id"], predicate, target["@id"])
+        for row in semantic_datasets
+        for predicate, targets in row.items()
+        if predicate.startswith(("http://", "https://")) and isinstance(targets, list)
+        for target in targets
+        if isinstance(target, dict) and target.get("@id")
+    }
+    assert direct_triples == runtime_triples
+    assert semantic_manifest["reconciliation"] == {
+        "status": "passed",
+        "policy": "whole-manifest-direct-runtime-reified-triple-equality",
+        "tripleSetSha256": relationship_semantics["tripleSetSha256"],
+        "directTripleSetSha256": relationship_semantics["tripleSetSha256"],
+        "runtimeTripleSetSha256": relationship_semantics["tripleSetSha256"],
+        "reifiedTripleSetSha256": relationship_semantics["tripleSetSha256"],
+        "statisticalEquivalenceInferredFromSimilarity": False,
+    }
     context = json.loads((output / "context/okf-ons.jsonld").read_text())["@context"]
     assert context["qb"] == "http://purl.org/linked-data/cube#"
+    assert context["okf"] == "https://chris-page-gov.github.io/okf-explorer/ns#"
+    assert context["ons"] == "https://chris-page-gov.github.io/okf-ons/vocab/"
     assert "sdmx" not in context
     assert context["dataset"] == {"@id": "dcat:dataset", "@type": "@id"}
     assert context["contextSet"] == {"@id": "okf:contextSet", "@type": "@id"}
@@ -413,11 +548,29 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "legacy_v0_1_citations_fallback": True,
         "human_verification_recorded": False,
     }
+    assert descriptor["extensions"]["okf-semantic-relationships.v1"] == {
+        "entrypoint": "semantic_descriptor",
+        "manifest_entrypoint": "semantic_manifest",
+        "runtime_entrypoint": "data_manifest",
+        "assertion_count": descriptor["counts"]["relationships"],
+        "direct_triples_generated": True,
+        "reified_assertions_generated": True,
+        "predicate_policy": "absolute-iri",
+        "representation": "gzip-json-ld-graph-shards",
+        "triple_set_sha256": relationship_semantics["tripleSetSha256"],
+        "similarity_is_discovery_not_equivalence": True,
+    }
+    semantic_integrity = descriptor["entrypoint_integrity"]["semantic_manifest"]
+    assert semantic_integrity == {
+        "path": "data/semantic/manifest.json",
+        "sha256": relationship_semantics["manifestSha256"],
+    }
 
     checksums = json.loads((output / "checksums.json").read_text())
     for row in checksums["files"]:
         data = (output / row["path"]).read_bytes()
         assert hashlib.sha256(data).hexdigest() == row["sha256"]
+        assert len(data) <= MAX_PUBLIC_FILE_BYTES
 
 
 def test_public_bundle_has_no_credentials_or_machine_paths(tmp_path: Path) -> None:

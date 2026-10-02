@@ -36,8 +36,50 @@ Identifiers are source-qualified and never inferred from display titles:
 - `ons-open-geography:dataset:{item-id}`
 - `ons-explore-local-statistics:indicator:{indicator-slug}`
 
-Cross-source equivalence is represented by a relationship with evidence; it
-does not replace native identity.
+Cross-source correspondence is represented by a relationship with evidence;
+it does not replace native identity or assert statistical equivalence.
+
+## Directed relationship assertions
+
+The relationship authority is the deterministic compiler in
+`src/okf_ons/semantic.py`. Source-specific adapters retain their narrow
+observations; the compiler assigns each material directed relationship:
+
+- a stable assertion IRI and absolute source, predicate and target IRIs;
+- validated local Explorer source and target routes;
+- preferred and inverse labels, status and real-world scope;
+- qualified derived authority, rule and build activity;
+- a governed observation time and source-specific evidence hashes;
+- mixed record-level rights without manufacturing a bundle-wide licence; and
+- the original contrast fields, shared terms and equivalence boundary.
+
+The same normalised row emits the route-sharded
+`okf-relationship-assertion.v2` projection, a direct RDF triple and a reified
+`rdf:Statement`/`okf:RelationshipAssertion` in the semantic graph. Compact
+YAML-LD and JSON-LD roots describe a digest-bound manifest; the full graph is
+split into bounded, deterministic gzip JSON-LD entity and assertion shards.
+Each manifest row records compressed and uncompressed hashes and counts, while
+the manifest records one canonical triple-set digest for direct, runtime and
+reified projections. The build validates exact whole-manifest triple and count
+parity before writing any semantic descriptor.
+
+The producer vendors the exact Explorer Draft 2020-12 assertion schema at
+`schemas/semantic-assertion.schema.json` and pins its bytes and source metadata.
+The offline build validator supports every keyword used by that schema and
+fails closed if a future schema introduces an unsupported keyword. It validates
+all reified assertion nodes and all runtime rows after mapping their local-route
+endpoints back to semantic IRIs. The digest-bound result is published as
+`data/semantic/validation.json` before the semantic manifest is written.
+Semantic gzip shards use a canonical RFC 1952 mtime-zero, OS-255 header rather
+than Python's platform-sensitive `gzip.compress` fast path.
+
+`alternative` and `cross-source-alternative` are inferred, discovery-only
+relationships. Their scores help rank candidates but never increase authority
+or assert statistical equivalence. `cross-source-representation` is normalised
+from a shared declared table code; it likewise does not assert that the two
+statistical products are equivalent. Geography vintages, methodology limits,
+applicability states and source-specific evidence remain on the related
+records and are exposed through the retained contrast differences.
 
 ## Record layers
 

@@ -42,6 +42,8 @@ The interaction is **browse → reduce → compare → configure → execute**.
 
 Every alternative relationship records:
 
+- a stable assertion IRI, absolute source, predicate and target IRIs, and
+  separately validated local source and target routes;
 - a deterministic similarity score and the fields that caused it;
 - shared subject concepts;
 - source surface and native identifier;
@@ -54,6 +56,18 @@ Every alternative relationship records:
   stronger distinction.
 
 Title similarity alone is never evidence that datasets are equivalent.
+Similarity assertions are therefore marked `inferred` and `discovery_only`.
+Their authority remains derived regardless of confidence. Each runtime row is
+generated with the matching direct semantic triple and an evidence-bearing
+`rdf:Statement` plus `okf:RelationshipAssertion`; the build fails when those
+three projections disagree. The compact root YAML-LD/JSON-LD documents point
+to a digest-bound semantic manifest. That manifest enumerates bounded gzip
+JSON-LD entity and assertion shards, their compressed and uncompressed hashes,
+and one whole-graph digest proving direct, runtime and reified triple parity.
+Before that manifest can state conformance, all assertion nodes and
+semantic-mapped runtime rows must pass the exact locally vendored, digest-pinned
+Explorer Draft 2020-12 assertion schema. The validation receipt and schema
+binding are themselves checksum-bound publication outputs.
 
 ## Statistical-quality contract
 

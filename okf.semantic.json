@@ -1,0 +1,146 @@
+{
+  "okf_core": {
+    "specification": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md",
+    "status": "conformant",
+    "version": "0.2"
+  },
+  "reader": {
+    "consumer": "https://chris-page-gov.github.io/okf-explorer/",
+    "delivery": "json-large-corpus-chunks",
+    "preserves": [
+      "direction",
+      "semantic-identities",
+      "local-routes",
+      "predicate",
+      "relationship-kind",
+      "preferred-and-inverse-labels",
+      "assertion-status-and-scope",
+      "authority",
+      "derivation",
+      "supporting-assertions",
+      "confidence",
+      "review-status",
+      "evidence",
+      "rights",
+      "freshness",
+      "lifecycle"
+    ]
+  },
+  "relationship_contract": {
+    "authoring": "generated-yaml-ld-sharded-assertion-graph",
+    "direct_triple_policy": "generated-from-one-assertion-source-across-pinned-shards",
+    "predicate_policy": "absolute-iri",
+    "required_fields": [
+      "id",
+      "source",
+      "target",
+      "source_iri",
+      "target_iri",
+      "predicate",
+      "kind",
+      "label",
+      "inverse_label",
+      "assertion_status",
+      "assertion_scope",
+      "authority",
+      "derivation",
+      "observed_at",
+      "evidence",
+      "rights"
+    ],
+    "schema": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/semantic-assertion.schema.json"
+  },
+  "repository": {
+    "name": "okf-ons",
+    "role": "large-corpus-producer",
+    "root_index": "bundle/index.md"
+  },
+  "schema": "okf-repository-semantic-contract.v1",
+  "semantic_layer": {
+    "authoritative_inputs": [
+      "source/",
+      "src/okf_ons/model.py",
+      "src/okf_ons/semantic.py",
+      "src/okf_ons/schema_validation.py",
+      "schemas/semantic-assertion.schema.json",
+      "schemas/semantic-assertion.schema.metadata.json",
+      "scripts/build_bundle.py"
+    ],
+    "context_policy": "pinned-local-contexts-no-browser-remote-expansion",
+    "identity_policy": "absolute-semantic-iri-plus-validated-local-route",
+    "limitations": [
+      "Source-specific evidence semantics remain authoritative; semantic vocabulary alignment is not statistical certification.",
+      "Similarity assertions are inferred discovery aids and never assert statistical identity or equivalence.",
+      "Cross-source representation assertions normalise shared declared table-code evidence without asserting statistical equivalence.",
+      "Rights remain mixed at record level; records whose source rights have not been evaluated remain explicitly not-evaluated.",
+      "The root YAML-LD and JSON-LD documents are compact semantic descriptors; the complete graph is carried by digest-bound gzip JSON-LD entity and assertion shards."
+    ],
+    "outputs": [
+      {
+        "generated": true,
+        "path": "bundle/okf-bundle.yamlld",
+        "required": true,
+        "role": "semantic-yaml-ld"
+      },
+      {
+        "generated": true,
+        "path": "bundle/okf-bundle.jsonld",
+        "required": true,
+        "role": "semantic-json-ld"
+      },
+      {
+        "generated": true,
+        "path": "bundle/data/semantic/manifest.json",
+        "required": true,
+        "role": "semantic-manifest"
+      },
+      {
+        "generated": true,
+        "path": "bundle/data/semantic/*.jsonld.gz",
+        "required": true,
+        "role": "semantic-json-ld-shards"
+      },
+      {
+        "generated": false,
+        "path": "schemas/semantic-assertion.schema.json",
+        "required": true,
+        "role": "relationship-schema"
+      },
+      {
+        "generated": true,
+        "path": "bundle/data/semantic/validation.json",
+        "required": true,
+        "role": "semantic-validation"
+      },
+      {
+        "generated": true,
+        "path": "bundle/okf-explorer.json",
+        "required": true,
+        "role": "explorer-runtime"
+      },
+      {
+        "generated": true,
+        "path": "bundle/data/relationships-*.json",
+        "required": true,
+        "role": "relationship-runtime"
+      }
+    ],
+    "profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/",
+    "state": "generated-yaml-ld-sharded-graph"
+  },
+  "tooling": {
+    "build": [
+      ".venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle"
+    ],
+    "check": [
+      ".venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle --check",
+      ".venv/bin/python scripts/check_okf_v02.py bundle",
+      ".venv/bin/python -m pytest -q",
+      ".venv/bin/python -m ruff check .",
+      ".venv/bin/python ../okf-explorer/scripts/reconcile_okf_repositories.py --repo . --strict"
+    ],
+    "setup": [
+      "uv sync --locked --extra test"
+    ]
+  }
+}
