@@ -1,0 +1,9 @@
+{
+  "schema": "okf-ons-vendored-schema-metadata.v1",
+  "source": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/semantic-assertion.schema.json",
+  "source_repository_path": "profiles/bundle-wiki/v1/semantic-assertion.schema.json",
+  "draft": "https://json-schema.org/draft/2020-12/schema",
+  "sha256": "f69480328db4b64d678d9c50b6534d808000f7fb50a30e8cc9e3bf2facbcb8bc",
+  "vendored_on": "2026-10-02",
+  "network_resolution_allowed": false
+}

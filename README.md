@@ -45,6 +45,22 @@ additive Explorer extensions. New concepts also retain the v0.1 `timestamp`
 and `# Citations` fallbacks so older consumers can continue best-effort
 discovery while v0.2 consumers prefer `generated` and `sources`.
 
+The additive semantic profile now generates all directed relationships once
+as rich `okf-relationship-assertion.v2` rows, then projects the same assertions
+to direct JSON-LD triples and evidence-bearing reified statements. Compact
+YAML-LD/JSON-LD descriptors lead to a digest-bound manifest and bounded gzip
+JSON-LD entity/assertion shards, avoiding a monolithic publication file while
+retaining whole-graph reconciliation.
+The exact Explorer Draft 2020-12 semantic-assertion schema is vendored and
+SHA-256 pinned under `schemas/`. Every semantic assertion and every runtime row
+mapped to semantic endpoints is validated exhaustively and offline before the
+semantic manifest can report conformance. The validation receipt is published
+at `data/semantic/validation.json`. Gzip shards use a canonical mtime-zero,
+OS-255 RFC 1952 header so Python and platform versions produce identical bytes.
+Explorer routes remain separate from absolute semantic identities. Similarity
+is explicitly inferred and discovery-only; neither a score nor a shared table
+code asserts statistical equivalence, source endorsement or certification.
+
 ## Access and documentation
 
 These are the canonical entry points for the Pages deployment from `main`.
@@ -230,7 +246,9 @@ Source attribution does not imply endorsement by ONS or another producer.
 
 ## Build
 
-Python 3.11 or later is required. A recursive clone is required because normal
+Python 3.11 or later and uv 0.12.2 are required. The uv version is enforced by
+`pyproject.toml`; `uv.lock` pins the complete test environment. A recursive clone is
+required because normal
 GitHub source archives do not contain the pinned ELS submodule. The release
 bundle ZIP linked above is the self-contained publication artifact.
 
@@ -242,7 +260,7 @@ declarations and must be checked against this guide before use. Validate the
 local paths, cross-references and acyclic plane graph with:
 
 ```bash
-python scripts/check_publication_contract.py
+.venv/bin/python scripts/check_publication_contract.py
 ```
 
 Changes to controlled source, generator, application or workflow paths must
@@ -256,25 +274,40 @@ separate immutable baseline or release artefact is the recorded future option;
 the workflow does not perform a second identical build merely to compare the
 result with itself.
 
-To reproduce `v0.2.0` from its checked-in frozen snapshot:
+To rebuild the current compiler from the checked-in v0.2.0 frozen snapshot
+(the historical tag predates these semantic and conformance extensions):
 
 ```bash
-git clone --recurse-submodules --branch v0.2.0 \
+git clone --recurse-submodules \
   https://github.com/chris-page-gov/okf-ons.git
 cd okf-ons
-python scripts/project_els_snapshot.py \
+uv sync --locked --extra test
+.venv/bin/python scripts/project_els_snapshot.py \
   --submodule-dir vendor/explore-local-statistics-app \
   --output output/ons-explore-local-statistics.json
 cmp output/ons-explore-local-statistics.json \
   source/demo-snapshot/ons-explore-local-statistics.json
-python scripts/build_bundle.py \
+.venv/bin/python scripts/build_bundle.py \
   --snapshot-dir source/demo-snapshot \
   --output bundle
-python scripts/build_bundle.py \
+.venv/bin/python scripts/build_bundle.py \
   --snapshot-dir source/demo-snapshot \
   --output bundle \
   --check
-python scripts/check_okf_v02.py bundle
+.venv/bin/python scripts/check_okf_v02.py bundle
+.venv/bin/python -m pytest -q
+.venv/bin/python -m ruff check .
+```
+
+The canonical Bundle Wiki v1 profile is mirrored byte for byte under
+`profiles/bundle-wiki/v1/`, with its adjacent vendor lock. The producer pins
+the same semantic-assertion schema and validates every emitted assertion
+offline. Read the [canonical published profile](https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/)
+for explanatory guidance; the mirrored Markdown retains upstream relative links.
+After semantic changes, run the sibling Explorer's strict reconciliation:
+
+```bash
+.venv/bin/python ../okf-explorer/scripts/reconcile_okf_repositories.py --repo . --strict
 ```
 
 The metadata-enrichment campaign also includes immutable successor snapshot
@@ -288,14 +321,14 @@ Explore Local Statistics and Open Geography source envelopes in r6 are
 byte-identical to r5. Rebuild and profile r6 without network access:
 
 ```bash
-python scripts/build_bundle.py \
+.venv/bin/python scripts/build_bundle.py \
   --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle
-python scripts/build_bundle.py \
+.venv/bin/python scripts/build_bundle.py \
   --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle \
   --check
-python scripts/profile_metadata_gaps.py \
+.venv/bin/python scripts/profile_metadata_gaps.py \
   --bundle bundle \
   --output evaluation/metadata-completeness/current.json
 ```

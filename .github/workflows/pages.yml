@@ -34,18 +34,21 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install validation tools
-        run: python -m pip install --disable-pip-version-check -e ".[test]"
+      - name: Install pinned uv bootstrap
+        run: python -m pip install --disable-pip-version-check uv==0.12.2
+
+      - name: Synchronise locked validation environment
+        run: uv sync --locked --extra test
 
       - name: Run tests
-        run: python -m pytest -q
+        run: .venv/bin/python -m pytest -q
 
       - name: Run static checks
-        run: python -m ruff check .
+        run: .venv/bin/python -m ruff check .
 
       - name: Verify pinned ELS metadata projection
         run: |
-          python scripts/project_els_snapshot.py \
+          .venv/bin/python scripts/project_els_snapshot.py \
             --submodule-dir vendor/explore-local-statistics-app \
             --output "$RUNNER_TEMP/ons-explore-local-statistics.json"
           cmp \
@@ -53,7 +56,7 @@ jobs:
             source/demo-snapshot/ons-explore-local-statistics.json
 
       - name: Build exact bundle once from the frozen source snapshot
-        run: python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
+        run: .venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
 
       - name: Add project-relative Pages assets to the public bundle
         run: |
@@ -63,7 +66,7 @@ jobs:
           touch bundle/.nojekyll
 
       - name: Validate assembled OKF v0.2 Markdown layer
-        run: python scripts/check_okf_v02.py bundle
+        run: .venv/bin/python scripts/check_okf_v02.py bundle
 
       - name: Verify public entrypoints
         run: |
@@ -82,6 +85,7 @@ jobs:
           test -f bundle/data/ons/spatial-index.json
           test -f bundle/data/providers/manifest.json
           test -f bundle/data/providers/ons-explore-local-statistics.json
+          test -f bundle/data/semantic/validation.json
 
       - name: Configure GitHub Pages
         if: github.ref == 'refs/heads/main'

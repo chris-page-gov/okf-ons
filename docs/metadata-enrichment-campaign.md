@@ -331,15 +331,15 @@ and
 Regenerate and compare profiles with:
 
 ```bash
-python scripts/build_bundle.py \
+.venv/bin/python scripts/build_bundle.py \
   --snapshot-dir source/metadata-enrichment-2026-07-21-r6 \
   --output bundle
-python scripts/profile_metadata_gaps.py \
+.venv/bin/python scripts/profile_metadata_gaps.py \
   --bundle bundle \
   --output /tmp/okf-ons-r6-profile.json
 cmp /tmp/okf-ons-r6-profile.json \
   evaluation/metadata-completeness/batch-09-live-nomis-codelists.json
-python scripts/compare_metadata_gaps.py \
+.venv/bin/python scripts/compare_metadata_gaps.py \
   evaluation/metadata-completeness/batch-08-live-ons-version-metadata.json \
   /tmp/okf-ons-r6-profile.json \
   --started-at 2026-07-21T14:06:05Z \

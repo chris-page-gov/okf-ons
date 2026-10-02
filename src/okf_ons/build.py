@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
+import io
 import json
 import math
 import re
@@ -34,11 +36,21 @@ from .okf import (
     render_frontmatter,
     validate_okf_bundle,
 )
+from .schema_validation import SemanticSchemaError, validate_assertions
 from .search import MISSING_FILTER_VALUE, build_search, filter_values, rank_records, result_document
+from .semantic import (
+    SemanticRelationshipError,
+    add_direct_triples,
+    compile_relationships,
+    semantic_assertion,
+    validate_semantic_projection,
+)
 
 PUBLIC_ROOT = "https://chris-page-gov.github.io/okf-ons/"
 EXPLORER_ROOT = "https://chris-page-gov.github.io/okf-explorer/"
 CHUNK_SIZE = 500
+SEMANTIC_SHARD_SIZE = 250
+MAX_PUBLIC_FILE_BYTES = 95_000_000
 NON_ENDORSEMENT = (
     "This experimental metadata bundle is independently published by the OKF ONS "
     "project and is not endorsed by the Office for National Statistics or other "
@@ -100,12 +112,20 @@ class BundleWriter:
         self.write_text(relative_path, canonical_json(value))
 
     def write_text(self, relative_path: str | Path, value: str) -> None:
+        self.write_bytes(relative_path, value.encode("utf-8"))
+
+    def write_bytes(self, relative_path: str | Path, value: bytes) -> None:
         relative = Path(relative_path)
         if relative.is_absolute() or ".." in relative.parts:
             raise BuildError(f"Unsafe bundle output path: {relative}")
+        if len(value) > MAX_PUBLIC_FILE_BYTES:
+            raise BuildError(
+                f"Public output exceeds the {MAX_PUBLIC_FILE_BYTES:,}-byte safety limit: "
+                f"{relative} ({len(value):,} bytes)"
+            )
         path = self.root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(value, encoding="utf-8", newline="\n")
+        path.write_bytes(value)
         self.paths.add(relative)
 
     def checksums(self) -> dict[str, Any]:
@@ -142,6 +162,8 @@ class BuildInputs:
     okf_publication: Path
     demo_guide: Path
     accessibility_statement: Path
+    semantic_assertion_schema: Path
+    semantic_assertion_schema_metadata: Path
 
 
 @dataclass
@@ -168,6 +190,10 @@ def default_inputs(root: Path) -> BuildInputs:
         okf_publication=root / "source" / "okf-publication.json",
         demo_guide=root / "docs" / "demo-guide.md",
         accessibility_statement=root / "accessibility.md",
+        semantic_assertion_schema=root / "schemas" / "semantic-assertion.schema.json",
+        semantic_assertion_schema_metadata=(
+            root / "schemas" / "semantic-assertion.schema.metadata.json"
+        ),
     )
 
 
@@ -336,6 +362,75 @@ def _chunks(
         writer.write_json(path, rows[offset : offset + size])
         paths.append(path)
     return paths
+
+
+def _semantic_shards(
+    writer: BundleWriter,
+    *,
+    prefix: str,
+    nodes: list[dict[str, Any]],
+    context_url: str,
+    snapshot_id: str,
+    shard_type: str,
+) -> list[dict[str, Any]]:
+    """Write deterministic, digest-described gzip JSON-LD graph shards."""
+
+    rows: list[dict[str, Any]] = []
+    for offset in range(0, len(nodes), SEMANTIC_SHARD_SIZE):
+        graph = nodes[offset : offset + SEMANTIC_SHARD_SIZE]
+        ordinal = offset // SEMANTIC_SHARD_SIZE
+        relative = f"data/semantic/{prefix}-{ordinal}.jsonld.gz"
+        document = {
+            "@context": context_url,
+            "@id": f"{PUBLIC_ROOT}{relative}",
+            "@type": shard_type,
+            "schema": f"okf-ons-semantic-{prefix}-shard.v1",
+            "snapshotId": snapshot_id,
+            "@graph": graph,
+        }
+        uncompressed = canonical_json(document).encode("utf-8")
+        compressed = deterministic_gzip(uncompressed)
+        writer.write_bytes(relative, compressed)
+        direct_triple_count = sum(
+            len(targets)
+            for node in graph
+            for predicate, targets in node.items()
+            if isinstance(predicate, str)
+            and predicate.startswith(("http://", "https://"))
+            and isinstance(targets, list)
+            and all(isinstance(target, Mapping) and target.get("@id") for target in targets)
+        )
+        rows.append(
+            {
+                "path": relative,
+                "sha256": _sha256_bytes(compressed),
+                "bytes": len(compressed),
+                "uncompressedSha256": _sha256_bytes(uncompressed),
+                "uncompressedBytes": len(uncompressed),
+                "nodeCount": len(graph),
+                "directTripleCount": direct_triple_count,
+            }
+        )
+    return rows
+
+
+def deterministic_gzip(value: bytes) -> bytes:
+    """Return canonical RFC 1952 bytes independent of Python/zlib platform headers."""
+
+    output = io.BytesIO()
+    with gzip.GzipFile(
+        filename="",
+        mode="wb",
+        compresslevel=9,
+        fileobj=output,
+        mtime=0,
+    ) as compressed:
+        compressed.write(value)
+    result = output.getvalue()
+    expected_header = b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff"
+    if not result.startswith(expected_header):
+        raise BuildError("gzip implementation did not emit the canonical RFC 1952 header")
+    return result
 
 
 def _generated_at(corpus: FrozenCorpus) -> str:
@@ -2153,7 +2248,13 @@ def _okf_markdown_documents(
 def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     corpus = load_frozen_corpus(inputs)
     output.mkdir(parents=True, exist_ok=True)
+    semantic_output = output / "data" / "semantic"
+    if semantic_output.exists():
+        if not semantic_output.is_dir() or semantic_output.is_symlink():
+            raise BuildError(f"Semantic output path is not a normal directory: {semantic_output}")
+        shutil.rmtree(semantic_output)
     writer = BundleWriter(output)
+    generated_at = _generated_at(corpus)
 
     provider_datapacks, provider_datapack_manifest = build_provider_datapacks(
         corpus, inputs.provider_datapacks
@@ -2164,21 +2265,23 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     reconciliation_relationships, reconciliation = build_cross_source_reconciliation(corpus.records)
     alternative_relationships = build_alternatives(corpus.records)
     _materialize_explorer_fields(corpus.records)
-    relationships = sorted(
-        reconciliation_relationships + alternative_relationships,
-        key=lambda row: (
-            str(row.get("source") or ""),
-            str(row.get("target") or ""),
-            str(row.get("kind") or ""),
-        ),
-    )
+    try:
+        relationships = compile_relationships(
+            reconciliation_relationships + alternative_relationships,
+            corpus.records,
+            generated_at=generated_at,
+            snapshot_id=corpus.snapshot["snapshotId"],
+            public_root=PUBLIC_ROOT,
+            authority_source=BUNDLE_PUBLISHER["url"],
+        )
+    except SemanticRelationshipError as exc:
+        raise BuildError(f"Unable to compile semantic relationships: {exc}") from exc
     resources = _resource_rows(corpus.records)
     search = build_search(corpus.records, snapshot_id=corpus.snapshot["snapshotId"])
     rankings, evaluation_report = _baseline_evaluation(corpus, inputs.gold_suite)
     coverage = _coverage_ledger(corpus)
     standards_evaluation = _quality_and_standards_summary(corpus)
     sdmx_implementation = _sdmx_implementation(corpus)
-    generated_at = _generated_at(corpus)
     source_counts = _source_counts(corpus.records)
     record_type_counts = dict(
         sorted(Counter(record["record_type"] for record in corpus.records).items())
@@ -2384,6 +2487,14 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "relationship_hydration": "lazy",
             "search": "static worker-compatible shards",
         },
+        "relationshipSemantics": {
+            "schema": "okf-relationship-assertion.v2",
+            "authoritativeProjection": "okf-bundle.yamlld",
+            "directTriplePolicy": "generated-from-one-assertion-source",
+            "predicatePolicy": "absolute-iri",
+            "assertionCount": len(relationships),
+            "similarityPolicy": "inferred-discovery-only-not-equivalence",
+        },
         "search": {
             "schema": search["manifest"]["schema"],
             "documents": search["manifest"]["counts"]["documents"],
@@ -2395,15 +2506,19 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
 
     context = {
         "@context": {
-            "okf": f"{PUBLIC_ROOT}vocab/",
+            "okf": "https://chris-page-gov.github.io/okf-explorer/ns#",
+            "ons": f"{PUBLIC_ROOT}vocab/",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
             "dcat": "http://www.w3.org/ns/dcat#",
             "dct": "http://purl.org/dc/terms/",
             "dqv": "http://www.w3.org/ns/dqv#",
             "prov": "http://www.w3.org/ns/prov#",
             "qb": "http://purl.org/linked-data/cube#",
             "skos": "http://www.w3.org/2004/02/skos/core#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
             "Catalog": "dcat:Catalog",
             "Dataset": "dcat:Dataset",
+            "RelationshipAssertion": "okf:RelationshipAssertion",
             "title": "dct:title",
             "description": "dct:description",
             "identifier": "dct:identifier",
@@ -2421,6 +2536,25 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "nonEndorsementStatement": "okf:nonEndorsementStatement",
             "contextSet": {"@id": "okf:contextSet", "@type": "@id"},
             "dataset": {"@id": "dcat:dataset", "@type": "@id"},
+            "route": "okf:route",
+            "source": {"@id": "rdf:subject", "@type": "@id"},
+            "predicate": {"@id": "rdf:predicate", "@type": "@id"},
+            "target": {"@id": "rdf:object", "@type": "@id"},
+            "source_route": "okf:sourceRoute",
+            "target_route": "okf:targetRoute",
+            "kind": "okf:kind",
+            "label": "okf:preferredLabel",
+            "inverse_label": "okf:inverseLabel",
+            "assertion_status": "okf:assertionStatus",
+            "assertion_scope": "okf:assertionScope",
+            "authority": "okf:authority",
+            "derivation": {"@id": "prov:wasDerivedFrom", "@type": "@id"},
+            "derivation_activity": {"@id": "prov:wasGeneratedBy", "@type": "@id"},
+            "observed_at": {"@id": "prov:generatedAtTime", "@type": "xsd:dateTime"},
+            "evidence": "okf:evidence",
+            "rights": "dct:rights",
+            "semanticManifest": {"@id": "okf:semanticManifest", "@type": "@id"},
+            "semanticGraph": "okf:semanticGraph",
             "alignmentClaim": "okf:alignmentClaim",
             "statisticalAccuracyEvaluated": "okf:statisticalAccuracyEvaluated",
         }
@@ -2512,8 +2646,135 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "liveExecutionAvailable": False,
     }
     writer.write_json("data/governance/release.json", governance)
+    semantic_datasets = [
+        {
+            "@id": f"{PUBLIC_ROOT}{record['route']}",
+            "@type": "Dataset",
+            "route": record["route"],
+            "identifier": record["id"],
+            "title": record["title"],
+            "description": record.get("notes", ""),
+            "landingPage": record.get("url", ""),
+            "wasDerivedFrom": record.get("provenance", {}).get("source_url", ""),
+            "wasGeneratedBy": f"{PUBLIC_ROOT}data/governance/release.json",
+            "wasAttributedTo": BUNDLE_PUBLISHER["id"],
+            "sourcePublisher": [
+                publisher.get("url")
+                or f"{PUBLIC_ROOT}publisher/{publisher.get('id', 'unknown')}"
+                for publisher in record.get("source_publishers", [])
+                if isinstance(publisher, Mapping)
+            ],
+            "bundlePublisher": BUNDLE_PUBLISHER["id"],
+            "semanticAuthority": BUNDLE_PUBLISHER["id"],
+            "reviewedBy": [],
+            "notEndorsedBySource": True,
+        }
+        for record in corpus.records
+    ]
+    try:
+        add_direct_triples(semantic_datasets, relationships)
+        semantic_assertions = [semantic_assertion(row) for row in relationships]
+        validate_semantic_projection(
+            semantic_datasets,
+            relationships,
+            semantic_assertions,
+        )
+    except SemanticRelationshipError as exc:
+        raise BuildError(f"Semantic relationship projection is inconsistent: {exc}") from exc
+
+    try:
+        semantic_validation = validate_assertions(
+            semantic_assertions,
+            (semantic_assertion(row) for row in relationships),
+            schema_path=inputs.semantic_assertion_schema,
+            metadata_path=inputs.semantic_assertion_schema_metadata,
+        )
+    except SemanticSchemaError as exc:
+        raise BuildError(f"Semantic assertion schema validation failed: {exc}") from exc
+    semantic_validation_text = canonical_json(semantic_validation)
+    semantic_validation_sha256 = _sha256_bytes(semantic_validation_text.encode("utf-8"))
+    writer.write_text("data/semantic/validation.json", semantic_validation_text)
+
+    semantic_context_url = f"{PUBLIC_ROOT}context/okf-ons.jsonld"
+    entity_shards = _semantic_shards(
+        writer,
+        prefix="entities",
+        nodes=semantic_datasets,
+        context_url=semantic_context_url,
+        snapshot_id=corpus.snapshot["snapshotId"],
+        shard_type="okf:SemanticEntityShard",
+    )
+    assertion_shards = _semantic_shards(
+        writer,
+        prefix="assertions",
+        nodes=semantic_assertions,
+        context_url=semantic_context_url,
+        snapshot_id=corpus.snapshot["snapshotId"],
+        shard_type="okf:SemanticAssertionShard",
+    )
+    semantic_triples = sorted(
+        [
+            str(row["source_iri"]),
+            str(row["predicate"]),
+            str(row["target_iri"]),
+        ]
+        for row in relationships
+    )
+    triple_set_sha256 = _sha256_json(semantic_triples)
+    semantic_manifest = {
+        "@context": semantic_context_url,
+        "@id": f"{PUBLIC_ROOT}data/semantic/manifest.json",
+        "@type": "okf:SemanticGraphManifest",
+        "schema": "okf-ons-semantic-graph-manifest.v1",
+        "snapshotId": corpus.snapshot["snapshotId"],
+        "generated_at": generated_at,
+        "representation": "gzip-json-ld-graph-shards",
+        "compression": "gzip-rfc1952-canonical-mtime-zero-os-255",
+        "mediaTypeAfterDecompression": "application/ld+json",
+        "context": {
+            "url": semantic_context_url,
+            "path": "context/okf-ons.jsonld",
+            "sha256": context_sha256,
+        },
+        "counts": {
+            "entities": len(semantic_datasets),
+            "relationshipAssertions": len(semantic_assertions),
+            "directRelationshipTriples": len(relationships),
+            "entityShards": len(entity_shards),
+            "assertionShards": len(assertion_shards),
+        },
+        "shards": {
+            "entities": entity_shards,
+            "assertions": assertion_shards,
+        },
+        "validation": {
+            "status": semantic_validation["status"],
+            "path": "data/semantic/validation.json",
+            "sha256": semantic_validation_sha256,
+            "schemaBinding": semantic_validation["schemaBinding"],
+            "semanticAssertionsValidated": semantic_validation["counts"][
+                "semanticAssertionsValidated"
+            ],
+            "runtimeRowsMappedAndValidated": semantic_validation["counts"][
+                "runtimeRowsMappedAndValidated"
+            ],
+        },
+        "reconciliation": {
+            "status": "passed",
+            "policy": "whole-manifest-direct-runtime-reified-triple-equality",
+            "tripleSetSha256": triple_set_sha256,
+            "directTripleSetSha256": triple_set_sha256,
+            "runtimeTripleSetSha256": triple_set_sha256,
+            "reifiedTripleSetSha256": triple_set_sha256,
+            "statisticalEquivalenceInferredFromSimilarity": False,
+        },
+    }
+    semantic_manifest_text = canonical_json(semantic_manifest)
+    semantic_manifest_sha256 = _sha256_bytes(semantic_manifest_text.encode("utf-8"))
+    writer.write_text("data/semantic/manifest.json", semantic_manifest_text)
+
     semantic_bundle = {
-        "@context": f"{PUBLIC_ROOT}context/okf-ons.jsonld",
+        "@context": semantic_context_url,
         "@id": f"{PUBLIC_ROOT}okf-bundle.jsonld",
         "@type": "dcat:Catalog",
         "title": "ONS data discovery OKF",
@@ -2541,35 +2802,34 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "These terms describe the generated catalogue mapping. They do not assert "
             "that an upstream statistical product is certified or fully conformant."
         ),
-        "dataset": [
-            {
-                "@id": f"{PUBLIC_ROOT}{record['route']}",
-                "@type": "Dataset",
-                "identifier": record["id"],
-                "title": record["title"],
-                "description": record.get("notes", ""),
-                "landingPage": record.get("url", ""),
-                "wasDerivedFrom": record.get("provenance", {}).get("source_url", ""),
-                "wasGeneratedBy": f"{PUBLIC_ROOT}data/governance/release.json",
-                "wasAttributedTo": BUNDLE_PUBLISHER["id"],
-                "sourcePublisher": [
-                    publisher.get("url")
-                    or f"{PUBLIC_ROOT}publisher/{publisher.get('id', 'unknown')}"
-                    for publisher in record.get("source_publishers", [])
-                    if isinstance(publisher, Mapping)
-                ],
-                "bundlePublisher": BUNDLE_PUBLISHER["id"],
-                "semanticAuthority": BUNDLE_PUBLISHER["id"],
-                "reviewedBy": [],
-                "notEndorsedBySource": True,
-            }
-            for record in corpus.records
-        ],
+        "dataset": [{"@id": row["@id"]} for row in semantic_datasets],
+        "semanticManifest": f"{PUBLIC_ROOT}data/semantic/manifest.json",
+        "semanticGraph": {
+            "schema": semantic_manifest["schema"],
+            "representation": semantic_manifest["representation"],
+            "manifestPath": "data/semantic/manifest.json",
+            "manifestSha256": semantic_manifest_sha256,
+            "entityShardCount": len(entity_shards),
+            "assertionShardCount": len(assertion_shards),
+            "tripleSetSha256": triple_set_sha256,
+        },
+        "relationshipAssertionCount": len(semantic_assertions),
+        "directRelationshipTripleCount": len(relationships),
         "statisticalAccuracyEvaluated": False,
     }
     writer.write_json("okf-bundle.jsonld", semantic_bundle)
     # JSON is valid YAML 1.2, keeping this dependency-free and byte-stable.
     writer.write_json("okf-bundle.yamlld", semantic_bundle)
+    data_manifest["indexes"]["semantic"] = "data/semantic/manifest.json"
+    data_manifest["relationshipSemantics"].update(
+        {
+            "manifestSha256": semantic_manifest_sha256,
+            "tripleSetSha256": triple_set_sha256,
+            "entityShardCount": len(entity_shards),
+            "assertionShardCount": len(assertion_shards),
+        }
+    )
+    writer.write_json("data/manifest.json", data_manifest)
 
     descriptor = {
         "@context": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/context.jsonld",
@@ -2621,6 +2881,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
         "entrypoints": {
             "data_manifest": "data/manifest.json",
+            "semantic_manifest": "data/semantic/manifest.json",
             "overview_index": "data/overview.json",
             "analysis_overview": "data/analysis/overview.json",
             "search_manifest": "data/search/manifest.json",
@@ -2642,7 +2903,11 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "provider_datapacks": {
                 "path": "data/providers/manifest.json",
                 "sha256": provider_datapack_manifest_sha256,
-            }
+            },
+            "semantic_manifest": {
+                "path": "data/semantic/manifest.json",
+                "sha256": semantic_manifest_sha256,
+            },
         },
         "extensions": {
             "okf-core.v0.2": {
@@ -2685,6 +2950,18 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "okf-ons-geography.v1": {
                 "entrypoint": "spatial_index",
                 "geometry_included": False,
+            },
+            "okf-semantic-relationships.v1": {
+                "entrypoint": "semantic_descriptor",
+                "manifest_entrypoint": "semantic_manifest",
+                "runtime_entrypoint": "data_manifest",
+                "assertion_count": len(relationships),
+                "direct_triples_generated": True,
+                "reified_assertions_generated": True,
+                "predicate_policy": "absolute-iri",
+                "representation": "gzip-json-ld-graph-shards",
+                "triple_set_sha256": triple_set_sha256,
+                "similarity_is_discovery_not_equivalence": True,
             },
             "okf-explorer-provider-datapacks.v1": {
                 "entrypoint": "provider_datapacks",

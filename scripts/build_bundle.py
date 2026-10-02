@@ -34,6 +34,10 @@ def main() -> int:
         okf_publication=ROOT / "source" / "okf-publication.json",
         demo_guide=ROOT / "docs" / "demo-guide.md",
         accessibility_statement=ROOT / "accessibility.md",
+        semantic_assertion_schema=ROOT / "schemas" / "semantic-assertion.schema.json",
+        semantic_assertion_schema_metadata=(
+            ROOT / "schemas" / "semantic-assertion.schema.metadata.json"
+        ),
     )
     try:
         if arguments.check:
