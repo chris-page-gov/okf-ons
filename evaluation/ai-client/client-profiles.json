@@ -4,7 +4,7 @@
   "warning": "Availability is a run-time property. Installed or previously ready does not mean authenticated and ready for a future run.",
   "connection_guide": {
     "path": "docs/mcp-client-rollout.md",
-    "sha256": "2965df6ab4783fdfd31356c543cda81558911f95e3e679ba652b5329a8f2491e",
+    "sha256": "9014b262a89c3a621fd49570d2deac04ca70ba47f6dd0a3af78fa3367b1c26b9",
     "verified_on": "2026-07-21"
   },
   "profiles": [

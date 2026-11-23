@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate this producer's generated Markdown layer against OKF v0.2."""
+"""Validate this producer's generated Markdown layer against OKF 0.3."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def main() -> int:
     try:
         report = validate_okf_bundle(arguments.bundle)
     except (OSError, OKFConformanceError) as exc:
-        parser.exit(1, f"OKF v0.2 conformance error: {exc}\n")
+        parser.exit(1, f"OKF 0.3 conformance error: {exc}\n")
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0
 

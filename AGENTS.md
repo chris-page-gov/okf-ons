@@ -172,11 +172,12 @@ uv sync --locked --extra test
   --snapshot-dir source/demo-snapshot \
   --output bundle \
   --check
-.venv/bin/python scripts/check_okf_v02.py bundle
+.venv/bin/python scripts/check_okf_v03.py bundle
 .venv/bin/python ../okf-explorer/scripts/reconcile_okf_repositories.py \
   --repo . \
   --strict
 node --check pages/app.js
+node scripts/check_reader_http_access.mjs --bundle bundle
 ```
 
 Run this matrix against both the stable demo snapshot and the exact
@@ -184,10 +185,11 @@ release-candidate snapshot. The Pages-selected snapshot must match governed
 release metadata. The Pages workflow must validate before uploading `bundle/`.
 
 <!-- okf-semantic-contract:start -->
-## OKF 0.2 and semantic relationship contract
+## OKF 0.3 and semantic relationship contract
 
 - Read `okf.semantic.json` before changing Markdown, ontology, semantic, relationship, bundle, or Reader-facing files. It records this repository's authored inputs, generated outputs, exact build/check commands, delivery mode, and current migration limitations.
-- Keep the intentionally small OKF 0.2 Markdown core separate from the additive Bundle Wiki YAML-LD profile. Unknown OKF fields remain forward-compatible; profile requirements must never be described as universal OKF core.
+- Keep the intentionally small OKF 0.3 Markdown core separate from the additive Bundle Wiki YAML-LD profile. Unknown OKF fields remain forward-compatible; profile requirements must never be described as universal OKF core.
+- Generate `bundle/okf-core-explorer.json` from all 12 typed Markdown documents so the portable Reader carries complete frontmatter, body, source path and digest. Keep its zero-edge core projection distinct from the 5,097 metadata extension entities and their semantic graph; do not infer core edges from navigation links.
 - Treat the declared YAML-LD/JSON-LD graph or authored Markdown YAML-LD frontmatter as semantic authority. Explorer JSON, shards, adjacency, registries, checksums and sites are generated projections and must not be hand-edited.
 - Every new material directed relationship must retain a stable assertion ID, validated local runtime `source` and `target`, absolute `source_iri` and `target_iri`, an absolute predicate IRI, a governed relationship kind, preferred and inverse labels, assertion status and scope, authority, derivation, observation time, evidence and rights. Semantic reification maps the same identities to RDF subject and object. Confidence never upgrades authority.
 - Keep the direct semantic triple and its evidence-bearing `okf:RelationshipAssertion` synchronized, or generate both deterministically from one assertion source. Do not infer domain predicates from Markdown links.

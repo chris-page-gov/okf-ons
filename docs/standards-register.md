@@ -36,13 +36,13 @@ There are consequently two deliberately separate status vocabularies:
 `aligned` applies only to the bundle mapping. It must never be presented as
 accreditation, producer compliance or statistical-quality certification.
 
-## Open Knowledge Format 0.2
+## Open Knowledge Format 0.3
 
 The portable knowledge layer conforms structurally to
-[OKF 0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md).
+[OKF 0.3](https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md).
 The root `index.md` declares the version, every non-reserved Markdown document
 has parseable frontmatter and a non-empty `type`, and generated concepts use
-the v0.2 `generated` and `sources` families.
+the v0.3 `generated` and `sources` families.
 
 The migration keeps `timestamp` and `# Citations` as additive v0.1 fallbacks.
 Unknown concept types and fields remain permitted, which is how the Explorer
@@ -51,7 +51,7 @@ provider datapacks stay available without becoming core OKF requirements.
 
 No `verified` event or `stale_after` value is emitted without governed
 evidence. The generated
-[`data/standards/okf-v0.2.json`](../bundle/data/standards/okf-v0.2.json)
+[`data/standards/okf-v0.3.json`](../bundle/data/standards/okf-v0.3.json)
 report records structural conformance, concept counts, derived trust tiers and
 lifecycle counts. It does not certify upstream source statistics.
 

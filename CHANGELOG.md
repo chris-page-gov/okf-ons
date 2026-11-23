@@ -9,9 +9,25 @@ All notable release changes are recorded here. This project follows semantic
 versioning while it remains experimental; before `1.0.0`, a minor version may
 include consumer migrations that would be breaking in a stable release.
 
-## Unreleased
+## [0.3.0] — release candidate
 
 ### Added
+
+- Add a deterministic portable Reader projection for all 12 typed Markdown
+  concepts, with source-byte hashes and explicit separation from the 5,097
+  metadata extension graph.
+- Add a loopback-only HTTP acceptance check that retrieves and verifies all 12
+  source documents, the core Reader projection and every declared semantic graph
+  shard.
+- Migrate the generated ONS Markdown bundle to pinned OKF 0.3 and the Bundle
+  Wiki v2 repository contract. Retain Bundle Wiki v1 schemas and historical
+  OKF 0.2 register evidence unchanged.
+- Mark source-backed metadata entities as profile extensions, separate from
+  the 12 typed Markdown core concepts.
+- Add a version-specific 0.3 producer checker and update the Pages assembly
+  gate, source contract and standards register.
+- Add a source-linked complex-question walkthrough for population estimates by
+  age, including alternatives, evidence limits and the non-executing AI plan.
 
 - Mirror the canonical Explorer v0.6.0 Bundle Wiki v1 profile byte for byte
   with its vendor lock and refresh the semantic schema pins to that release.

@@ -1,8 +1,8 @@
 {
   "okf_core": {
-    "specification": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md",
+    "specification": "https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md",
     "status": "conformant",
-    "version": "0.2"
+    "version": "0.3"
   },
   "reader": {
     "consumer": "https://chris-page-gov.github.io/okf-explorer/",
@@ -55,7 +55,7 @@
     "role": "large-corpus-producer",
     "root_index": "bundle/index.md"
   },
-  "schema": "okf-repository-semantic-contract.v1",
+  "schema": "okf-repository-semantic-contract.v2",
   "semantic_layer": {
     "authoritative_inputs": [
       "source/",
@@ -64,7 +64,8 @@
       "src/okf_ons/schema_validation.py",
       "schemas/semantic-assertion.schema.json",
       "schemas/semantic-assertion.schema.metadata.json",
-      "scripts/build_bundle.py"
+      "scripts/build_bundle.py",
+      "profiles/bundle-wiki/v2/repository-contract.schema.json"
     ],
     "context_policy": "pinned-local-contexts-no-browser-remote-expansion",
     "identity_policy": "absolute-semantic-iri-plus-validated-local-route",
@@ -74,7 +75,8 @@
       "Cross-source representation assertions normalise shared declared table-code evidence without asserting statistical equivalence.",
       "Rights remain mixed at record level; records whose source rights have not been evaluated remain explicitly not-evaluated.",
       "The root YAML-LD and JSON-LD documents are compact semantic descriptors; the complete graph is carried by digest-bound gzip JSON-LD entity and assertion shards.",
-      "Compatibility chunks are retained; the separate bounded rich Reader runtime and SHA-256 route locator are not yet published. This release does not claim bounded rich browser hydration."
+      "The 5,097 source-backed metadata entities carry core_role=extension in runtime rows and semantic nodes; only the 12 typed Markdown concepts are OKF core concepts.",
+      "The complete source graph remains digest-bound in compressed shards; bounded projection and browser coverage must be assessed separately from core Markdown conformance."
     ],
     "outputs": [
       {
@@ -126,7 +128,7 @@
         "role": "relationship-runtime"
       }
     ],
-    "profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/",
+    "profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v2/",
     "state": "generated-yaml-ld-sharded-graph"
   },
   "tooling": {
@@ -135,10 +137,10 @@
     ],
     "check": [
       ".venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle --check",
-      ".venv/bin/python scripts/check_okf_v02.py bundle",
+      ".venv/bin/python scripts/check_okf_v03.py bundle",
       ".venv/bin/python -m pytest -q",
       ".venv/bin/python -m ruff check .",
-      ".venv/bin/python ../okf-explorer/scripts/reconcile_okf_repositories.py --repo . --strict"
+      ".venv/bin/python ../okf-explorer/scripts/reconcile_okf_repositories.py --repo . --strict --profile-v2"
     ],
     "setup": [
       "uv sync --locked --extra test"

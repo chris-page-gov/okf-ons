@@ -1,9 +1,9 @@
 {
   "schema": "okf-ons.okf-publication.v1",
-  "okfVersion": "0.2",
+  "okfVersion": "0.3",
   "specification": {
-    "resource": "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md",
-    "version": "0.2"
+    "resource": "https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md",
+    "version": "0.3"
   },
   "generated": {
     "at": "2026-07-25T11:08:21Z",

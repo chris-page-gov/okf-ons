@@ -1,0 +1,105 @@
+{
+  "schema": "okf-ons-complex-question-source-trail.v1",
+  "question": "I need a population trend by age for a named local authority and a stated period. Which ONS dataset and edition should I consider? What nearby series could be confused with it? Which geography vintage, provenance and quality evidence can I inspect, and what must be chosen before a live query is authorised?",
+  "scope": {
+    "core_version": "0.3",
+    "semantic_profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v2/",
+    "snapshot_id": "monday-2026-07-17-r2",
+    "snapshot_manifest_sha256": "d3691d801eefb7f0bc86c2660b1b8546a29727c71cc20fa1d742ff31ad8ce809",
+    "core_concept_count": 12,
+    "profile_metadata_entity_count": 5097,
+    "profile_entity_role": "extension",
+    "relationship_assertion_count": 19735,
+    "triple_set_sha256": "96d8ace4df2bd41f230800ec7ba20888c8bd603a2ec7eb50f4438dd05ffbb9f7",
+    "descriptor_sha256": "32b58f6e9ae02e59b0d53e51b68cedcd8b8149099b1db76513204ec179debfaa",
+    "semantic_manifest_sha256": "a7abf082d1c83a1a67572a7b9ffe53e169e71c8bcf751a6eec7b12f4fdd0716e"
+  },
+  "source_record": {
+    "source_path": "source/demo-snapshot/nomis-dataset-definitions.json",
+    "source_sha256": "857ab320b4cad94c3a05ef09d15f0886b42015949fa386e4bc7f367d94022627",
+    "source_record_id": "NM_2002_1",
+    "record_id": "nomis:dataset:NM_2002_1",
+    "route": "dataset/nomis-dataset-nm-2002-1",
+    "title": "Population estimates - local authority based by single year of age",
+    "source_lines": {
+      "definition": "128297-128303",
+      "quality_and_method_statement": "128185"
+    },
+    "published_metadata": {
+      "content_source": "pest",
+      "first_released": "2010-08-11 09:30:00",
+      "last_revised": "2025-07-30 09:30:00",
+      "description": "Mid-year (30 June) estimates based on the latest Census of Population with allowance for under-enumeration; available at local-authority level and above.",
+      "dimensions": [
+        {"position": 1, "concept": "C_AGE", "code_list": "CL_2002_1_C_AGE"},
+        {"position": 2, "concept": "FREQ", "code_list": "CL_2002_1_FREQ"},
+        {"position": 3, "concept": "GENDER", "code_list": "CL_2002_1_GENDER"},
+        {"position": 4, "concept": "GEOGRAPHY", "code_list": "CL_2002_1_GEOGRAPHY"},
+        {"position": 5, "concept": "MEASURES", "code_list": "CL_2002_1_MEASURES"},
+        {"position": 6, "concept": "TIME", "code_list": "CL_2002_1_TIME"}
+      ],
+      "geography_vintage": null,
+      "frequency": "",
+      "edition": null,
+      "version": null,
+      "methodology_links": [],
+      "quality_links": [
+        "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/methodologies/midyearpopulationestimatesqmi"
+      ]
+    },
+    "claim_boundary": "These are fields preserved from the frozen catalogue record. A blank or null field is not evidence that an option or vintage is unavailable upstream. The QMI URL is cited, not independently revalidated here."
+  },
+  "alternatives": [
+    {
+      "record_id": "nomis:dataset:NM_31_1",
+      "title": "Population estimates - local authority based by five year age band",
+      "negative_control": "Different age grain; the comparison must not treat this as a single-year age series.",
+      "assertion_id": "https://chris-page-gov.github.io/okf-ons/assertion/1b7f034fd8099eaf3d51d314f63a170742474ec79781b97a883b278992bd44db"
+    },
+    {
+      "record_id": "nomis:dataset:NM_2010_1",
+      "title": "Population estimates - small area (2011 based) by single year of age - England and Wales",
+      "negative_control": "Different geographic grain and vintage from the local-authority title.",
+      "assertion_id": "https://chris-page-gov.github.io/okf-ons/assertion/99e7ea560adc5b592e3362ff651ffb09c88f359a931ae8a31172f0bdc1c50908"
+    },
+    {
+      "record_id": "nomis:dataset:NM_2014_1",
+      "title": "Population estimates - small area (2021 based) by single year of age - England and Wales",
+      "negative_control": "Similar age detail with a small-area geography; do not silently substitute it for the requested local-authority level.",
+      "assertion_id": "https://chris-page-gov.github.io/okf-ons/assertion/b3ba169b572ede9d8ac6aacb998bf63183928ebb4e9db6e8aebb9cc736af0e8f"
+    },
+    {
+      "record_id": "ons-data-api:dataset:ageing-population-estimates",
+      "title": "Local authority ageing statistics, based on annual mid-year population estimates",
+      "negative_control": "Different ONS Data API source surface and distinct edition, version, frequency and unit metadata."
+    }
+  ],
+  "relationship_policy": {
+    "predicate": "https://chris-page-gov.github.io/okf-ons/vocab/discoveryAlternative",
+    "cross_source_predicate": "https://chris-page-gov.github.io/okf-ons/vocab/crossSourceDiscoveryAlternative",
+    "derivation": "https://chris-page-gov.github.io/okf-ons/rules/deterministic-title-topic-similarity-v1",
+    "assertion_status": "inferred",
+    "discovery_only": true,
+    "statistical_equivalence_asserted": false,
+    "warning": "Similarity ranks candidates for review; it does not show equivalence, fitness or endorsement."
+  },
+  "access_replay": {
+    "local_broker_tools": ["okf.search", "okf.get_record", "okf.compare", "okf.prepare_mcp_plan"],
+    "private_replay_receipt": "estate-03-acceptance/ons-complex-question-replay.json",
+    "private_replay_sha256": "48bbeba04358a6777f8d5cca7034fc80891d5ddad1a18f33606346b61144ccc9",
+    "network_calls": 0,
+    "observation_values_returned": false,
+    "live_source_validated": false,
+    "authorised": false,
+    "executable": false,
+    "executed": false,
+    "client_answer_evaluated": false
+  },
+  "acceptance_boundaries": {
+    "source_core_checker": "passed for the declared generated bundle root; 12 Markdown concepts, 15 Markdown documents, no uninspected nested roots",
+    "graph_integrity": "producer build validation checks all 19,735 assertions; whole-graph direct/runtime/reified triple digest is recorded above",
+    "browser_journey_manifest": "evaluation/okf-03/ons-population-by-age-explorer-journeys.json",
+    "browser_receipt": "pending exact local Explorer run",
+    "public_deployment": "not tested by this source trail"
+  }
+}

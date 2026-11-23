@@ -65,8 +65,8 @@ jobs:
           cp accessibility.md bundle/accessibility.md
           touch bundle/.nojekyll
 
-      - name: Validate assembled OKF v0.2 Markdown layer
-        run: .venv/bin/python scripts/check_okf_v02.py bundle
+      - name: Validate assembled OKF 0.3 Markdown layer
+        run: .venv/bin/python scripts/check_okf_v03.py bundle
 
       - name: Verify public entrypoints
         run: |
@@ -79,7 +79,7 @@ jobs:
           test -f bundle/data/governance/context-set.json
           test -f bundle/data/governance/release.json
           test -f bundle/data/standards/evaluation.json
-          test -f bundle/data/standards/okf-v0.2.json
+          test -f bundle/data/standards/okf-v0.3.json
           test -f bundle/data/evaluation/report.json
           test -f bundle/data/ons/mcp-bindings.json
           test -f bundle/data/ons/spatial-index.json

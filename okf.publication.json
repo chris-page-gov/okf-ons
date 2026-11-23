@@ -111,6 +111,7 @@
       {"path": "bundle/okf-bundle.jsonld", "role": "semantic-json-ld", "plane": "semantic", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle"]},
       {"path": "bundle/data/**", "role": "semantic-shards", "plane": "runtime", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle", "check-okf"]},
       {"path": "bundle/okf-explorer.json", "role": "explorer-runtime", "plane": "application", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle"]},
+      {"path": "bundle/okf-core-explorer.json", "role": "portable-core-reader-projection", "plane": "application", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle", "check-okf"]},
       {"path": "bundle/checksums.json", "role": "checksum-manifest", "plane": "release", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle"]},
       {"path": "bundle/**", "role": "site", "plane": "deployment", "required": true, "build_command_ids": ["build-bundle", "assemble-pages"], "check_command_ids": ["check-okf", "check-entrypoints"]}
     ]
@@ -120,7 +121,7 @@
     {"id": "semantic", "depends_on": ["source"], "paths": ["source/ontology-crosswalk.json", "bundle/okf-bundle.yamlld", "bundle/okf-bundle.jsonld"], "command_ids": ["build-bundle", "check-bundle"]},
     {"id": "runtime", "depends_on": ["semantic"], "paths": ["bundle/data/**", "bundle/concepts/**", "bundle/index.md"], "command_ids": ["build-bundle", "check-bundle", "check-okf"]},
     {"id": "documentation", "depends_on": ["source"], "paths": ["README.md", "AGENTS.md", "CHANGELOG.md", "docs/**", "accessibility.md"], "command_ids": ["check-publication-contract"]},
-    {"id": "application", "depends_on": ["runtime"], "paths": ["pages/**", "bundle/okf-explorer.json"], "command_ids": ["test-pages", "check-javascript"]},
+    {"id": "application", "depends_on": ["runtime"], "paths": ["pages/**", "bundle/okf-explorer.json", "bundle/okf-core-explorer.json"], "command_ids": ["test-pages", "check-javascript", "check-reader-http"]},
     {"id": "browser", "depends_on": ["application", "documentation"], "paths": ["pages/**"], "command_ids": ["test-pages"]},
     {"id": "release", "depends_on": ["runtime", "documentation", "browser"], "paths": ["bundle/checksums.json", "CHANGELOG.md"], "command_ids": ["check-bundle", "check-okf"]},
     {"id": "deployment", "depends_on": ["release"], "paths": [".github/workflows/pages.yml", "bundle/**"], "command_ids": ["assemble-pages", "check-entrypoints"]}
@@ -131,9 +132,10 @@
       {"id": "check-publication-contract", "kind": "check", "planes": ["source", "documentation"], "command": ".venv/bin/python scripts/check_publication_contract.py", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2},
       {"id": "build-bundle", "kind": "build", "planes": ["semantic", "runtime", "application", "release", "deployment"], "command": ".venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "generated-only", "timeout_minutes": 15},
       {"id": "check-bundle", "kind": "check", "planes": ["semantic", "runtime", "release"], "command": ".venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle --check", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 15},
-      {"id": "check-okf", "kind": "check", "planes": ["runtime", "release", "deployment"], "command": ".venv/bin/python scripts/check_okf_v02.py bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 5},
+      {"id": "check-okf", "kind": "check", "planes": ["runtime", "release", "deployment"], "command": ".venv/bin/python scripts/check_okf_v03.py bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 5},
       {"id": "test-pages", "kind": "test", "planes": ["application", "browser"], "command": ".venv/bin/python -m pytest -q tests/test_pages.py", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 5},
       {"id": "check-javascript", "kind": "check", "planes": ["application"], "command": "node --check pages/app.js", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2},
+      {"id": "check-reader-http", "kind": "check", "planes": ["application"], "command": "node scripts/check_reader_http_access.mjs --bundle bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "loopback-only", "mutates": "none", "timeout_minutes": 5},
       {"id": "assemble-pages", "kind": "build", "planes": ["deployment"], "command": "cp -R pages/. bundle/", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "generated-only", "timeout_minutes": 2},
       {"id": "check-entrypoints", "kind": "check", "planes": ["deployment"], "command": "test -f bundle/index.html", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2}
     ]
