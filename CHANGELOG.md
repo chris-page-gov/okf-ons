@@ -1,13 +1,25 @@
 # Changelog
 
-## Unreleased — publish the population walkthrough
+## [0.3.0] — 23 November 2026
+
+### Reader access and walkthrough publication
+
+- Require an independent import and exact source, frontmatter, body and core
+  graph reconciliation, plus all five ONS Reader journeys, in the existing
+  protected build gate before the exact candidate is deployed.
+- Pin the verified Explorer consumer and patched Node runtime, retain consumer
+  receipts, and avoid an unrelated host favicon request on both public guides.
+- Match the independent Reader's body boundary whitespace rule while retaining
+  each complete Markdown document and its exact byte digest.
+
+
 
 - Include the source-linked population-by-age walkthrough, diagram, source
   trail and Reader journeys in the generated bundle and checksum manifest.
 - Link the published guide from the landing page, use pinned repository source
   citations and check the guide's actual Pages entrypoints before deployment.
 
-## Unreleased — standards references
+### Standards references
 
 - Link the central current and historical OKF standards register and public bundle catalogue.
 
@@ -16,7 +28,7 @@ All notable release changes are recorded here. This project follows semantic
 versioning while it remains experimental; before `1.0.0`, a minor version may
 include consumer migrations that would be breaking in a stable release.
 
-## [0.3.0] — release candidate
+
 
 ### Added
 

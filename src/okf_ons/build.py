@@ -2294,7 +2294,9 @@ def _core_explorer_projection(documents: Mapping[str, str]) -> dict[str, Any]:
             "source_sha256": _sha256_bytes(raw),
             "source_bytes": len(raw),
             "section": route.split("/", 1)[0] if "/" in route else "root",
-            "body": parsed["body"],
+            # Match the independent Reader's display-body boundary rule. The
+            # complete original document remains bound by its byte digest.
+            "body": parsed["body"].strip(),
             "frontmatter": metadata,
         }
     known_routes = set(nodes)

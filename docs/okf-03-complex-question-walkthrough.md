@@ -156,3 +156,14 @@ The v0.3 core and deterministic candidate source/import checks do not establish
 live Pages availability, generic third-party AI-client compatibility, answer
 quality or statistical accuracy. Those require separate exact-revision browser,
 client and domain acceptance.
+
+## Required publication gate
+
+The existing protected `build` check now imports the generated Markdown with
+the pinned independent Explorer Reader, checks all 12 concepts against the
+portable projection, and replays all five journeys in Chromium. It checks full
+frontmatter, bodies, source hashes and core reference pairs, and retains the
+HTTP, parity and browser receipts. Failure prevents Pages deployment; the
+bundle is built once and the same workspace is uploaded after acceptance.
+Both the landing page and walkthrough declare an empty favicon, keeping the
+journey free of an unrelated host-level request.

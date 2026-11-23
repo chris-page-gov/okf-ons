@@ -567,7 +567,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         assert node["source_bytes"] == len(source)
         assert node["source_sha256"] == hashlib.sha256(source).hexdigest()
         assert node["frontmatter"] == parsed.frontmatter
-        assert node["body"] == parsed.body
+        assert node["body"] == parsed.body.strip()
     assert descriptor["entrypoints"]["okf_conformance"] == (
         "data/standards/okf-v0.3.json"
     )

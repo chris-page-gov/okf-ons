@@ -58,8 +58,66 @@ jobs:
       - name: Build exact bundle once from the frozen source snapshot
         run: .venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
 
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          version: "10.34.7"
+          run_install: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.22.3"
+
       - name: Verify every generated bundle file over loopback HTTP
-        run: node scripts/check_reader_http_access.mjs --bundle bundle
+        run: node scripts/check_reader_http_access.mjs --bundle bundle --output "$RUNNER_TEMP/client-access.json"
+
+      - name: Check out the verified Explorer consumer
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: chris-page-gov/okf-explorer
+          ref: 21a6b1be874eca4019770b15bd1c31ca41872f85
+          path: .acceptance-tools/okf-explorer
+          persist-credentials: false
+
+      - name: Install the frozen Explorer Python environment
+        working-directory: .acceptance-tools/okf-explorer
+        run: uv sync --locked
+
+      - name: Import every core source with the independent Reader
+        working-directory: .acceptance-tools/okf-explorer
+        run: >-
+          uv run --locked python scripts/check_okf_03_source.py
+          "$GITHUB_WORKSPACE/bundle" --require-0.3
+          --output "$RUNNER_TEMP/source-check.json"
+          --projection "$RUNNER_TEMP/source-projection.json"
+
+      - name: Reconcile full frontmatter, bodies, source bytes and core graph
+        run: .venv/bin/python scripts/check_core_projection.py "$RUNNER_TEMP/source-projection.json" --output "$RUNNER_TEMP/core-parity.json"
+
+      - name: Install the frozen Explorer dependencies
+        run: pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer install --frozen-lockfile
+
+      - name: Install the runner's pinned Chromium
+        timeout-minutes: 5
+        run: pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer exec playwright install chromium
+
+      - name: Replay all five ONS complex-question Reader journeys
+        run: >-
+          pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer acceptance:bundle --
+          --bundle-root "$GITHUB_WORKSPACE/bundle"
+          --journeys "$GITHUB_WORKSPACE/evaluation/okf-03/ons-population-by-age-explorer-journeys.json"
+          --output "$RUNNER_TEMP/explorer-acceptance.json" --port 4182
+
+      - name: Retain exact consumer receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: consumer-acceptance-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/source-check.json
+            ${{ runner.temp }}/core-parity.json
+            ${{ runner.temp }}/client-access.json
+            ${{ runner.temp }}/explorer-acceptance.json
+          if-no-files-found: ignore
 
       - name: Add project-relative Pages assets to the public bundle
         run: |
