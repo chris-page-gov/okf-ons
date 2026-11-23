@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from okf_ons.build import BuildError, BuildInputs, check_bundle, compile_bundle  # noqa: E402
+from okf_ons.build import BuildError, check_bundle, compile_bundle, default_inputs  # noqa: E402
 
 
 def main() -> int:
@@ -23,22 +24,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=ROOT / "bundle")
     parser.add_argument("--check", action="store_true")
     arguments = parser.parse_args()
-    inputs = BuildInputs(
-        snapshot_directory=arguments.snapshot_dir,
-        source_register=ROOT / "source" / "source-register.json",
-        provider_datapacks=ROOT / "source" / "provider-datapacks",
-        standards_register=ROOT / "source" / "standards-register.json",
-        ontology_crosswalk=ROOT / "source" / "ontology-crosswalk.json",
-        gold_suite=ROOT / "evaluation" / "gold-queries.json",
-        evaluation_aliases=ROOT / "source" / "evaluation-aliases.json",
-        okf_publication=ROOT / "source" / "okf-publication.json",
-        demo_guide=ROOT / "docs" / "demo-guide.md",
-        accessibility_statement=ROOT / "accessibility.md",
-        semantic_assertion_schema=ROOT / "schemas" / "semantic-assertion.schema.json",
-        semantic_assertion_schema_metadata=(
-            ROOT / "schemas" / "semantic-assertion.schema.metadata.json"
-        ),
-    )
+    inputs = replace(default_inputs(ROOT), snapshot_directory=arguments.snapshot_dir)
     try:
         if arguments.check:
             check_bundle(inputs, arguments.output)

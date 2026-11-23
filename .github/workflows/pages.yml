@@ -74,6 +74,9 @@ jobs:
       - name: Verify public entrypoints
         run: |
           test -f bundle/index.html
+          test -f bundle/walkthrough.html
+          test -f bundle/ons-population-by-age-walkthrough.svg
+          test -f bundle/ons-population-by-age-source-trail.json
           test -f bundle/index.md
           test -f bundle/concepts/catalogue.md
           test -f bundle/okf-core-explorer.json

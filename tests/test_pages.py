@@ -109,6 +109,8 @@ def test_main_page_has_progressive_accessible_discovery_structure() -> None:
 
 
 def test_static_page_assets_are_project_relative_and_present() -> None:
+    from okf_ons.build import default_inputs
+    generated = dict(default_inputs(ROOT).walkthrough_assets)
     for page in PAGES.glob("*.html"):
         parser = parse(page)
         for attribute, reference in parser.references:
@@ -121,6 +123,11 @@ def test_static_page_assets_are_project_relative_and_present() -> None:
                 # Generated bundle assets are produced by the build workflow.
                 continue
             if local.name == "okf-explorer.json":
+                continue
+            if local.parent == PAGES and local.name in generated:
+                assert generated[local.name].is_file(), (
+                    f"generated page asset source missing: {reference}"
+                )
                 continue
             assert local.exists(), f"{page.name} {attribute} target missing: {reference}"
 

@@ -165,6 +165,7 @@ class BuildInputs:
     accessibility_statement: Path
     semantic_assertion_schema: Path
     semantic_assertion_schema_metadata: Path
+    walkthrough_assets: tuple[tuple[str, Path], ...]
 
 
 @dataclass
@@ -191,6 +192,21 @@ def default_inputs(root: Path) -> BuildInputs:
         okf_publication=root / "source" / "okf-publication.json",
         demo_guide=root / "docs" / "demo-guide.md",
         accessibility_statement=root / "accessibility.md",
+        walkthrough_assets=(
+            ("walkthrough.html", root / "docs/ons-population-by-age-walkthrough.html"),
+            (
+                "ons-population-by-age-walkthrough.svg",
+                root / "docs/ons-population-by-age-walkthrough.svg",
+            ),
+            (
+                "ons-population-by-age-explorer-journeys.json",
+                root / "evaluation/okf-03/ons-population-by-age-explorer-journeys.json",
+            ),
+            (
+                "ons-population-by-age-source-trail.json",
+                root / "evaluation/okf-03/ons-population-by-age-source-trail.json",
+            ),
+        ),
         semantic_assertion_schema=root / "schemas" / "semantic-assertion.schema.json",
         semantic_assertion_schema_metadata=(
             root / "schemas" / "semantic-assertion.schema.metadata.json"
@@ -3126,6 +3142,10 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
     }
     writer.write_json("okf-explorer.json", descriptor)
+    for public_path, source in inputs.walkthrough_assets:
+        if source.is_symlink() or not source.is_file():
+            raise BuildError(f"required walkthrough asset is not a regular file: {public_path}")
+        writer.write_bytes(public_path, source.read_bytes())
     checksums = writer.checksums()
     writer.write_json("checksums.json", checksums)
     return {
