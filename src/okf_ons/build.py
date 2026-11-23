@@ -7,6 +7,7 @@ import hashlib
 import io
 import json
 import math
+import posixpath
 import re
 import shutil
 import tempfile
@@ -326,7 +327,7 @@ def load_frozen_corpus(inputs: BuildInputs) -> FrozenCorpus:
         "resource": OKF_SPECIFICATION,
         "version": OKF_VERSION,
     }:
-        raise BuildError("OKF publication metadata must pin the reviewed v0.2 specification")
+        raise BuildError("OKF publication metadata must pin the reviewed v0.3 specification")
     generated = okf_publication.get("generated")
     if not isinstance(generated, Mapping) or not generated.get("by") or not generated.get("at"):
         raise BuildError("OKF publication metadata requires generated.by and generated.at")
@@ -1805,7 +1806,7 @@ def _okf_concept_fields(
         "tags": tags,
         "generated": generated,
         # Retained as an unknown extension so a v0.1 consumer can use its
-        # historical timestamp fallback while v0.2 consumers prefer generated.at.
+        # historical timestamp fallback while v0.3 consumers prefer generated.at.
         "timestamp": generated["at"],
         "status": publication["status"],
         "sources": sources,
@@ -1825,7 +1826,7 @@ def _okf_markdown_documents(
     demo_guide: Path,
     accessibility_statement: Path,
 ) -> dict[str, str]:
-    """Build the canonical OKF v0.2 Markdown layer over Explorer extensions."""
+    """Build the canonical OKF 0.3 Markdown layer over Explorer extensions."""
 
     documents: dict[str, str] = {}
     coverage_sources = {
@@ -1853,7 +1854,7 @@ def _okf_markdown_documents(
 
     root_body = (
         "# ONS data discovery OKF\n\n"
-        "This is the canonical OKF v0.2 entrypoint for a bounded, metadata-only "
+        "This is the canonical OKF 0.3 entrypoint for a bounded, metadata-only "
         "ONS discovery snapshot. It contains no statistical observation values.\n\n"
         "# Knowledge concepts\n\n"
         "* [Catalogue and extension entrypoints](concepts/catalogue.md) - the "
@@ -1865,16 +1866,20 @@ def _okf_markdown_documents(
         "dated reviewed-live distinction.\n"
         "* [Governance](concepts/governance.md) - authority, integrity and "
         "non-endorsement boundaries.\n"
-        "* [Standards evidence](concepts/standards.md) - structural OKF v0.2 "
+        "* [Standards evidence](concepts/standards.md) - structural OKF 0.3 "
         "conformance and other evidence mappings.\n"
         "* [MCP selection contract](concepts/mcp-selection.md) - non-executing "
         "selection metadata.\n\n"
         "# Compatibility and extensions\n\n"
         "The Markdown concepts are the portable OKF core. "
-        "[`okf-explorer.json`](okf-explorer.json), YAML-LD, JSON-LD, static "
+        "[`okf-core-explorer.json`](okf-core-explorer.json) exposes all 12 typed "
+        "Markdown concepts to a portable Reader. The 5,097-record metadata "
+        "extension graph is separate at [`okf-explorer.json`](okf-explorer.json) "
+        "and `data/semantic/manifest.json`; the core projection asserts no "
+        "concept-to-concept edges. YAML-LD, JSON-LD, static "
         "search, facets, federation, integrity files and provider datapacks are "
         "additive extensions. Concept documents retain the legacy `timestamp` "
-        "and `# Citations` forms for best-effort v0.1 consumers; v0.2 consumers "
+        "and `# Citations` forms for best-effort v0.1 consumers; v0.3 consumers "
         "must prefer `generated` and `sources`.\n"
     )
     documents["index.md"] = render_frontmatter({"okf_version": OKF_VERSION}) + "\n" + root_body
@@ -1883,7 +1888,7 @@ def _okf_markdown_documents(
         {
             "id": "okf-v02-spec",
             "resource": OKF_SPECIFICATION,
-            "title": "Open Knowledge Format specification v0.2",
+            "title": "Open Knowledge Format specification v0.3",
             "last_modified": "2026-07-24",
         }
     ]
@@ -1902,7 +1907,7 @@ def _okf_markdown_documents(
             "metadata_only": True,
             "observation_values_included": False,
             "explorer_profile": (
-                "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/"
+                "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v2/"
             ),
         },
     )
@@ -1917,7 +1922,7 @@ def _okf_markdown_documents(
             "# Entry points\n\n"
             "- [Explorer descriptor](../okf-explorer.json)\n"
             "- [Data manifest](../data/manifest.json)\n"
-            "- [OKF v0.2 conformance report](../data/standards/okf-v0.2.json)\n\n"
+            "- [OKF 0.3 conformance report](../data/standards/okf-v0.3.json)\n\n"
             "# Claim boundary\n\n"
             f"{publication['claimBoundary']}\n\n"
             "# Citations\n\n"
@@ -2114,7 +2119,7 @@ def _okf_markdown_documents(
         {
             "id": "okf-v02-spec",
             "resource": OKF_SPECIFICATION,
-            "title": "Open Knowledge Format specification v0.2",
+            "title": "Open Knowledge Format specification v0.3",
             "last_modified": "2026-07-24",
         },
         {
@@ -2124,8 +2129,8 @@ def _okf_markdown_documents(
         },
         {
             "id": "okf-conformance",
-            "resource": "../data/standards/okf-v0.2.json",
-            "title": "Generated OKF v0.2 conformance report",
+            "resource": "../data/standards/okf-v0.3.json",
+            "title": "Generated OKF 0.3 conformance report",
         },
     ]
     standards_fields = _okf_concept_fields(
@@ -2133,7 +2138,7 @@ def _okf_markdown_documents(
         concept_type="Standards Evidence",
         title="OKF ONS standards and conformance evidence",
         description=(
-            "Structural OKF v0.2 conformance plus bounded evidence mappings to other standards."
+            "Structural OKF 0.3 conformance plus bounded evidence mappings to other standards."
         ),
         resource="../data/standards/evaluation.json",
         tags=["okf-0.2", "standards", "conformance", "evidence"],
@@ -2147,7 +2152,7 @@ def _okf_markdown_documents(
     documents["concepts/standards.md"] = render_concept(
         standards_fields,
         (
-            "# OKF v0.2\n\n"
+            "# OKF 0.3\n\n"
             "The generated producer check enforces parseable frontmatter, a non-empty "
             "`type` on every concept, reserved-file rules, and the optional family "
             "shapes this bundle uses. Unknown extension fields remain permitted.\n\n"
@@ -2245,6 +2250,108 @@ def _okf_markdown_documents(
     return documents
 
 
+def _core_explorer_projection(documents: Mapping[str, str]) -> dict[str, Any]:
+    """Project the complete authored Markdown layer for portable Reader access.
+
+    This intentionally contains no semantic edges: navigation links remain
+    navigation, while the separate large-corpus graph carries metadata links.
+    """
+
+    nodes: dict[str, dict[str, Any]] = {}
+    navigation: list[dict[str, Any]] = []
+    navigation_text: dict[str, str] = {}
+    for route, text in sorted(documents.items()):
+        raw = text.encode("utf-8")
+        parsed = parse_generated_document_text(text, route)
+        if route == "index.md" or route.endswith("/index.md"):
+            navigation.append({"path": route, "body": parsed["body"]})
+            navigation_text[route] = parsed["body"]
+            continue
+        metadata = parsed["frontmatter"] or {}
+        if not isinstance(metadata.get("type"), str):
+            continue
+        nodes[route] = {
+            **metadata,
+            "id": route,
+            "title": metadata.get("title") or Path(route).stem,
+            "source_path": route,
+            "source_sha256": _sha256_bytes(raw),
+            "source_bytes": len(raw),
+            "section": route.split("/", 1)[0] if "/" in route else "root",
+            "body": parsed["body"],
+            "frontmatter": metadata,
+        }
+    known_routes = set(nodes)
+    for route, node in nodes.items():
+        markdown_links: dict[str, str] = {}
+        for href in re.findall(r"\]\(([^)]+)\)", node["body"]):
+            target_url = urlsplit(href)
+            if target_url.scheme or target_url.netloc:
+                continue
+            target_path = unquote(target_url.path)
+            if not target_path:
+                continue
+            resolved = posixpath.normpath(posixpath.join(posixpath.dirname(route), target_path))
+            if resolved in known_routes:
+                markdown_links[href] = resolved
+        node["markdown_links"] = markdown_links
+    for row in navigation:
+        route = row["path"]
+        linked_concepts: set[str] = set()
+        for href in re.findall(r"\]\(([^)]+)\)", navigation_text[route]):
+            target_url = urlsplit(href)
+            if target_url.scheme or target_url.netloc:
+                continue
+            resolved = posixpath.normpath(
+                posixpath.join(posixpath.dirname(route), unquote(target_url.path))
+            )
+            if resolved in known_routes:
+                linked_concepts.add(resolved)
+        row["concepts"] = sorted(linked_concepts)
+    if len(nodes) != 12:
+        raise BuildError(f"Expected 12 typed Markdown concepts, found {len(nodes)}")
+    return {
+        "schema": "okf-explorer-bundle.v0",
+        "kind": "okf-bundle",
+        "okf_version": OKF_VERSION,
+        "meta": {
+            "title": "ONS data discovery OKF core concepts",
+            "description": (
+                "Portable Reader projection of 12 authored OKF Markdown concepts; "
+                "separate from the metadata extension graph."
+            ),
+            "frontmatter": parse_generated_document_text(documents["index.md"], "index.md")[
+                "frontmatter"
+            ],
+            "navigation": navigation,
+        },
+        "nodes": dict(sorted(nodes.items())),
+        "edges": [],
+    }
+
+
+def parse_generated_document_text(text: str, label: str) -> dict[str, Any]:
+    """Parse generated Markdown without creating a temporary file."""
+
+    if not text.startswith("---\n"):
+        return {"frontmatter": {}, "body": text}
+    closing = text.find("---\n", 4)
+    if closing < 0:
+        raise BuildError(f"Generated Markdown frontmatter is not closed: {label}")
+    frontmatter: dict[str, Any] = {}
+    for line_number, line in enumerate(text[4:closing].splitlines(), start=2):
+        key, separator, encoded = line.partition(":")
+        if not separator or not key or not encoded.strip():
+            raise BuildError(f"Invalid generated frontmatter at {label}:{line_number}")
+        try:
+            frontmatter[key] = json.loads(encoded.strip())
+        except json.JSONDecodeError as exc:
+            raise BuildError(
+                f"Invalid JSON-compatible frontmatter at {label}:{line_number}"
+            ) from exc
+    return {"frontmatter": frontmatter, "body": text[closing + 4 :]}
+
+
 def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     corpus = load_frozen_corpus(inputs)
     output.mkdir(parents=True, exist_ok=True)
@@ -2303,17 +2410,21 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     )
     for path, document in okf_documents.items():
         writer.write_text(path, document)
+    core_projection = _core_explorer_projection(okf_documents)
+    core_projection_bytes = canonical_json(core_projection).encode("utf-8")
+    core_projection_sha256 = _sha256_bytes(core_projection_bytes)
+    writer.write_bytes("okf-core-explorer.json", core_projection_bytes)
     try:
         okf_conformance = validate_okf_bundle(output)
     except (OSError, OKFConformanceError) as exc:
-        raise BuildError(f"Generated OKF v0.2 Markdown is not conformant: {exc}") from exc
+        raise BuildError(f"Generated OKF 0.3 Markdown is not conformant: {exc}") from exc
     if okf_conformance["legacyV01FallbackCount"] != okf_conformance["conceptCount"]:
         raise BuildError("Every public concept must retain the v0.1 compatibility fallbacks")
     standards_evaluation["okfConformance"] = {
         "status": okf_conformance["status"],
         "version": OKF_VERSION,
         "entrypoint": okf_conformance["entrypoint"],
-        "report": "data/standards/okf-v0.2.json",
+        "report": "data/standards/okf-v0.3.json",
         "conceptCount": okf_conformance["conceptCount"],
         "humanReviewed": okf_conformance["trustTiers"]["humanReviewed"],
         "claim": (
@@ -2321,9 +2432,15 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "source endorsement or legal certification."
         ),
     }
-    writer.write_json("data/standards/okf-v0.2.json", okf_conformance)
+    writer.write_json("data/standards/okf-v0.3.json", okf_conformance)
 
-    dataset_chunks = _chunks(writer, "datasets", corpus.records)
+    # The 5,097 source records are profile entities backed by frozen source
+    # metadata, not OKF core concepts: none has its own typed Markdown file.
+    runtime_records = [
+        {**record, "core_role": "extension"}
+        for record in corpus.records
+    ]
+    dataset_chunks = _chunks(writer, "datasets", runtime_records)
     resource_chunks = _chunks(writer, "resources", resources)
     relationship_chunks = _chunks(writer, "relationships", relationships)
     publisher_chunks = _chunks(
@@ -2479,7 +2596,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "governance": "data/governance/release.json",
             "context_set": "data/governance/context-set.json",
             "provider_datapacks": "data/providers/manifest.json",
-            "okf_conformance": "data/standards/okf-v0.2.json",
+            "okf_conformance": "data/standards/okf-v0.3.json",
         },
         "performance": {
             "startup_mode": "overview-first",
@@ -2519,6 +2636,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "Catalog": "dcat:Catalog",
             "Dataset": "dcat:Dataset",
             "RelationshipAssertion": "okf:RelationshipAssertion",
+            "core_role": "okf:coreRole",
             "title": "dct:title",
             "description": "dct:description",
             "identifier": "dct:identifier",
@@ -2650,6 +2768,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         {
             "@id": f"{PUBLIC_ROOT}{record['route']}",
             "@type": "Dataset",
+            "core_role": record["core_role"],
             "route": record["route"],
             "identifier": record["id"],
             "title": record["title"],
@@ -2669,7 +2788,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "reviewedBy": [],
             "notEndorsedBySource": True,
         }
-        for record in corpus.records
+        for record in runtime_records
     ]
     try:
         add_direct_triples(semantic_datasets, relationships)
@@ -2836,7 +2955,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "@id": f"{PUBLIC_ROOT}okf-explorer.json",
         "schema": "okf-explorer-large-corpus.v1",
         "kind": "okf-large-corpus",
-        "profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/",
+        "profile": "https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v2/",
         "title": "ONS data discovery OKF",
         "description": (
             "Metadata-only ONS discovery demonstrator with explicit coverage, "
@@ -2846,7 +2965,7 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         "snapshot": corpus.snapshot["snapshotId"],
         "generated_at": generated_at,
         "okf_version": OKF_VERSION,
-        "core_conformance": "OKF v0.2 Markdown concept layer",
+        "core_conformance": "OKF 0.3 Markdown concept layer",
         "status": "bounded-demonstrator",
         "publisher": BUNDLE_PUBLISHER["id"],
         "authority": governance["authority"],
@@ -2894,12 +3013,17 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "context_set": "data/governance/context-set.json",
             "provider_datapacks": "data/providers/manifest.json",
             "okf_index": "index.md",
-            "okf_conformance": "data/standards/okf-v0.2.json",
+            "okf_core_reader": "okf-core-explorer.json",
+            "okf_conformance": "data/standards/okf-v0.3.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
             "viewer": EXPLORER_ROOT,
         },
         "entrypoint_integrity": {
+            "okf_core_reader": {
+                "path": "okf-core-explorer.json",
+                "sha256": core_projection_sha256,
+            },
             "provider_datapacks": {
                 "path": "data/providers/manifest.json",
                 "sha256": provider_datapack_manifest_sha256,
@@ -2910,8 +3034,15 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             },
         },
         "extensions": {
-            "okf-core.v0.2": {
+            "okf-core.v0.3": {
                 "entrypoint": "okf_index",
+                "reader_projection": "okf_core_reader",
+                "reader_projection_scope": {
+                    "typed_markdown_concepts": 12,
+                    "semantic_edges": 0,
+                    "metadata_extension_entities": len(corpus.records),
+                    "extension_graph_entrypoint": "semantic_manifest",
+                },
                 "conformance": "okf_conformance",
                 "status": okf_conformance["status"],
                 "unknown_fields_allowed": True,

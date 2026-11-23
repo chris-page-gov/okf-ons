@@ -2,11 +2,15 @@
 
 ## Format contract
 
-The public bundle has a canonical OKF 0.2 Markdown entrypoint at `index.md`.
-The typed concepts carry structured provenance, generation and lifecycle
-metadata while the large-corpus descriptor, shards, YAML-LD, federation,
-facets, checksums and provider datapacks remain additive Explorer extensions.
-Consumers must tolerate unknown types and fields.
+The public bundle has a canonical OKF 0.3 Markdown entrypoint at `index.md`.
+The generated `okf-core-explorer.json` Reader projection exposes all 12 typed
+Markdown documents, including their complete frontmatter and body, actual paths
+and source digests. It declares no concept graph edges. The separate
+`okf-explorer.json` descriptor and semantic shards expose 5,097 asset-backed
+metadata entities as profile extensions with their existing 19,735
+relationships. Neither coverage plane stands in for the other. YAML-LD,
+federation, facets, checksums and provider datapacks remain additive Explorer
+extensions. Consumers must tolerate unknown types and fields.
 
 The producer preserves the v0.1 `timestamp` and `# Citations` fallbacks during
 migration. It does not emit `verified` or `stale_after` without an evidenced

@@ -58,6 +58,9 @@ jobs:
       - name: Build exact bundle once from the frozen source snapshot
         run: .venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
 
+      - name: Verify every generated bundle file over loopback HTTP
+        run: node scripts/check_reader_http_access.mjs --bundle bundle
+
       - name: Add project-relative Pages assets to the public bundle
         run: |
           cp -R pages/. bundle/
@@ -65,21 +68,22 @@ jobs:
           cp accessibility.md bundle/accessibility.md
           touch bundle/.nojekyll
 
-      - name: Validate assembled OKF v0.2 Markdown layer
-        run: .venv/bin/python scripts/check_okf_v02.py bundle
+      - name: Validate assembled OKF 0.3 Markdown layer
+        run: .venv/bin/python scripts/check_okf_v03.py bundle
 
       - name: Verify public entrypoints
         run: |
           test -f bundle/index.html
           test -f bundle/index.md
           test -f bundle/concepts/catalogue.md
+          test -f bundle/okf-core-explorer.json
           test -f bundle/okf-explorer.json
           test -f bundle/data/demo/contrast-records.json
           test -f bundle/data/coverage/ledger.json
           test -f bundle/data/governance/context-set.json
           test -f bundle/data/governance/release.json
           test -f bundle/data/standards/evaluation.json
-          test -f bundle/data/standards/okf-v0.2.json
+          test -f bundle/data/standards/okf-v0.3.json
           test -f bundle/data/evaluation/report.json
           test -f bundle/data/ons/mcp-bindings.json
           test -f bundle/data/ons/spatial-index.json

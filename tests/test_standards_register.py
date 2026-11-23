@@ -68,7 +68,7 @@ def test_standards_register_has_current_code_and_bounded_claim_models() -> None:
     register = load_json(STANDARDS_REGISTER)
 
     assert register["schemaVersion"] == "okf-ons.standards-register.v1"
-    assert register["asOf"] == "2026-07-24"
+    assert register["asOf"] == "2026-11-23"
     assert set(register["categories"]) == STANDARD_CATEGORIES
     assert set(register["claimModel"]["evidenceStatuses"]) == EVIDENCE_STATUSES
     assert set(register["claimModel"]["profileStatuses"]) == PROFILE_STATUSES

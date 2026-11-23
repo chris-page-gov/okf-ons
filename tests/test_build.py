@@ -17,7 +17,12 @@ from okf_ons.build import (  # noqa: E402
     compile_bundle,
     default_inputs,
 )
-from okf_ons.okf import OKF_SPECIFICATION, OKF_VERSION, validate_okf_bundle  # noqa: E402
+from okf_ons.okf import (  # noqa: E402
+    OKF_SPECIFICATION,
+    OKF_VERSION,
+    parse_generated_document,
+    validate_okf_bundle,
+)
 from okf_ons.semantic import RELATIONSHIP_ASSERTION  # noqa: E402
 
 
@@ -36,7 +41,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
 
     assert descriptor["schema"] == "okf-explorer-large-corpus.v1"
     assert descriptor["okf_version"] == OKF_VERSION
-    assert descriptor["core_conformance"] == "OKF v0.2 Markdown concept layer"
+    assert descriptor["core_conformance"] == "OKF 0.3 Markdown concept layer"
     assert descriptor["version"] == __version__
     assert descriptor["counts"]["records"] == 5_097
     assert descriptor["counts"]["sources"] == 4
@@ -82,7 +87,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "data/governance/context-set.json",
         "data/governance/release.json",
         "data/standards/evaluation.json",
-        "data/standards/okf-v0.2.json",
+        "data/standards/okf-v0.3.json",
         "data/standards/sdmx.json",
         "data/evaluation/report.json",
         "data/ons/mcp-bindings.json",
@@ -105,6 +110,13 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     data_manifest = json.loads((output / "data/manifest.json").read_text())
     overview = json.loads((output / "data/overview.json").read_text())
     analysis = json.loads((output / "data/analysis/overview.json").read_text())
+    runtime_records = [
+        row
+        for path in data_manifest["chunks"]["datasets"]
+        for row in json.loads((output / path).read_text())
+    ]
+    assert len(runtime_records) == 5_097
+    assert {row["core_role"] for row in runtime_records} == {"extension"}
     assert data_manifest["title"] == descriptor["title"]
     assert data_manifest["okf_version"] == OKF_VERSION
     assert data_manifest["snapshot"] == descriptor["snapshot"]
@@ -387,6 +399,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         if RELATIONSHIP_ASSERTION in row.get("@type", [])
     ]
     assert len(semantic_datasets) == descriptor["counts"]["records"]
+    assert {row["core_role"] for row in semantic_datasets} == {"extension"}
     assert len(semantic_assertions) == descriptor["counts"]["relationships"]
     assert semantic_bundle["relationshipAssertionCount"] == len(semantic_assertions)
     assert semantic_bundle["directRelationshipTripleCount"] == len(semantic_assertions)
@@ -462,6 +475,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert context["ons"] == "https://chris-page-gov.github.io/okf-ons/vocab/"
     assert "sdmx" not in context
     assert context["dataset"] == {"@id": "dcat:dataset", "@type": "@id"}
+    assert context["core_role"] == "okf:coreRole"
     assert context["contextSet"] == {"@id": "okf:contextSet", "@type": "@id"}
     context_set = json.loads((output / "data/governance/context-set.json").read_text())
     context_bytes = (output / "context/okf-ons.jsonld").read_bytes()
@@ -520,7 +534,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
 
     okf_report = validate_okf_bundle(output)
     assert okf_report == json.loads(
-        (output / "data/standards/okf-v0.2.json").read_text()
+        (output / "data/standards/okf-v0.3.json").read_text()
     )
     assert okf_report["status"] == "aligned"
     assert okf_report["conceptCount"] == 12
@@ -536,18 +550,33 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "stable": 0,
     }
     assert descriptor["entrypoints"]["okf_index"] == "index.md"
+    assert descriptor["entrypoints"]["okf_core_reader"] == "okf-core-explorer.json"
+    core_projection = json.loads((output / "okf-core-explorer.json").read_text())
+    assert core_projection["schema"] == "okf-explorer-bundle.v0"
+    assert len(core_projection["nodes"]) == 12
+    assert core_projection["edges"] == []
+    for route, node in core_projection["nodes"].items():
+        source = (output / route).read_bytes()
+        parsed = parse_generated_document(output / route)
+        assert node["source_path"] == route
+        assert node["source_bytes"] == len(source)
+        assert node["source_sha256"] == hashlib.sha256(source).hexdigest()
+        assert node["frontmatter"] == parsed.frontmatter
+        assert node["body"] == parsed.body
     assert descriptor["entrypoints"]["okf_conformance"] == (
-        "data/standards/okf-v0.2.json"
+        "data/standards/okf-v0.3.json"
     )
-    assert descriptor["extensions"]["okf-core.v0.2"] == {
-        "entrypoint": "okf_index",
-        "conformance": "okf_conformance",
-        "status": "aligned",
-        "unknown_fields_allowed": True,
-        "legacy_v0_1_timestamp_fallback": True,
-        "legacy_v0_1_citations_fallback": True,
-        "human_verification_recorded": False,
+    core_extension = descriptor["extensions"]["okf-core.v0.3"]
+    assert core_extension["entrypoint"] == "okf_index"
+    assert core_extension["reader_projection"] == "okf_core_reader"
+    assert core_extension["reader_projection_scope"] == {
+        "typed_markdown_concepts": 12,
+        "semantic_edges": 0,
+        "metadata_extension_entities": 5097,
+        "extension_graph_entrypoint": "semantic_manifest",
     }
+    assert core_extension["conformance"] == "okf_conformance"
+    assert core_extension["status"] == "aligned"
     assert descriptor["extensions"]["okf-semantic-relationships.v1"] == {
         "entrypoint": "semantic_descriptor",
         "manifest_entrypoint": "semantic_manifest",

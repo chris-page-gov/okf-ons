@@ -1,4 +1,4 @@
-"""Dependency-free OKF v0.2 Markdown rendering and producer validation."""
+"""Dependency-free OKF v0.3 Markdown rendering and producer validation."""
 
 from __future__ import annotations
 
@@ -10,12 +10,16 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-OKF_VERSION = "0.2"
+OKF_VERSION = "0.3"
 OKF_SPECIFICATION = (
-    "https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/"
-    "3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md"
+    "https://github.com/open-knowledge-format/open-knowledge-format/blob/"
+    "527e81aff55992be21507e97004286789126f88c/SPEC.md"
 )
 _DATE_HEADING = re.compile(r"^## \d{4}-\d{2}-\d{2}$", re.MULTILINE)
+_RFC3339_DATETIME = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
+)
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _ACTOR = re.compile(
     r"^(?:(?:human|process):[^\s:]+|[^/\s:]+/[^/\s]+)$"
 )
@@ -95,8 +99,8 @@ def parse_generated_document(path: Path) -> ParsedDocument:
 
 
 def _datetime(value: Any, label: str) -> None:
-    if not isinstance(value, str) or "T" not in value:
-        raise OKFConformanceError(f"{label} must be a non-empty ISO 8601 datetime")
+    if not isinstance(value, str) or not _RFC3339_DATETIME.fullmatch(value):
+        raise OKFConformanceError(f"{label} must be an RFC 3339 datetime")
     try:
         datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
@@ -104,7 +108,7 @@ def _datetime(value: Any, label: str) -> None:
 
 
 def _date(value: Any, label: str) -> None:
-    if not isinstance(value, str):
+    if not isinstance(value, str) or not _ISO_DATE.fullmatch(value):
         raise OKFConformanceError(f"{label} must be an ISO 8601 date")
     try:
         date.fromisoformat(value)
@@ -243,7 +247,7 @@ def _validate_optional_families(
 
 
 def validate_okf_bundle(root: Path) -> dict[str, Any]:
-    """Validate the generated bundle against the structural OKF v0.2 rules."""
+    """Validate the generated bundle's OKF 0.3 structural requirements."""
 
     root = root.resolve()
     root_index = root / "index.md"
@@ -265,7 +269,7 @@ def validate_okf_bundle(root: Path) -> dict[str, Any]:
             if path == root_index:
                 if document.frontmatter != {"okf_version": OKF_VERSION}:
                     raise OKFConformanceError(
-                        "root index.md must declare only okf_version 0.2"
+                        "root index.md must declare only okf_version 0.3"
                     )
             elif document.frontmatter is not None:
                 raise OKFConformanceError(
@@ -310,7 +314,7 @@ def validate_okf_bundle(root: Path) -> dict[str, Any]:
             legacy_fallbacks += 1
 
     return {
-        "schema": "okf-ons-okf-conformance.v1",
+        "schema": "okf-ons-okf-conformance.v2",
         "specification": {
             "version": OKF_VERSION,
             "resource": OKF_SPECIFICATION,

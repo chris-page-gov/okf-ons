@@ -21,7 +21,7 @@ from okf_ons.okf import (  # noqa: E402
 def _root(bundle: Path) -> None:
     bundle.mkdir()
     (bundle / "index.md").write_text(
-        render_frontmatter({"okf_version": "0.2"}) + "\n# Test bundle\n",
+        render_frontmatter({"okf_version": "0.3"}) + "\n# Test bundle\n",
         encoding="utf-8",
     )
 

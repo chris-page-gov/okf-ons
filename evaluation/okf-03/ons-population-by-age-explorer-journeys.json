@@ -1,0 +1,234 @@
+{
+  "schema": "okf-explorer-journeys.v1",
+  "bundle_descriptor": "okf-explorer.json",
+  "expected_identity": {
+    "schema": "okf-explorer-large-corpus.v1",
+    "id": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
+    "version": "0.3.0",
+    "snapshot": "monday-2026-07-17-r2"
+  },
+  "journeys": [
+    {
+      "id": "portable-core-markdown-reader",
+      "actions": [
+        {"type": "goto", "descriptor": "okf-core-explorer.json", "hash": "#concepts/catalogue.md"},
+        {"type": "wait_for", "selector": ".right-panel h2:has-text(\"ONS data discovery catalogue\")"}
+      ],
+      "assertions": [
+        {"type": "text", "selector": ".right-panel h2:has-text(\"ONS data discovery catalogue\")", "includes": "ONS data discovery catalogue"},
+        {"type": "text", "selector": ".right-panel", "includes": "5,097 source-qualified metadata records"}
+      ]
+    },
+    {
+      "id": "population-by-age-search-and-source",
+      "actions": [
+        {
+          "type": "goto"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".search-input"
+        },
+        {
+          "type": "fill",
+          "selector": ".search-input",
+          "value": "NM_2002_1"
+        },
+        {
+          "type": "click",
+          "selector": ".result-open:has(h2:text-is(\"Population estimates - local authority based by single year of age\"))"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel h2:has-text(\"Population estimates - local authority based by single year of age\")"
+        },
+        {
+          "type": "click",
+          "selector": ".right-panel button.primary-action:has-text(\"Load full record\")"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel"
+        },
+        {
+          "type": "click",
+          "selector": "#detail-tab-data"
+        },
+        {
+          "type": "click",
+          "selector": ".right-panel details.json-panel > summary"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "NM_2002_1"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "C_AGE"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "GEOGRAPHY"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "midyearpopulationestimatesqmi"
+        },
+        {
+          "type": "not_text",
+          "selector": ".right-panel",
+          "includes": "observation values"
+        },
+        {
+          "type": "requested",
+          "includes": "/bundle/data/search/manifest.json"
+        },
+        {
+          "type": "console_clean"
+        }
+      ]
+    },
+    {
+      "id": "population-by-age-record-graph",
+      "actions": [
+        {
+          "type": "goto",
+          "hash": "#dataset/nomis-dataset-nm-2002-1",
+          "params": {
+            "view": "graph"
+          }
+        },
+        {
+          "type": "wait_for",
+          "selector": "svg.graph [data-route=\"dataset/nomis-dataset-nm-2002-1\"][aria-label=\"Population estimates - local authority based by single year of age\"]"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "attribute",
+          "selector": "svg.graph [data-route=\"dataset/nomis-dataset-nm-2002-1\"][aria-label=\"Population estimates - local authority based by single year of age\"]",
+          "name": "aria-label",
+          "equals": "Population estimates - local authority based by single year of age"
+        },
+        {
+          "type": "visible",
+          "selector": "svg.graph [data-route=\"dataset/nomis-dataset-nm-2002-1\"][aria-label=\"Population estimates - local authority based by single year of age\"]"
+        },
+        {
+          "type": "not_requested",
+          "includes": "api.beta.ons.gov.uk"
+        },
+        {
+          "type": "console_clean"
+        }
+      ]
+    },
+    {
+      "id": "negative-control-five-year-age-band",
+      "actions": [
+        {
+          "type": "goto"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".search-input"
+        },
+        {
+          "type": "fill",
+          "selector": ".search-input",
+          "value": "NM_31_1"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".result-open:has(h2:text-is(\"Population estimates - local authority based by five year age band\"))"
+        },
+        {
+          "type": "click",
+          "selector": ".result-open:has(h2:text-is(\"Population estimates - local authority based by five year age band\"))"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel h2:has-text(\"Population estimates - local authority based by five year age band\")"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "NM_31_1"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "five year age band"
+        },
+        {
+          "type": "not_requested",
+          "includes": "api.beta.ons.gov.uk"
+        },
+        {
+          "type": "console_clean"
+        }
+      ]
+    },
+    {
+      "id": "negative-control-2021-based-small-area",
+      "actions": [
+        {
+          "type": "goto"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".search-input"
+        },
+        {
+          "type": "fill",
+          "selector": ".search-input",
+          "value": "NM_2014_1"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".result-open:has(h2:text-is(\"Population estimates - small area (2021 based) by single year of age - England and Wales\"))"
+        },
+        {
+          "type": "click",
+          "selector": ".result-open:has(h2:text-is(\"Population estimates - small area (2021 based) by single year of age - England and Wales\"))"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel h2:has-text(\"Population estimates - small area (2021 based) by single year of age\")"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "NM_2014_1"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "2021 based"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "small area"
+        },
+        {
+          "type": "not_requested",
+          "includes": "api.beta.ons.gov.uk"
+        },
+        {
+          "type": "console_clean"
+        }
+      ]
+    }
+  ]
+}

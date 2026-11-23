@@ -22,15 +22,21 @@ The local broker is not the downstream live-data server: it makes no network
 calls and returns no observation values. No observations, API keys, or private
 data are stored in the bundle.
 
-## OKF 0.2 core and Explorer extensions
+## OKF 0.3 core and Explorer extensions
 
 The checked-in bundle targets
-[Open Knowledge Format 0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f828c2f23d109c855ee403c3a4c81f3a96/okf/SPEC.md).
+[Open Knowledge Format 0.3](https://github.com/open-knowledge-format/open-knowledge-format/blob/527e81aff55992be21507e97004286789126f88c/SPEC.md).
 Its generated portable core starts at
 [`index.md`](https://chris-page-gov.github.io/okf-ons/index.md), which declares
-`okf_version: "0.2"` and progressively links to typed concepts for the
+`okf_version: "0.3"` and progressively links to typed concepts for the
 catalogue, frozen snapshot, four source lanes, provider state, governance,
 standards and MCP selection.
+
+The generated `okf-core-explorer.json` exposes all 12 typed Markdown concepts
+to a portable Reader with full frontmatter, body, source path and digest. It
+declares no concept graph edges. This is separate from the 5,097 asset-backed
+metadata extension entities and their 19,735 relationships in the large-corpus
+semantic graph.
 
 Every concept uses `generated` and `sources`. No `verified` event is claimed:
 the automated checks prove structural conformance and frozen-input integrity,
@@ -43,7 +49,7 @@ The large-corpus descriptor, JSON/YAML-LD, static search, facets,
 relationships, federation, integrity catalogues and provider datapacks remain
 additive Explorer extensions. New concepts also retain the v0.1 `timestamp`
 and `# Citations` fallbacks so older consumers can continue best-effort
-discovery while v0.2 consumers prefer `generated` and `sources`.
+discovery while 0.3 consumers prefer `generated` and `sources`.
 
 The additive semantic profile now generates all directed relationships once
 as rich `okf-relationship-assertion.v2` rows, then projects the same assertions
@@ -66,14 +72,21 @@ code asserts statistical equivalence, source endorsement or certification.
 These are the canonical entry points for the Pages deployment from `main`.
 The immutable application release `v0.2.0` predates the OKF specification 0.2
 migration and remains available as historical release evidence.
+The checked-in producer adoption candidate is version `0.3.0`; it is not yet
+the deployed Pages bundle or a published GitHub release.
+The [OKF 0.3 complex-question visual walkthrough](docs/ons-population-by-age-walkthrough.html)
+and its [source-linked notes](docs/okf-03-complex-question-walkthrough.md)
+trace a population-by-age question through source metadata, alternatives, the
+semantic graph and the local non-executing MCP broker.
 
 ### Live and machine-readable access
 
 | Resource | URL |
 | --- | --- |
 | Human discovery UI | <https://chris-page-gov.github.io/okf-ons/> |
-| OKF 0.2 root index | <https://chris-page-gov.github.io/okf-ons/index.md> |
+| OKF 0.3 root index | <https://chris-page-gov.github.io/okf-ons/index.md> |
 | OKF concepts index | <https://chris-page-gov.github.io/okf-ons/concepts/> |
+| Portable OKF core Reader projection (12 concepts) | <https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json> |
 | Open this bundle directly in OKF Explorer | <https://chris-page-gov.github.io/okf-explorer/?bundle=https%3A%2F%2Fchris-page-gov.github.io%2Fokf-ons%2Fokf-explorer.json> |
 | OKF Explorer without a preloaded bundle | <https://chris-page-gov.github.io/okf-explorer/> |
 | OKF bundle descriptor | <https://chris-page-gov.github.io/okf-ons/okf-explorer.json> |
@@ -90,7 +103,7 @@ migration and remains available as historical release evidence.
 | Checksums | <https://chris-page-gov.github.io/okf-ons/checksums.json> |
 | Search manifest | <https://chris-page-gov.github.io/okf-ons/data/search/manifest.json> |
 | Standards evaluation | <https://chris-page-gov.github.io/okf-ons/data/standards/evaluation.json> |
-| OKF 0.2 conformance report | <https://chris-page-gov.github.io/okf-ons/data/standards/okf-v0.2.json> |
+| OKF 0.3 conformance report | <https://chris-page-gov.github.io/okf-ons/data/standards/okf-v0.3.json> |
 | SDMX evidence | <https://chris-page-gov.github.io/okf-ons/data/standards/sdmx.json> |
 | Evaluation report | <https://chris-page-gov.github.io/okf-ons/data/evaluation/report.json> |
 | MCP binding index | <https://chris-page-gov.github.io/okf-ons/data/ons/mcp-bindings.json> |
@@ -274,8 +287,9 @@ separate immutable baseline or release artefact is the recorded future option;
 the workflow does not perform a second identical build merely to compare the
 result with itself.
 
-To rebuild the current compiler from the checked-in v0.2.0 frozen snapshot
-(the historical tag predates these semantic and conformance extensions):
+To rebuild the current 0.3.0 producer from the frozen snapshot also used by the
+historical v0.2.0 tag (which predates these semantic and conformance
+extensions):
 
 ```bash
 git clone --recurse-submodules \
@@ -294,16 +308,18 @@ cmp output/ons-explore-local-statistics.json \
   --snapshot-dir source/demo-snapshot \
   --output bundle \
   --check
-.venv/bin/python scripts/check_okf_v02.py bundle
+.venv/bin/python scripts/check_okf_v03.py bundle
 .venv/bin/python -m pytest -q
 .venv/bin/python -m ruff check .
 ```
 
-The canonical Bundle Wiki v1 profile is mirrored byte for byte under
-`profiles/bundle-wiki/v1/`, with its adjacent vendor lock. The producer pins
-the same semantic-assertion schema and validates every emitted assertion
-offline. Read the [canonical published profile](https://chris-page-gov.github.io/okf-explorer/profile/bundle-wiki/v1/)
-for explanatory guidance; the mirrored Markdown retains upstream relative links.
+The active producer uses the [Bundle Wiki v2 profile](profiles/bundle-wiki/v2/)
+and its core 0.3 repository contract. It retains the 16 frozen Bundle Wiki v1
+schemas and contexts as structural dependencies, with the adjacent v1 vendor
+lock unchanged. The producer pins the same semantic-assertion schema and
+validates every emitted assertion offline. Read the
+[v2 profile guidance](profiles/bundle-wiki/v2/index.md) for the versioned core
+and graph rules.
 After semantic changes, run the sibling Explorer's strict reconciliation:
 
 ```bash
@@ -334,6 +350,8 @@ byte-identical to r5. Rebuild and profile r6 without network access:
 ```
 
 The live Pages and Explorer URLs above still serve governed release v0.2.0.
+The checked-in producer version `0.3.0` is a release candidate until the exact
+reviewed revision is deliberately published.
 The r6 campaign snapshot is checked in as governed campaign evidence but
 remains an undeployed release candidate until the release metadata and
 Pages-selected snapshot are deliberately switched.

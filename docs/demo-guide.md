@@ -68,13 +68,15 @@ accuracy, methodological fitness or comparability for a specific analysis.
 
 | Purpose | Path |
 | --- | --- |
-| OKF 0.2 root index | `index.md` |
+| OKF 0.3 root index | `index.md` |
 | OKF concepts | `concepts/index.md` |
+| Portable OKF core Reader projection (12 Markdown concepts, no graph edges) | `okf-core-explorer.json` |
 | Bundle descriptor | `okf-explorer.json` |
+| Metadata extension graph (5,097 entities, 19,735 relationships) | `data/semantic/manifest.json` |
 | Bounded comparison records | `data/demo/contrast-records.json` |
 | Coverage ledger | `data/coverage/ledger.json` |
 | Standards evaluation | `data/standards/evaluation.json` |
-| OKF 0.2 conformance | `data/standards/okf-v0.2.json` |
+| OKF 0.3 conformance | `data/standards/okf-v0.3.json` |
 | Discovery evaluation | `data/evaluation/report.json` |
 | MCP bindings | `data/ons/mcp-bindings.json` |
 | Spatial metadata index | `data/ons/spatial-index.json` |

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 600" role="img" aria-labelledby="title description">
+  <title id="title">Trace a population-by-age question through the ONS OKF bundle</title>
+  <desc id="description">Five steps connect a complex discovery question to 12 OKF core concepts, 5,097 profile metadata entities, an evidence-backed Nomis candidate and alternatives, then a non-executing MCP plan. A separate lower lane records negative controls: five-year age bands, small-area geography, and no observation values or live execution.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#344b64"/>
+    </marker>
+    <style>
+      .bg{fill:#f6f8fb}.step{fill:#fff;stroke:#2b587a;stroke-width:2}.step-alt{fill:#eef5fa;stroke:#2b587a;stroke-width:2}.warn{fill:#fff7df;stroke:#8b5a00;stroke-width:2}.safe{fill:#e8f5ee;stroke:#216e4e;stroke-width:2}.line{stroke:#344b64;stroke-width:3;fill:none;marker-end:url(#arrow)}.dashed{stroke:#344b64;stroke-width:2.5;stroke-dasharray:8 7;fill:none;marker-end:url(#arrow)}.title{font:700 24px system-ui,sans-serif;fill:#14283b}.body{font:17px system-ui,sans-serif;fill:#14283b}.small{font:15px system-ui,sans-serif;fill:#30465c}.label{font:700 14px system-ui,sans-serif;letter-spacing:.05em;fill:#334e68}
+    </style>
+  </defs>
+  <rect class="bg" width="1440" height="600" rx="18"/>
+  <text class="label" x="42" y="42">OKF 0.3 · ONS DATA DISCOVERY · FROZEN SNAPSHOT</text>
+  <text class="title" x="42" y="82">From a complex question to evidence and an unexecuted plan</text>
+
+  <path class="line" d="M282 211 H320"/><path class="line" d="M562 211 H600"/><path class="line" d="M842 211 H880"/><path class="line" d="M1122 211 H1160"/>
+  <rect class="step" x="42" y="124" width="240" height="176" rx="14"/>
+  <text class="label" x="62" y="155">1 · ASK</text>
+  <text class="body" x="62" y="188"><tspan x="62">Population by age</tspan><tspan x="62" dy="25">for a named local</tspan><tspan x="62" dy="25">authority and period.</tspan><tspan x="62" dy="31">Find source, vintage,</tspan><tspan x="62" dy="25">quality and choices.</tspan></text>
+
+  <rect class="step-alt" x="322" y="124" width="240" height="176" rx="14"/>
+  <text class="label" x="342" y="155">2 · ORIENT</text>
+  <text class="body" x="342" y="188"><tspan x="342">Root index → catalogue</tspan><tspan x="342" dy="25">→ descriptor → manifests.</tspan><tspan x="342" dy="31">12 typed Markdown</tspan><tspan x="342" dy="25">core concepts.</tspan><tspan x="342" dy="31">5,097 extension entities.</tspan></text>
+
+  <rect class="step" x="602" y="124" width="240" height="176" rx="14"/>
+  <text class="label" x="622" y="155">3 · INSPECT</text>
+  <text class="body" x="622" y="188"><tspan x="622">Nomis NM_2002_1</tspan><tspan x="622" dy="25">Single-year age.</tspan><tspan x="622" dy="25">Six dimensions include</tspan><tspan x="622" dy="25">age, geography and time.</tspan><tspan x="622" dy="31">Vintage is not stated.</tspan></text>
+
+  <rect class="warn" x="882" y="124" width="240" height="176" rx="14"/>
+  <text class="label" x="902" y="155">4 · COMPARE</text>
+  <text class="body" x="902" y="188"><tspan x="902">5-year age bands;</tspan><tspan x="902" dy="25">2011- and 2021-based</tspan><tspan x="902" dy="25">small-area series;</tspan><tspan x="902" dy="25">ONS Data API series.</tspan><tspan x="902" dy="31">Similarity ≠ equivalence.</tspan></text>
+
+  <rect class="safe" x="1162" y="124" width="236" height="176" rx="14"/>
+  <text class="label" x="1182" y="155">5 · PREPARE</text>
+  <text class="body" x="1182" y="188"><tspan x="1182">Local MCP plan records</tspan><tspan x="1182" dy="25">missing choices.</tspan><tspan x="1182" dy="31">Live schema check,</tspan><tspan x="1182" dy="25">authority and execution</tspan><tspan x="1182" dy="25">remain separate.</tspan></text>
+
+  <text class="label" x="42" y="356">NEGATIVE CONTROLS · KEEP THE BOUNDARIES VISIBLE</text>
+  <path class="dashed" d="M722 303 V377 H206"/><path class="dashed" d="M1002 303 V377 H628"/><path class="dashed" d="M1280 303 V377 H1050"/>
+
+  <rect class="warn" x="42" y="408" width="360" height="130" rx="14"/>
+  <text class="title" x="64" y="444">NM_31_1</text>
+  <text class="body" x="64" y="476"><tspan x="64">Five-year age bands differ from</tspan><tspan x="64" dy="25">the requested single-year grain.</tspan></text>
+
+  <rect class="warn" x="422" y="408" width="400" height="130" rx="14"/>
+  <text class="title" x="444" y="444">NM_2014_1</text>
+  <text class="body" x="444" y="476"><tspan x="444">2021-based small-area geography</tspan><tspan x="444" dy="25">is not silently substituted.</tspan></text>
+
+  <rect class="safe" x="842" y="408" width="556" height="130" rx="14"/>
+  <text class="title" x="864" y="444">Metadata and AI access limits</text>
+  <text class="body" x="864" y="476"><tspan x="864">No observation values, live API calls, authorisation</tspan><tspan x="864" dy="25">or execution are claimed by this walkthrough.</tspan></text>
+
+  <text class="small" x="42" y="574">Source trail: frozen Nomis definition NM_2002_1 · QMI link recorded by source · semantic manifest and assertion IDs bound to the snapshot.</text>
+</svg>

@@ -1,6 +1,6 @@
 # Metadata model
 
-## Portable OKF 0.2 layer
+## Portable OKF 0.3 layer
 
 The canonical portable layer starts at `bundle/index.md` with
 `okf_version: "0.2"`. It contains typed Markdown concepts for the catalogue,
