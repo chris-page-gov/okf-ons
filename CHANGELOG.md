@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — standards references
+
+- Link the central current and historical OKF standards register and public bundle catalogue.
+
+
 All notable release changes are recorded here. This project follows semantic
 versioning while it remains experimental; before `1.0.0`, a minor version may
 include consumer migrations that would be breaking in a stable release.
