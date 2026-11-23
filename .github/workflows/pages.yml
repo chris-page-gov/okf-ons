@@ -58,6 +58,9 @@ jobs:
       - name: Build exact bundle once from the frozen source snapshot
         run: .venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
 
+      - name: Verify every generated bundle file over loopback HTTP
+        run: node scripts/check_reader_http_access.mjs --bundle bundle
+
       - name: Add project-relative Pages assets to the public bundle
         run: |
           cp -R pages/. bundle/
@@ -73,6 +76,7 @@ jobs:
           test -f bundle/index.html
           test -f bundle/index.md
           test -f bundle/concepts/catalogue.md
+          test -f bundle/okf-core-explorer.json
           test -f bundle/okf-explorer.json
           test -f bundle/data/demo/contrast-records.json
           test -f bundle/data/coverage/ledger.json

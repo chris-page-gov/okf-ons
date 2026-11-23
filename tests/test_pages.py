@@ -235,10 +235,12 @@ def test_pages_workflow_validates_prs_and_deploys_only_main() -> None:
     assert "source/demo-snapshot" in text_value
     assert "uv sync --locked --extra test" in text_value
     assert ".venv/bin/python scripts/build_bundle.py" in text_value
+    assert "node scripts/check_reader_http_access.mjs --bundle bundle" in text_value
     assert ".venv/bin/python scripts/check_okf_v03.py bundle" in text_value
     for public_entrypoint in (
         "index.md",
         "concepts/catalogue.md",
+        "okf-core-explorer.json",
         "data/standards/okf-v0.3.json",
         "data/providers/manifest.json",
         "data/providers/ons-explore-local-statistics.json",

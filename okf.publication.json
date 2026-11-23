@@ -137,7 +137,7 @@
       {"id": "check-javascript", "kind": "check", "planes": ["application"], "command": "node --check pages/app.js", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2},
       {"id": "check-reader-http", "kind": "check", "planes": ["application"], "command": "node scripts/check_reader_http_access.mjs --bundle bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "loopback-only", "mutates": "none", "timeout_minutes": 5},
       {"id": "assemble-pages", "kind": "build", "planes": ["deployment"], "command": "cp -R pages/. bundle/", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "generated-only", "timeout_minutes": 2},
-      {"id": "check-entrypoints", "kind": "check", "planes": ["deployment"], "command": "test -f bundle/index.html", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2}
+      {"id": "check-entrypoints", "kind": "check", "planes": ["deployment"], "command": "test -f bundle/index.html && test -f bundle/okf-core-explorer.json", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2}
     ]
   },
   "lockstep": {
