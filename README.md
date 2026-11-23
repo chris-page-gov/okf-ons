@@ -548,3 +548,7 @@ Code is MIT licensed. Source metadata remains subject to its stated upstream
 licence, often the Open Government Licence v3.0. The bundle makes no blanket
 licence claim: ELS record rights remain `not-evaluated` pending source-by-source
 review, and generated records preserve the available source and rights evidence.
+
+## OKF standards and bundle discovery
+
+The [central standards register](https://github.com/chris-page-gov/okf-explorer/blob/main/docs/okf-standards.md) records current and historical OKF specifications, version-specific pins and the public bundle catalogue. Use the [machine-readable register](https://raw.githubusercontent.com/chris-page-gov/okf-explorer/main/registry/okf-standards.json) to resolve the version implemented by this repository.
