@@ -113,7 +113,7 @@
       {"path": "bundle/okf-explorer.json", "role": "explorer-runtime", "plane": "application", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle"]},
       {"path": "bundle/okf-core-explorer.json", "role": "portable-core-reader-projection", "plane": "application", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle", "check-okf"]},
       {"path": "bundle/checksums.json", "role": "checksum-manifest", "plane": "release", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-bundle"]},
-      {"path": "bundle/**", "role": "site", "plane": "deployment", "required": true, "build_command_ids": ["build-bundle", "assemble-pages"], "check_command_ids": ["check-okf", "check-entrypoints"]}
+      {"path": "bundle/**", "role": "site", "plane": "deployment", "required": true, "build_command_ids": ["build-bundle"], "check_command_ids": ["check-okf", "check-entrypoints"]}
     ]
   },
   "planes": [
@@ -124,7 +124,7 @@
     {"id": "application", "depends_on": ["runtime"], "paths": ["pages/**", "bundle/okf-explorer.json", "bundle/okf-core-explorer.json"], "command_ids": ["test-pages", "check-javascript", "check-reader-http", "check-core-parity"]},
     {"id": "browser", "depends_on": ["application", "documentation"], "paths": ["pages/**", "evaluation/okf-03/**"], "command_ids": ["test-pages", "check-explorer-access"]},
     {"id": "release", "depends_on": ["runtime", "documentation", "browser"], "paths": ["bundle/checksums.json", "CHANGELOG.md"], "command_ids": ["check-bundle", "check-okf"]},
-    {"id": "deployment", "depends_on": ["release"], "paths": [".github/workflows/pages.yml", "bundle/**"], "command_ids": ["assemble-pages", "check-entrypoints"]}
+    {"id": "deployment", "depends_on": ["release"], "paths": [".github/workflows/pages.yml", "bundle/**"], "command_ids": ["check-entrypoints"]}
   ],
   "tooling": {
     "commands": [
@@ -138,7 +138,6 @@
       {"id": "check-reader-http", "kind": "check", "planes": ["application"], "command": "node scripts/check_reader_http_access.mjs --bundle bundle", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "loopback-only", "mutates": "none", "timeout_minutes": 5},
       {"id": "check-core-parity", "kind": "check", "planes": ["application"], "command": ".venv/bin/python scripts/check_core_projection.py \"$OKF_SOURCE_PROJECTION\" --output \"$OKF_CORE_PARITY_OUTPUT\"", "source": "AGENTS.md", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "generated-only", "timeout_minutes": 2},
       {"id": "check-explorer-access", "kind": "test", "planes": ["browser"], "command": "pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer acceptance:bundle -- --bundle-root \"$PWD/bundle\" --journeys \"$PWD/evaluation/okf-03/ons-population-by-age-explorer-journeys.json\" --output \"$OKF_EXPLORER_ACCEPTANCE_OUTPUT\" --port 4182", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "loopback-only", "mutates": "generated-only", "timeout_minutes": 10},
-      {"id": "assemble-pages", "kind": "build", "planes": ["deployment"], "command": "cp -R pages/. bundle/", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "generated-only", "timeout_minutes": 2},
       {"id": "check-entrypoints", "kind": "check", "planes": ["deployment"], "command": "test -f bundle/index.html && test -f bundle/okf-core-explorer.json", "source": ".github/workflows/pages.yml", "review_status": "reviewed-local-guidance", "network": "none", "mutates": "none", "timeout_minutes": 2}
     ]
   },
@@ -183,7 +182,7 @@
     "command_ids": []
   },
   "limitations": [
-    "The ignored bundle directory is generated once in CI and the same workspace bytes are validated, assembled and uploaded; there is no checked-in generated baseline for a clean pre-build --check.",
+    "The ignored complete public bundle, including every Pages asset and the no-Jekyll marker, is generated once and checksum-bound before HTTP and Reader acceptance; those same bytes are uploaded without an overlay or rebuild. There is no checked-in generated baseline for a clean pre-build --check.",
     "A future immutable bundle baseline or release artefact could enable a clean pre-build --check without committing the full generated tree.",
     "The required build check imports every typed source independently, reconciles full frontmatter, bodies, source hashes and core edges, and replays five bundle-specific Chromium journeys before the same assembled workspace is uploaded. Public deployment and intended audience access still need a separate live check.",
     "Declared command strings are untrusted metadata and must be reviewed against repository guidance before execution."

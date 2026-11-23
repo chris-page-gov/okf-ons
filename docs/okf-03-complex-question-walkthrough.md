@@ -167,3 +167,9 @@ HTTP, parity and browser receipts. Failure prevents Pages deployment; the
 bundle is built once and the same workspace is uploaded after acceptance.
 Both the landing page and walkthrough declare an empty favicon, keeping the
 journey free of an unrelated host-level request.
+
+The complete public landing page, application JavaScript, stylesheet and
+HTML guides are also build inputs. The compiler copies them and writes the
+no-Jekyll marker before calculating checksums. No Pages overlay follows the
+HTTP or browser gate, so the standalone archive and deployed candidate have
+the same complete file inventory.

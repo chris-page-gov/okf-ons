@@ -34,10 +34,15 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     result = compile_bundle(inputs, output)
     check_bundle(inputs, output)
 
-    for public_path, source in inputs.walkthrough_assets:
+    for public_path, source in inputs.publication_assets:
         assert (output / public_path).read_bytes() == source.read_bytes()
         checksum = next(row for row in result["checksums"]["files"] if row["path"] == public_path)
         assert checksum["sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+
+    assert (output / ".nojekyll").read_bytes() == b""
+    assert next(row for row in result["checksums"]["files"] if row["path"] == ".nojekyll")[
+        "sha256"
+    ] == hashlib.sha256(b"").hexdigest()
 
     descriptor = result["descriptor"]
     coverage = result["coverage"]

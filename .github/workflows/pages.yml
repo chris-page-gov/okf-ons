@@ -117,13 +117,6 @@ jobs:
             ${{ runner.temp }}/explorer-acceptance.json
           if-no-files-found: ignore
 
-      - name: Add project-relative Pages assets to the public bundle
-        run: |
-          cp -R pages/. bundle/
-          cp docs/demo-guide.md bundle/demo-guide.md
-          cp accessibility.md bundle/accessibility.md
-          touch bundle/.nojekyll
-
       - name: Validate assembled OKF 0.3 Markdown layer
         run: .venv/bin/python scripts/check_okf_v03.py bundle
 

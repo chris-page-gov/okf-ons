@@ -4,6 +4,10 @@
 
 ### Reader access and walkthrough publication
 
+- Include every Pages asset and the no-Jekyll marker in the single generated
+  bundle before checksums and consumer acceptance; deploy those exact checked
+  bytes without an unlisted post-check overlay.
+
 - Require an independent import and exact source, frontmatter, body and core
   graph reconciliation, plus all five ONS Reader journeys, in the existing
   protected build gate before the exact candidate is deployed.
