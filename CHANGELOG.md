@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — publish the population walkthrough
+
+- Include the source-linked population-by-age walkthrough, diagram, source
+  trail and Reader journeys in the generated bundle and checksum manifest.
+- Link the published guide from the landing page, use pinned repository source
+  citations and check the guide's actual Pages entrypoints before deployment.
+
 ## Unreleased — standards references
 
 - Link the central current and historical OKF standards register and public bundle catalogue.

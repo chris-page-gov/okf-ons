@@ -20,6 +20,13 @@ drives the local browser run; the
 [machine-readable source trail](../evaluation/okf-03/ons-population-by-age-source-trail.json)
 binds its evidence and limits.
 
+The producer build copies the HTML, diagram, journey manifest and source trail
+into the public bundle before calculating checksums. The landing page links
+to `walkthrough.html`. Public source citations use the exact retained repository
+revision; local checkout paths are not used as deployed source links. The Pages
+workflow requires these assets before upload, and the bundle check retrieves
+their complete bytes along with every declared graph and core source file.
+
 ## Reader journey
 
 ```mermaid
