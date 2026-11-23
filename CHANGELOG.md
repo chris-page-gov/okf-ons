@@ -11,6 +11,8 @@
   receipts, and avoid an unrelated host favicon request on both public guides.
 - Match the independent Reader's body boundary whitespace rule while retaining
   each complete Markdown document and its exact byte digest.
+- Install the pinned package manager directly to honour the existing policy
+  allowing only GitHub-owned actions; repository permissions are unchanged.
 
 
 

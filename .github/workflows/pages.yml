@@ -58,14 +58,12 @@ jobs:
       - name: Build exact bundle once from the frozen source snapshot
         run: .venv/bin/python scripts/build_bundle.py --snapshot-dir source/demo-snapshot --output bundle
 
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-        with:
-          version: "10.34.7"
-          run_install: false
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24.22.3"
+
+      - name: Install the exact pnpm version without package scripts
+        run: npm install --global --ignore-scripts --no-audit --no-fund pnpm@10.34.7
 
       - name: Verify every generated bundle file over loopback HTTP
         run: node scripts/check_reader_http_access.mjs --bundle bundle --output "$RUNNER_TEMP/client-access.json"
