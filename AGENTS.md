@@ -208,3 +208,17 @@ Read [the central standards and bundle catalogue reference](https://github.com/c
 before changing specification links or an OKF version declaration. Resolve the
 implemented version through the shared register and preserve historical pins.
 <!-- okf-standards:end -->
+
+## Required consumer acceptance
+
+The protected `build` check uses Explorer revision
+`21a6b1be874eca4019770b15bd1c31ca41872f85` to import every typed source
+independently, compare full frontmatter, bodies, source-byte digests and core
+references, and run all five ONS journeys before publishing the same candidate.
+The workflow sets the independent projection and receipt paths explicitly;
+`check-core-parity` uses `OKF_SOURCE_PROJECTION` and `OKF_CORE_PARITY_OUTPUT`,
+and `check-explorer-access` uses `OKF_EXPLORER_ACCEPTANCE_OUTPUT`.
+These files must be outside the public bundle. Consumer tools are checked out
+under `.acceptance-tools/okf-explorer` at the pinned revision; install its frozen
+Python and pnpm environments before replay. Do not treat local tests as live
+public deployment verification.

@@ -165,7 +165,7 @@ class BuildInputs:
     accessibility_statement: Path
     semantic_assertion_schema: Path
     semantic_assertion_schema_metadata: Path
-    walkthrough_assets: tuple[tuple[str, Path], ...]
+    publication_assets: tuple[tuple[str, Path], ...]
 
 
 @dataclass
@@ -192,7 +192,12 @@ def default_inputs(root: Path) -> BuildInputs:
         okf_publication=root / "source" / "okf-publication.json",
         demo_guide=root / "docs" / "demo-guide.md",
         accessibility_statement=root / "accessibility.md",
-        walkthrough_assets=(
+        publication_assets=(
+            ("index.html", root / "pages/index.html"),
+            ("app.js", root / "pages/app.js"),
+            ("styles.css", root / "pages/styles.css"),
+            ("demo-guide.html", root / "pages/demo-guide.html"),
+            ("accessibility.html", root / "pages/accessibility.html"),
             ("walkthrough.html", root / "docs/ons-population-by-age-walkthrough.html"),
             (
                 "ons-population-by-age-walkthrough.svg",
@@ -2294,7 +2299,9 @@ def _core_explorer_projection(documents: Mapping[str, str]) -> dict[str, Any]:
             "source_sha256": _sha256_bytes(raw),
             "source_bytes": len(raw),
             "section": route.split("/", 1)[0] if "/" in route else "root",
-            "body": parsed["body"],
+            # Match the independent Reader's display-body boundary rule. The
+            # complete original document remains bound by its byte digest.
+            "body": parsed["body"].strip(),
             "frontmatter": metadata,
         }
     known_routes = set(nodes)
@@ -3142,10 +3149,11 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
         },
     }
     writer.write_json("okf-explorer.json", descriptor)
-    for public_path, source in inputs.walkthrough_assets:
+    for public_path, source in inputs.publication_assets:
         if source.is_symlink() or not source.is_file():
-            raise BuildError(f"required walkthrough asset is not a regular file: {public_path}")
+            raise BuildError(f"required publication asset is not a regular file: {public_path}")
         writer.write_bytes(public_path, source.read_bytes())
+    writer.write_bytes(".nojekyll", b"")
     checksums = writer.checksums()
     writer.write_json("checksums.json", checksums)
     return {

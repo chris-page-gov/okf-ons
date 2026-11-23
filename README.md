@@ -72,8 +72,9 @@ code asserts statistical equivalence, source endorsement or certification.
 These are the canonical entry points for the Pages deployment from `main`.
 The immutable application release `v0.2.0` predates the OKF specification 0.2
 migration and remains available as historical release evidence.
-The checked-in producer adoption candidate is version `0.3.0`; it is not yet
-the deployed Pages bundle or a published GitHub release.
+Protected `main` now deploys the `0.3.0` producer candidate from the same
+frozen demo snapshot. Formal GitHub release publication remains gated by
+exact-revision source, Explorer, AI-access and live browser acceptance.
 The [OKF 0.3 complex-question visual walkthrough](docs/ons-population-by-age-walkthrough.html)
 and its [source-linked notes](docs/okf-03-complex-question-walkthrough.md)
 trace a population-by-age question through source metadata, alternatives, the
@@ -349,9 +350,13 @@ byte-identical to r5. Rebuild and profile r6 without network access:
   --output evaluation/metadata-completeness/current.json
 ```
 
-The live Pages and Explorer URLs above still serve governed release v0.2.0.
-The checked-in producer version `0.3.0` is a release candidate until the exact
-reviewed revision is deliberately published.
+The live Pages and Explorer routes use the `0.3.0` producer candidate and
+retain the governed demo snapshot `monday-2026-07-17-r2`. The existing immutable
+`v0.2.0` GitHub release remains unchanged. The required build gate now compares
+all 12 concepts with an independent Reader import and replays five real
+Chromium journeys before promoting the same candidate. The Reader display
+body trims only boundary whitespace; every complete Markdown source remains
+published with its exact byte digest.
 The r6 campaign snapshot is checked in as governed campaign evidence but
 remains an undeployed release candidate until the release metadata and
 Pages-selected snapshot are deliberately switched.

@@ -108,9 +108,17 @@ def test_main_page_has_progressive_accessible_discovery_structure() -> None:
     assert "validated plan" not in html.casefold()
 
 
+def test_every_public_page_asset_is_a_declared_compiler_input() -> None:
+    from okf_ons.build import default_inputs
+
+    declared = {source for _, source in default_inputs(ROOT).publication_assets}
+    actual = {p for p in PAGES.rglob("*") if p.is_file() and p.name != ".DS_Store"}
+    assert actual <= declared
+
+
 def test_static_page_assets_are_project_relative_and_present() -> None:
     from okf_ons.build import default_inputs
-    generated = dict(default_inputs(ROOT).walkthrough_assets)
+    generated = dict(default_inputs(ROOT).publication_assets)
     for page in PAGES.glob("*.html"):
         parser = parse(page)
         for attribute, reference in parser.references:
