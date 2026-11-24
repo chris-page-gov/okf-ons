@@ -11,6 +11,16 @@
 - Add a pinned-identity Reader journey for the core snapshot and standards
   concepts, with the exact core descriptor as its acceptance root.
 
+### Changed
+
+- Link each published walkthrough directly to its own Reader descriptor and the
+  exact metadata record or source concept used by that question.
+- Pin the validation bootstrap to the attested uv 0.13.4 release and verify the
+  Linux runner archive digest before use. This replaces uv 0.12.2, whose bundled
+  certificate store contains the reported vulnerable root.
+- Pin the independent source importer, reconciler and Reader acceptance to the
+  uv 0.13.4-compatible Explorer main commit used for the release gates.
+
 ## [0.3.0] — 23 November 2026
 
 ### Reader access and walkthrough publication

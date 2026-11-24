@@ -40,6 +40,10 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         checksum = next(row for row in result["checksums"]["files"] if row["path"] == public_path)
         assert checksum["sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
 
+    metadata_guide = (output / "walkthrough.html").read_text()
+    assert "#dataset/nomis-dataset-nm-2002-1" in metadata_guide
+    assert "#concepts/sources/nomis-dataset-definitions.md" in metadata_guide
+
     assert (output / ".nojekyll").read_bytes() == b""
     assert next(row for row in result["checksums"]["files"] if row["path"] == ".nojekyll")[
         "sha256"

@@ -266,7 +266,7 @@ Source attribution does not imply endorsement by ONS or another producer.
 
 ## Build
 
-Python 3.11 or later and uv 0.12.2 are required. The uv version is enforced by
+Python 3.11 or later and uv 0.13.4 are required. The uv version is enforced by
 `pyproject.toml`; `uv.lock` pins the complete test environment. A recursive clone is
 required because normal
 GitHub source archives do not contain the pinned ELS submodule. The release

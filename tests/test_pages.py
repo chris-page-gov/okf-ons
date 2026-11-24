@@ -110,6 +110,15 @@ def test_main_page_has_progressive_accessible_discovery_structure() -> None:
     assert "validated plan" not in html.casefold()
 
 
+def test_metadata_walkthrough_links_to_its_exact_reader_routes() -> None:
+    guide = (ROOT / "docs/ons-population-by-age-walkthrough.html").read_text(
+        encoding="utf-8"
+    )
+    assert "&amp;q=NM_2002_1#dataset/nomis-dataset-nm-2002-1" in guide
+    assert "#dataset/nomis-dataset-nm-2002-1" in guide
+    assert "#concepts/sources/nomis-dataset-definitions.md" in guide
+
+
 def test_every_public_page_asset_is_a_declared_compiler_input() -> None:
     from okf_ons.build import default_inputs
 
