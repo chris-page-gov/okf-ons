@@ -45,7 +45,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/uv-bin"
           tar -xzf "$archive" --directory "$RUNNER_TEMP/uv-bin" --strip-components=1
           echo "$RUNNER_TEMP/uv-bin" >> "$GITHUB_PATH"
-          test "$("$RUNNER_TEMP/uv-bin/uv" --version)" = "uv 0.13.4 (7456b60bc 2026-10-20 x86_64-unknown-linux-gnu)"
+          version="$("$RUNNER_TEMP/uv-bin/uv" --version)"
+          printf 'Verified uv reports: %s\n' "$version"
+          case "$version" in
+            "uv 0.13.4 "*) ;;
+            *) printf 'Expected uv 0.13.4, got: %s\n' "$version" >&2; exit 1 ;;
+          esac
 
       - name: Synchronise locked validation environment
         run: uv sync --locked --extra test

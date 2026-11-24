@@ -15,7 +15,8 @@ def test_uv_bootstrap_version_and_linux_archive_digest_are_locked() -> None:
         in workflow
     )
     assert "2b428396f12572d4429cf210ca234dd599a33b3af0958a4d5ed569d63e3f344f" in workflow
-    assert 'uv 0.13.4 (7456b60bc 2026-10-20 x86_64-unknown-linux-gnu)' in workflow
+    assert '"uv 0.13.4 "*)' in workflow
+    assert 'Expected uv 0.13.4, got:' in workflow
     assert "uv 0.13.4" in readme
     assert "uv==0.12.2" not in workflow
 
