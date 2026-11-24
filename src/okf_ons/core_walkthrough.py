@@ -143,19 +143,26 @@ def generate(core: Mapping[str, Any], descriptor_bytes: bytes, bundle: Path) -> 
         })
 
     descriptor_sha = _sha256(descriptor_bytes)
+    answer_paragraphs = [
+        "No. The core describes a bounded metadata snapshot across four source lanes, "
+        "not every ONS dataset, and contains no statistical observations.",
+        "It defines no governed stale_after date; current-value and live-execution "
+        "claims need provider revalidation.",
+        "Governance says structural validation and frozen-input integrity do not "
+        "establish statistical truth, while the standards concept separates OKF 0.3 "
+        "structure from accuracy, legal compliance and certification.",
+        "The conclusion about completeness, currentness and accuracy is an inference "
+        "from these stated limits.",
+    ]
+    answer_markup = "\n".join(
+        f"<p>{html.escape(paragraph).replace('stale_after', '<code>stale_after</code>')}</p>"
+        for paragraph in answer_paragraphs
+    )
     evidence = {
         "schema": "okf-ons-core-only-walkthrough.v1",
         "question": QUESTION,
         "answer_scope": "typed-core-markdown-only",
-        "answer": (
-            "No. The core describes a bounded metadata snapshot across four source lanes, "
-            "not every ONS dataset, and contains no statistical observations. It defines no "
-            "governed stale_after date; current-value and live-execution claims need provider "
-            "revalidation. Governance says structural validation and frozen-input integrity "
-            "do not establish statistical truth, while the standards concept separates OKF "
-            "0.3 structure from accuracy, legal compliance and certification. The conclusion "
-            "about completeness, currentness and accuracy is an inference from these stated limits."
-        ),
+        "answer": " ".join(answer_paragraphs),
         "core_descriptor": {
             "path": "okf-core-explorer.json",
             "bundle_id": core["bundle_id"],
@@ -208,8 +215,7 @@ def generate(core: Mapping[str, Any], descriptor_bytes: bytes, bundle: Path) -> 
 <p><a href="index.html">ONS bundle homepage</a> · <a href="{html.escape(explorer_url, quote=True)}">Open this core bundle at the snapshot concept in OKF Explorer</a></p>
 <h1>{html.escape(QUESTION)}</h1>
 <section class="answer"><h2>Worked answer from the core sources</h2>
-<p>No. The core describes a bounded metadata snapshot across four source lanes, not every ONS dataset, and contains no statistical observation values. It defines no governed <code>stale_after</code> date; current-value and live-execution claims need provider revalidation.</p>
-<p>Its governance concept says deterministic validation establishes structural conformance and frozen-input integrity, not statistical truth. The standards concept also separates OKF 0.3 structural conformance from statistical accuracy, legal compliance and certification. The conclusion about completeness, currentness and accuracy is an inference from those source-stated limits.</p></section>
+{answer_markup}</section>
 <h2>Follow the core source trail</h2><figure><picture><source media="(max-width: 600px)" srcset="ons-core-walkthrough-mobile.svg"><img src="ons-core-walkthrough.svg" alt="A reading sequence through the catalogue, snapshot, governance and standards concepts. Dotted connectors are not semantic edges; the core graph has zero edges."></picture><figcaption class="muted">This is a guided reading sequence through four exact Markdown sources. It does not depict graph relationships; the core projection has zero edges.</figcaption></figure>
 <section class="limits"><h2>Negative controls</h2><ul>
 <li>The 5,097 figure is a metadata-record count for this bounded snapshot, not observation coverage or a claim about all ONS datasets.</li>
