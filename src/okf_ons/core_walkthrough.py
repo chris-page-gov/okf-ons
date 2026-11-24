@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
+from . import __version__
+
 CORE_ID = "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json"
 EXPLORER = "https://chris-page-gov.github.io/okf-explorer/explore/?bundle="
 ROUTES = (
@@ -109,8 +111,8 @@ def generate(core: Mapping[str, Any], descriptor_bytes: bytes, bundle: Path) -> 
     """Return deterministic guide, diagrams and evidence for the exact core bytes."""
     if core.get("schema") != "okf-explorer-bundle.v0" or core.get("okf_version") != "0.3":
         raise ValueError("Core walkthrough requires the OKF 0.3 core projection")
-    if core.get("bundle_id") != CORE_ID or core.get("version") != "0.3.0":
-        raise ValueError("Core Reader identity differs from the ONS 0.3.0 descriptor")
+    if core.get("bundle_id") != CORE_ID or core.get("version") != __version__:
+        raise ValueError("Core Reader identity differs from the current ONS producer version")
     if core.get("snapshot") != "monday-2026-07-17-r2":
         raise ValueError("Core Reader snapshot differs from the frozen publication snapshot")
     if core.get("edges") != [] or len(core.get("nodes", {})) != 12:

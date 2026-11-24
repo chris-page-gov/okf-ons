@@ -567,7 +567,7 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert core_projection["bundle_id"] == (
         "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json"
     )
-    assert core_projection["version"] == "0.3.0"
+    assert core_projection["version"] == __version__
     assert core_projection["snapshot"] == "monday-2026-07-17-r2"
     assert len(core_projection["nodes"]) == 12
     assert core_projection["edges"] == []

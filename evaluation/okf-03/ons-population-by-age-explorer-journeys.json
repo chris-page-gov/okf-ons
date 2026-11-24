@@ -4,7 +4,7 @@
   "expected_identity": {
     "schema": "okf-explorer-large-corpus.v1",
     "id": "https://chris-page-gov.github.io/okf-ons/okf-explorer.json",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "snapshot": "monday-2026-07-17-r2"
   },
   "journeys": [

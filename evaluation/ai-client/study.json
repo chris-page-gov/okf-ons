@@ -14,7 +14,7 @@
     "expected": "evaluation/ai-client/expected.json",
     "expected_sha256": "8c4ae366c85ecdce471da43835a6a3106a7390de9bbd7b004ca43f0d76609e33",
     "client_profiles": "evaluation/ai-client/client-profiles.json",
-    "client_profiles_sha256": "c36f2fbd80205e62910779c19b6d4e0e312e8e7f38b124db879c9889925e11a6",
+    "client_profiles_sha256": "8c70602dcf9e620cad4d4b8b43bd7cced2534750bb7ed9d85bf023192b287f91",
     "personas_and_journeys": "evaluation/ai-client/personas-and-journeys.json",
     "personas_and_journeys_sha256": "b1101129aeea20567fefd07699849949281609d80571c9a7c50a3ffb8ec9eba7",
     "issue_register": "evaluation/ai-client/issue-register.json",

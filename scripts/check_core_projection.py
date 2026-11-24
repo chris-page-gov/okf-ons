@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +19,12 @@ def check(projection: Path, bundle: Path = ROOT / "bundle") -> dict:
     published = json.loads(descriptor.read_bytes())
     if published.get("bundle_id") != "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json":
         raise ValueError("published core Reader identity differs")
-    if published.get("version") != "0.3.0" or published.get("snapshot") != "monday-2026-07-17-r2":
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    expected_version = project["project"]["version"]
+    if (
+        published.get("version") != expected_version
+        or published.get("snapshot") != "monday-2026-07-17-r2"
+    ):
         raise ValueError("published core Reader version or frozen snapshot differs")
     if set(published["nodes"]) != set(imported["nodes"]):
         raise ValueError("published core concept coverage differs from source")

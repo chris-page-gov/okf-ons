@@ -65,8 +65,9 @@ separately trusted downstream MCP such as MCP-Geo.
 
 ## Broker contract and local smoke test
 
-The 0.3.0 producer identifies its server as `okf-ons-metadata-broker` version
-`0.3.0`; the historical v0.2.0 release retains its recorded version. It
+The 0.3.1 producer identifies its server as `okf-ons-metadata-broker` version
+`0.3.1`; the historical v0.2.0 and v0.3.0 releases retain their recorded
+versions. It
 negotiates the current MCP protocol `2025-11-25` while retaining
 `2025-06-18` compatibility for existing clients. If a client requests an
 unsupported version, it returns `2025-11-25` during initialization.
