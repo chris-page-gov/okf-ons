@@ -98,12 +98,19 @@ jobs:
         timeout-minutes: 5
         run: pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer exec playwright install chromium
 
-      - name: Replay all five ONS complex-question Reader journeys
+      - name: Replay all five metadata-backed ONS Reader journeys
         run: >-
           pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer acceptance:bundle --
           --bundle-root "$GITHUB_WORKSPACE/bundle"
           --journeys "$GITHUB_WORKSPACE/evaluation/okf-03/ons-population-by-age-explorer-journeys.json"
           --output "$RUNNER_TEMP/explorer-acceptance.json" --port 4182
+
+      - name: Replay the core-only conformance question in its own Reader
+        run: >-
+          pnpm --dir .acceptance-tools/okf-explorer/apps/okf-explorer acceptance:bundle --
+          --bundle-root "$GITHUB_WORKSPACE/bundle"
+          --journeys "$GITHUB_WORKSPACE/evaluation/okf-03/ons-core-walkthrough-explorer-journeys.json"
+          --output "$RUNNER_TEMP/core-walkthrough-explorer-acceptance.json" --port 4183
 
       - name: Retain exact consumer receipts
         if: always()
@@ -115,6 +122,7 @@ jobs:
             ${{ runner.temp }}/core-parity.json
             ${{ runner.temp }}/client-access.json
             ${{ runner.temp }}/explorer-acceptance.json
+            ${{ runner.temp }}/core-walkthrough-explorer-acceptance.json
           if-no-files-found: ignore
 
       - name: Validate assembled OKF 0.3 Markdown layer
@@ -126,6 +134,10 @@ jobs:
           test -f bundle/walkthrough.html
           test -f bundle/ons-population-by-age-walkthrough.svg
           test -f bundle/ons-population-by-age-source-trail.json
+          test -f bundle/core-walkthrough.html
+          test -f bundle/ons-core-walkthrough.svg
+          test -f bundle/ons-core-walkthrough-mobile.svg
+          test -f bundle/ons-core-walkthrough-evidence.json
           test -f bundle/index.md
           test -f bundle/concepts/catalogue.md
           test -f bundle/okf-core-explorer.json

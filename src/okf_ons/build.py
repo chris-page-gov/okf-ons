@@ -20,6 +20,8 @@ from typing import Any
 from urllib.parse import unquote, urlsplit
 
 from . import __version__
+from .core_walkthrough import CORE_ID as CORE_READER_ID
+from .core_walkthrough import generate as generate_core_walkthrough
 from .evaluation import evaluate_rankings, load_gold_suite
 from .model import (
     BUNDLE_PUBLISHER,
@@ -210,6 +212,10 @@ def default_inputs(root: Path) -> BuildInputs:
             (
                 "ons-population-by-age-source-trail.json",
                 root / "evaluation/okf-03/ons-population-by-age-source-trail.json",
+            ),
+            (
+                "ons-core-walkthrough-explorer-journeys.json",
+                root / "evaluation/okf-03/ons-core-walkthrough-explorer-journeys.json",
             ),
         ),
         semantic_assertion_schema=root / "schemas" / "semantic-assertion.schema.json",
@@ -2271,7 +2277,13 @@ def _okf_markdown_documents(
     return documents
 
 
-def _core_explorer_projection(documents: Mapping[str, str]) -> dict[str, Any]:
+def _core_explorer_projection(
+    documents: Mapping[str, str],
+    *,
+    bundle_id: str,
+    version: str,
+    snapshot: str,
+) -> dict[str, Any]:
     """Project the complete authored Markdown layer for portable Reader access.
 
     This intentionally contains no semantic edges: navigation links remain
@@ -2335,6 +2347,9 @@ def _core_explorer_projection(documents: Mapping[str, str]) -> dict[str, Any]:
         raise BuildError(f"Expected 12 typed Markdown concepts, found {len(nodes)}")
     return {
         "schema": "okf-explorer-bundle.v0",
+        "bundle_id": bundle_id,
+        "version": version,
+        "snapshot": snapshot,
         "kind": "okf-bundle",
         "okf_version": OKF_VERSION,
         "meta": {
@@ -2433,10 +2448,20 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
     )
     for path, document in okf_documents.items():
         writer.write_text(path, document)
-    core_projection = _core_explorer_projection(okf_documents)
+    core_projection = _core_explorer_projection(
+        okf_documents,
+        bundle_id=CORE_READER_ID,
+        version=__version__,
+        snapshot=str(corpus.snapshot["snapshotId"]),
+    )
     core_projection_bytes = canonical_json(core_projection).encode("utf-8")
     core_projection_sha256 = _sha256_bytes(core_projection_bytes)
     writer.write_bytes("okf-core-explorer.json", core_projection_bytes)
+    core_walkthrough_assets = generate_core_walkthrough(
+        core_projection, core_projection_bytes, output
+    )
+    for public_path, content in core_walkthrough_assets.items():
+        writer.write_bytes(public_path, content)
     try:
         okf_conformance = validate_okf_bundle(output)
     except (OSError, OKFConformanceError) as exc:
@@ -3037,6 +3062,8 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "provider_datapacks": "data/providers/manifest.json",
             "okf_index": "index.md",
             "okf_core_reader": "okf-core-explorer.json",
+            "core_only_walkthrough": "core-walkthrough.html",
+            "core_only_walkthrough_evidence": "ons-core-walkthrough-evidence.json",
             "okf_conformance": "data/standards/okf-v0.3.json",
             "mcp_bindings": "data/ons/mcp-bindings.json",
             "spatial_index": "data/ons/spatial-index.json",
@@ -3046,6 +3073,12 @@ def compile_bundle(inputs: BuildInputs, output: Path) -> dict[str, Any]:
             "okf_core_reader": {
                 "path": "okf-core-explorer.json",
                 "sha256": core_projection_sha256,
+            },
+            "core_only_walkthrough_evidence": {
+                "path": "ons-core-walkthrough-evidence.json",
+                "sha256": _sha256_bytes(
+                    core_walkthrough_assets["ons-core-walkthrough-evidence.json"]
+                ),
             },
             "provider_datapacks": {
                 "path": "data/providers/manifest.json",

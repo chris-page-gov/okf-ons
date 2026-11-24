@@ -7,6 +7,18 @@
   "reader": {
     "consumer": "https://chris-page-gov.github.io/okf-explorer/",
     "delivery": "json-large-corpus-chunks",
+    "portable_core": {
+      "descriptor": "bundle/okf-core-explorer.json",
+      "identity": {
+        "schema": "okf-explorer-bundle.v0",
+        "id": "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json",
+        "version": "0.3.1",
+        "snapshot": "monday-2026-07-17-r2"
+      },
+      "typed_markdown_concepts": 12,
+      "directed_core_reference_pairs": 0,
+      "metadata_graph_used_by_core_walkthrough": false
+    },
     "preserves": [
       "direction",
       "semantic-identities",
@@ -120,6 +132,30 @@
         "path": "bundle/okf-explorer.json",
         "required": true,
         "role": "explorer-runtime"
+      },
+      {
+        "generated": true,
+        "path": "bundle/okf-core-explorer.json",
+        "required": true,
+        "role": "portable-core-reader-projection"
+      },
+      {
+        "generated": true,
+        "path": "bundle/core-walkthrough.html",
+        "required": true,
+        "role": "core-only-source-linked-question"
+      },
+      {
+        "generated": true,
+        "path": "bundle/ons-core-walkthrough-*.svg",
+        "required": true,
+        "role": "core-only-desktop-and-mobile-diagrams"
+      },
+      {
+        "generated": true,
+        "path": "bundle/ons-core-walkthrough-evidence.json",
+        "required": true,
+        "role": "core-only-exact-source-digests"
       },
       {
         "generated": true,

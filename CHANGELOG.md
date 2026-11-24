@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1] — 24 November 2026
+
+### Added
+
+- Add a distinct OKF 0.3 core-only question and source-linked desktop and mobile
+  diagrams, bound to the exact 12-concept Reader descriptor and four Markdown
+  source hashes. The answer keeps snapshot scope, freshness and statistical
+  accuracy limits separate from the metadata-backed population question.
+- Add a pinned-identity Reader journey for the core snapshot and standards
+  concepts, with the exact core descriptor as its acceptance root.
+
 ## [0.3.0] — 23 November 2026
 
 ### Reader access and walkthrough publication

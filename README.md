@@ -72,13 +72,19 @@ code asserts statistical equivalence, source endorsement or certification.
 These are the canonical entry points for the Pages deployment from `main`.
 The immutable application release `v0.2.0` predates the OKF specification 0.2
 migration and remains available as historical release evidence.
-Protected `main` now deploys the `0.3.0` producer candidate from the same
-frozen demo snapshot. Formal GitHub release publication remains gated by
+The `0.3.1` producer patch is built from the same frozen demo snapshot. Formal
+GitHub release publication remains gated by
 exact-revision source, Explorer, AI-access and live browser acceptance.
 The [OKF 0.3 complex-question visual walkthrough](docs/ons-population-by-age-walkthrough.html)
 and its [source-linked notes](docs/okf-03-complex-question-walkthrough.md)
 trace a population-by-age question through source metadata, alternatives, the
 semantic graph and the local non-executing MCP broker.
+The separate [core-only walkthrough](docs/okf-03-core-only-walkthrough.md)
+answers whether OKF 0.3 conformance establishes complete, current or
+statistically verified coverage, using only the 12 typed Markdown concepts.
+The generated guide binds its answer and diagrams to the portable core
+descriptor and source-document hashes; it does not use a metadata record or
+the metadata extension graph.
 
 ### Live and machine-readable access
 
@@ -288,9 +294,9 @@ separate immutable baseline or release artefact is the recorded future option;
 the workflow does not perform a second identical build merely to compare the
 result with itself.
 
-To rebuild the current 0.3.0 producer from the frozen snapshot also used by the
-historical v0.2.0 tag (which predates these semantic and conformance
-extensions):
+To rebuild the current `0.3.1` producer candidate from the frozen snapshot
+also used by the historical `v0.2.0` tag (which predates these semantic and
+conformance extensions):
 
 ```bash
 git clone --recurse-submodules \
@@ -350,8 +356,8 @@ byte-identical to r5. Rebuild and profile r6 without network access:
   --output evaluation/metadata-completeness/current.json
 ```
 
-The live Pages and Explorer routes use the `0.3.0` producer candidate and
-retain the governed demo snapshot `monday-2026-07-17-r2`. The existing immutable
+The `0.3.1` producer candidate retains the governed demo snapshot
+`monday-2026-07-17-r2`. The existing immutable
 `v0.2.0` GitHub release remains unchanged. The required build gate now compares
 all 12 concepts with an independent Reader import and replays five real
 Chromium journeys before promoting the same candidate. The Reader display

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from okf_ons import __version__
 from okf_ons.build import _core_explorer_projection
 
 SPEC = importlib.util.spec_from_file_location(
@@ -26,7 +27,14 @@ def fixture(tmp_path: Path):
     }
     projection = tmp_path / "independent.json"
     projection.write_text(json.dumps({"nodes": {"concept.md": node}, "edges": []}))
-    descriptor = {"nodes": {"concept.md": node}, "edges": []}
+    descriptor = {
+        "schema": "okf-explorer-bundle.v0",
+        "bundle_id": "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json",
+        "version": __version__,
+        "snapshot": "monday-2026-07-17-r2",
+        "nodes": {"concept.md": node},
+        "edges": [],
+    }
     (tmp_path / "okf-core-explorer.json").write_text(json.dumps(descriptor))
     return projection, descriptor
 
@@ -43,7 +51,12 @@ def test_reader_body_boundary_rule_keeps_original_source_identity():
             '---\ntype: "concept"\ntitle: "Example"\n---\n\n'
             '# Exact body\n\n  Indented internal content.\n\n'
         )
-    result = _core_explorer_projection(documents)
+    result = _core_explorer_projection(
+        documents,
+        bundle_id="https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json",
+        version=__version__,
+        snapshot="monday-2026-07-17-r2",
+    )
     for route, node in result["nodes"].items():
         assert node["body"] == '# Exact body\n\n  Indented internal content.'
         raw = documents[route].encode()
