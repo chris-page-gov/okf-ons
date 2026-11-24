@@ -16,6 +16,10 @@ def check(projection: Path, bundle: Path = ROOT / "bundle") -> dict:
     imported = json.loads(projection.read_bytes())
     descriptor = bundle / "okf-core-explorer.json"
     published = json.loads(descriptor.read_bytes())
+    if published.get("bundle_id") != "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json":
+        raise ValueError("published core Reader identity differs")
+    if published.get("version") != "0.3.0" or published.get("snapshot") != "monday-2026-07-17-r2":
+        raise ValueError("published core Reader version or frozen snapshot differs")
     if set(published["nodes"]) != set(imported["nodes"]):
         raise ValueError("published core concept coverage differs from source")
     for route, node in published["nodes"].items():

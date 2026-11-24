@@ -1,0 +1,67 @@
+{
+  "schema": "okf-explorer-journeys.v1",
+  "bundle_descriptor": "okf-core-explorer.json",
+  "expected_identity": {
+    "schema": "okf-explorer-bundle.v0",
+    "id": "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json",
+    "version": "0.3.0",
+    "snapshot": "monday-2026-07-17-r2"
+  },
+  "journeys": [
+    {
+      "id": "core-only-snapshot-boundary-and-freshness",
+      "actions": [
+        {
+          "type": "goto",
+          "hash": "#concepts/snapshot.md"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel h2:has-text(\"Governed ONS metadata snapshot monday-2026-07-17-r2\")"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "5,097 metadata records across 4 bounded source lanes"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "No governed stale_after date is currently defined"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "Live execution and current-value claims require revalidation against the relevant provider"
+        }
+      ]
+    },
+    {
+      "id": "core-only-structural-conformance-is-not-accuracy",
+      "actions": [
+        {
+          "type": "goto",
+          "hash": "#concepts/standards.md"
+        },
+        {
+          "type": "wait_for",
+          "selector": ".right-panel h2:has-text(\"OKF ONS standards and conformance evidence\")"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "Structural conformance is evaluated independently of statistical accuracy, legal compliance or certification"
+        },
+        {
+          "type": "text",
+          "selector": ".right-panel",
+          "includes": "generated producer check"
+        }
+      ]
+    }
+  ]
+}

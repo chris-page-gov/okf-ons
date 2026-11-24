@@ -222,3 +222,8 @@ These files must be outside the public bundle. Consumer tools are checked out
 under `.acceptance-tools/okf-explorer` at the pinned revision; install its frozen
 Python and pnpm environments before replay. Do not treat local tests as live
 public deployment verification.
+
+The core-only conformance question is a separate bundle-specific case rooted at
+`okf-core-explorer.json`; its journey checks the snapshot and standards source
+documents without using metadata entities. Keep that acceptance alongside the
+five metadata-backed journeys in the protected build workflow.

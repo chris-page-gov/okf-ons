@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -563,6 +564,11 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
     assert descriptor["entrypoints"]["okf_core_reader"] == "okf-core-explorer.json"
     core_projection = json.loads((output / "okf-core-explorer.json").read_text())
     assert core_projection["schema"] == "okf-explorer-bundle.v0"
+    assert core_projection["bundle_id"] == (
+        "https://chris-page-gov.github.io/okf-ons/okf-core-explorer.json"
+    )
+    assert core_projection["version"] == "0.3.0"
+    assert core_projection["snapshot"] == "monday-2026-07-17-r2"
     assert len(core_projection["nodes"]) == 12
     assert core_projection["edges"] == []
     for route, node in core_projection["nodes"].items():
@@ -604,6 +610,55 @@ def test_full_frozen_bundle_is_deterministic_and_keeps_claim_boundaries(
         "path": "data/semantic/manifest.json",
         "sha256": relationship_semantics["manifestSha256"],
     }
+
+    assert descriptor["entrypoints"]["core_only_walkthrough"] == "core-walkthrough.html"
+    evidence_path = output / "ons-core-walkthrough-evidence.json"
+    evidence_bytes = evidence_path.read_bytes()
+    evidence = json.loads(evidence_bytes)
+    core_bytes = (output / "okf-core-explorer.json").read_bytes()
+    assert evidence["core_descriptor"] == {
+        "path": "okf-core-explorer.json",
+        "bundle_id": core_projection["bundle_id"],
+        "version": core_projection["version"],
+        "snapshot": core_projection["snapshot"],
+        "sha256": hashlib.sha256(core_bytes).hexdigest(),
+    }
+    assert evidence["core_scope"] == {
+        "typed_markdown_concepts": 12,
+        "directed_core_reference_pairs": 0,
+        "metadata_extension_graph_used": False,
+        "dataset_record_used": False,
+        "observation_values_used": False,
+    }
+    expected_sources = {
+        "concepts/catalogue.md",
+        "concepts/snapshot.md",
+        "concepts/governance.md",
+        "concepts/standards.md",
+    }
+    assert {item["route"] for item in evidence["source_documents"]} == expected_sources
+    for item in evidence["source_documents"]:
+        source_bytes = (output / item["route"]).read_bytes()
+        assert item["sha256"] == hashlib.sha256(source_bytes).hexdigest()
+        assert item["bytes"] == len(source_bytes)
+    html_guide = (output / "core-walkthrough.html").read_text()
+    assert "Does OKF 0.3 conformance mean this ONS catalogue is complete" in html_guide
+    assert "No. The core describes a bounded metadata snapshot" in html_guide
+    assert "ons-core-walkthrough-mobile.svg" in html_guide
+    assert "https://chris-page-gov.github.io/okf-explorer/explore/?bundle=" in html_guide
+    assert core_projection["bundle_id"] in html_guide
+    assert "#concepts/snapshot.md" in html_guide
+    assert "NM_2002_1" not in html_guide
+    assert len(evidence["negative_controls"]) >= 4
+    for source in evidence["source_documents"]:
+        assert source["sha256"] in html_guide
+    for diagram_name in (
+        "ons-core-walkthrough.svg",
+        "ons-core-walkthrough-mobile.svg",
+    ):
+        diagram_root = ET.fromstring((output / diagram_name).read_bytes())
+        assert diagram_root.tag == "{http://www.w3.org/2000/svg}svg"
+        assert diagram_root.find("{http://www.w3.org/2000/svg}title") is not None
 
     checksums = json.loads((output / "checksums.json").read_text())
     for row in checksums["files"]:

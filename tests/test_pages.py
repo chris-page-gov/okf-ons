@@ -102,6 +102,8 @@ def test_main_page_has_progressive_accessible_discovery_structure() -> None:
     }
     assert 'aria-live="polite"' in html
     assert "Open in OKF Explorer" in html
+    assert "core-walkthrough.html" in html
+    assert "OKF core's limits on completeness and currency" in html
     assert "searches all 5,097 frozen records" in html
     assert "No API key is requested or retained." in html
     assert "non-executing candidate plan" in html
@@ -131,6 +133,14 @@ def test_static_page_assets_are_project_relative_and_present() -> None:
                 # Generated bundle assets are produced by the build workflow.
                 continue
             if local.name == "okf-explorer.json":
+                continue
+            if local.parent == PAGES and local.name in {
+                "core-walkthrough.html",
+                "ons-core-walkthrough.svg",
+                "ons-core-walkthrough-mobile.svg",
+                "ons-core-walkthrough-evidence.json",
+            }:
+                # The bundle builder generates this guide from the exact core descriptor.
                 continue
             if local.parent == PAGES and local.name in generated:
                 assert generated[local.name].is_file(), (

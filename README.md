@@ -79,6 +79,12 @@ The [OKF 0.3 complex-question visual walkthrough](docs/ons-population-by-age-wal
 and its [source-linked notes](docs/okf-03-complex-question-walkthrough.md)
 trace a population-by-age question through source metadata, alternatives, the
 semantic graph and the local non-executing MCP broker.
+The separate [core-only walkthrough](docs/okf-03-core-only-walkthrough.md)
+answers whether OKF 0.3 conformance establishes complete, current or
+statistically verified coverage, using only the 12 typed Markdown concepts.
+The generated guide binds its answer and diagrams to the portable core
+descriptor and source-document hashes; it does not use a metadata record or
+the metadata extension graph.
 
 ### Live and machine-readable access
 

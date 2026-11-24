@@ -1,5 +1,10 @@
 # OKF 0.3 complex question walkthrough: population by age
 
+This guide is the metadata-backed question. The distinct
+[core-only walkthrough](okf-03-core-only-walkthrough.md) asks what the 12
+typed Markdown concepts establish about scope, freshness and conformance; it
+does not reuse the dataset records, metadata graph or MCP plan described here.
+
 ## Question
 
 > I need a population trend by age for a named local authority and a stated
