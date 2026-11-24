@@ -23,7 +23,7 @@ testpaths = ["tests"]
 addopts = "-ra"
 
 [tool.uv]
-required-version = "==0.12.2"
+required-version = "==0.13.4"
 
 [tool.ruff]
 line-length = 100
